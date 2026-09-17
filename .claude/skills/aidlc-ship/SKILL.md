@@ -25,25 +25,29 @@ This skill **always asks** before acting and acts only on the engineer's explici
 
 Run `git status --short --untracked-files=all` and `git diff --stat` (plus `--cached`). Summarise changed, staged and untracked paths, calling out `changes/<change-id>/` artifacts (they ship with the code) and anything that looks unrelated or sensitive. Current branch must be `aidlc/<change-id>`; any other branch requires the engineer's confirmation to use it. **Refuse on the default branch** — say why and stop.
 
-## 2. Ask
+## 2. Conventions check
 
-AskUserQuestion with exactly these options: "Commit, push and open PR", "Commit only", "Stop here". Show the proposed commit message and PR title first so the engineer confirms real text. "Stop here" ends with nothing written.
+Delegate to the `aidlc-conventions-checker` subagent with the change ID; it has Read, Glob, Grep and Bash, runs only the commands documented in `docs/repo-profile.md` (or `CLAUDE.md`) and never edits, fixes or commits. Show its `K<n>` findings and its commands table in the summary; nothing is written. Any finding at severity Important changes the question in step 3.
 
-## 3. Commit
+## 3. Ask
+
+AskUserQuestion with exactly these options. Zero open Important findings: "Commit, push and open PR", "Commit only", "Stop here". Any Important finding: "Fix findings first (aidlc-build)", "Ship anyway: commit, push and open PR", "Stop here". Show the proposed commit message and PR title first so the engineer confirms real text. "Stop here" and "Fix findings first" end with nothing written. "Ship anyway" proceeds as "Commit, push and open PR" and lists the accepted K-findings in the PR body.
+
+## 4. Commit
 
 - Stage the reviewed paths explicitly (`git add <paths>`), including `changes/<change-id>/`; never `git add -A` without listing what it captures.
 - Subject: when the change ID starts with a Jira key (`vs-1234-…` → `VS-1234`), `VS-1234: <imperative title>`; otherwise a Conventional Commit type (`feat:`, `fix:`, `docs:`, `chore:` …) derived from intent. Title comes from `intent.md`, ≤ 72 characters.
 - Body: why the change exists (from intent), then `Change: <change-id>`. Keep the repository's own commit conventions if `CLAUDE.md`/`CONVENTIONS.md` define them.
 - Read back `git log -1 --stat` and report it. Pre-commit hooks that fail stop the skill; report the output, never bypass.
 
-## 4. Push and open the PR (only on "Commit, push and open PR")
+## 5. Push and open the PR (only on "Commit, push and open PR" / "Ship anyway")
 
 - `git push -u origin aidlc/<change-id>`. Never force, never to the default branch.
-- Render `templates/pr-body.md` to a temp file with real content: **Summary** from `intent.md`; **Ticket** link only when a key/URL is genuinely known (ticket key in the ID, `intent.md` References, Atlassian MCP); **Spec / plan** links to `changes/<change-id>/spec.md`, `plan.md`; **Evidence** — verification summary from `review.md` Verification evidence or `evidence.md`, by R-ID; **Review** — passes with tier, finding IDs closed/accepted; **Knowledge records** — ADR, incident, threat-model, learning paths actually written for this change, else `none`; **Checklist** — conventions/pre-commit run (with result), tests run, no secrets, artifacts committed. Never invent a link, metric or approval; write `none`/`not run` instead.
+- Render `templates/pr-body.md` to a temp file with real content: **Summary** from `intent.md`; **Ticket** link only when a key/URL is genuinely known (ticket key in the ID, `intent.md` References, Atlassian MCP); **Spec / plan** links to `changes/<change-id>/spec.md`, `plan.md`; **Evidence** — verification summary from `review.md` Verification evidence or `evidence.md`, by R-ID; **Review** — passes with tier, finding IDs closed/accepted, and the accepted conventions findings line (K-IDs shipped over with the engineer's reason, else `none`); **Knowledge records** — ADR, incident, threat-model, learning paths actually written for this change, else `none`; **Checklist** — conventions/pre-commit run (result from the checker's commands table), tests run, no secrets, artifacts committed. Never invent a link, metric or approval; write `none`/`not run` instead.
 - `gh pr create --base <default branch> --head aidlc/<change-id> --title "<commit subject>" --body-file <rendered file>`. When `gh` is absent or unauthenticated, use the github MCP `create_pull_request` with the same fields; if neither exists, print the rendered body and the exact command for the engineer and stop.
 - Draft PRs only when the engineer asked for one.
 
-## 5. Record
+## 6. Record
 
 Read back the PR URL from the command output (`gh pr view --json url`). Append it under `## References` in `changes/<change-id>/review.md` (and `evidence.md` References when that file exists), Read the file back, and report: branch, commit SHA, PR URL, what was not done (e.g. "Commit only": no push, no PR). Suggest `/aidlc-learn <change-id>` when a lesson may qualify.
 

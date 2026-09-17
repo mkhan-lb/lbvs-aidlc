@@ -56,18 +56,21 @@ REQUIRED_ASSETS = (
     ".claude/skills/aidlc-spike/templates/spike.md",
     ".claude/skills/aidlc-ship/templates/pr-body.md",
     ".claude/skills/aidlc-init/templates/agent.md",
+    ".claude/skills/aidlc-onboard/templates/repo-profile.md",
     "docs/adr/README.md", "docs/adr/template.md",
     "docs/incidents/README.md", "docs/incidents/template.md",
     "docs/security/README.md", "docs/security/threat-model-template.md",
-    "docs/references/README.md", "docs/references/libraries.md",
     "docs/platform/README.md", "docs/platform/platform.md",
+    "docs/glossary/README.md", "docs/glossary/template.md", "docs/glossary/logicbroker-glossary.md",
+    "docs/glossary/logicbroker-glossary-comparison.md", "docs/glossary/virtualstock-glossary.md",
+    "docs/playbooks/README.md", "docs/playbooks/template.md",
     "templates/conventions/CONVENTIONS.md", "templates/conventions/.editorconfig",
     "templates/conventions/.pre-commit-config.yaml", "templates/conventions/ruff.toml", "templates/conventions/biome.json",
     ".claude/agents/aidlc-verifier.md", ".claude/agents/aidlc-repo-scout.md",
     ".claude/agents/aidlc-design-reviewer.md", ".claude/agents/aidlc-threat-modeler.md",
-    ".claude/agents/aidlc-test-critic.md",
+    ".claude/agents/aidlc-test-critic.md", ".claude/agents/aidlc-conventions-checker.md",
     ".omp/agents/aidlc-design-reviewer.md", ".omp/agents/aidlc-threat-modeler.md",
-    ".omp/agents/aidlc-test-critic.md",
+    ".omp/agents/aidlc-test-critic.md", ".omp/agents/aidlc-conventions-checker.md",
     "docs/vendor/aws-aidlc/NOTICE.md",
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
     "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",
@@ -272,6 +275,36 @@ def conventions(root, apply=False):
         print("Brownfield: keep the repository's conventions; aidlc-onboard records them in CLAUDE.md. Copy a default only where none exists.")
     return 0
 
+
+PROFILE_PATH = "docs/repo-profile.md"
+
+
+def profile(root):
+    """Report whether docs/repo-profile.md exists and whether its manifests changed since it was verified."""
+    file = root / PROFILE_PATH
+    if not file.is_file():
+        print("profile: missing ({}). Write one with /aidlc-onboard or /aidlc-init; stages will scout until it exists.".format(PROFILE_PATH))
+        return 0
+    head = file.read_text(encoding="utf-8").split("\n", 12)
+    verified = next((line for line in head if line.startswith("Last verified:")), "")
+    manifests = next((line for line in head if line.startswith("Manifests:")), "")
+    match = re.search(r"\bat ([0-9a-f]{7,40})\b", verified)
+    if not match:
+        print("profile: present but its header lacks `Last verified: <date> at <commit>`; treat as stale.")
+        return 0
+    revision = match.group(1)
+    paths = manifests.partition(":")[2].split()
+    if not git_out(root, "rev-parse", "--verify", "--quiet", revision + "^{commit}"):
+        print("profile: stale (verified at {}, which is not in this repository's history).".format(revision[:12]))
+        return 0
+    log = git_out(root, "log", "--format=%h", revision + "..HEAD", "--", *paths) if paths else ""
+    commits = [line for line in log.split("\n") if line]
+    if commits:
+        print("profile: stale ({} manifest commit(s) since {}: {}). Refresh with /aidlc-onboard.".format(
+            len(commits), revision[:12], ", ".join(commits[:5]) + (" …" if len(commits) > 5 else "")))
+    else:
+        print("profile: fresh ({}; no manifest changes since {}).".format(verified.partition(":")[2].strip(), revision[:12]))
+    return 0
 
 def git_out(root, *args):
     result = subprocess.run(("git", "-C", str(root)) + args, capture_output=True, text=True,
@@ -643,6 +676,7 @@ def main():
     commands.add_parser("worktree", help="WorktreeCreate hook: read the requested name on stdin, print the worktree path")
     conv = commands.add_parser("conventions", help="compare repository conventions with the package defaults; --apply copies only missing defaults")
     conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
+    commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
     export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
     export.add_argument("destination", type=Path)
     args = parser.parse_args()
@@ -666,6 +700,8 @@ def main():
             return create_worktree()
         if args.command == "conventions":
             return conventions(args.root.resolve(), apply=args.apply)
+        if args.command == "profile":
+            return profile(args.root.resolve())
         return doctor(args.root.resolve(), install=getattr(args, "install", False))
     except (OSError, ValueError) as error:
         print("ERROR: {}".format(error), file=sys.stderr)

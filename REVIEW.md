@@ -8,7 +8,7 @@ Review the identified diff or working-tree scope against the available intent, s
 
 - **Bugs:** incorrect behaviour, broken edge cases, regressions, concurrency or error-handling failures.
 - **Security:** injection, authorisation gaps, exposed credentials or personal data, unsafe execution, and bypassable controls.
-- **Compliance:** mismatches with the current spec and plan, applicable policy or design principles. Check that implementation changes did not silently leave the artifacts stale, and that a new or changed architectural boundary, technology choice or contract has a matching record under `docs/adr/` (a gap is a finding, never a blocker). Do not flag deliberately deferred lifecycle infrastructure as a defect in this workflow.
+- **Compliance:** mismatches with the current spec and plan, applicable policy or design principles. Check that implementation changes did not silently leave the artifacts stale, and that a new or changed architectural boundary, technology choice or contract has a matching record under `docs/adr/` (a gap is a finding, never a blocker). The pre-PR `aidlc-conventions-checker` report's `K<n>` findings (documented commands, conventions, delivery hygiene, glossary drift) are input to the engineer's ship decision, not blockers. Do not flag deliberately deferred lifecycle infrastructure as a defect in this workflow.
 
 Each actionable finding identifies severity, affected file/line or artifact, the failure scenario, evidence, and a proposed correction. Separate demonstrated failures from hypotheses needing reproduction. Report missing context instead of asserting compliance with an unknown policy.
 

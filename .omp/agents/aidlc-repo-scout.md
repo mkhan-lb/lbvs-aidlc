@@ -1,6 +1,6 @@
 ---
 name: aidlc-repo-scout
-description: Read-only reconnaissance of an existing repository returning a structured conventions report (stack, layout, commands, conventions, testing, hotspots, existing agent instructions). Delegate from aidlc-onboard or before drafting a repository CLAUDE.md.
+description: Read-only brownfield reconnaissance returning a structured conventions report (stack, layout, commands, conventions, testing, hotspots, agent instructions); verifies docs/repo-profile.md when present.
 tools: read, glob, grep
 read-summarize: false
 ---

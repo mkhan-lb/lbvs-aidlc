@@ -426,3 +426,17 @@ None of the new flows was driven in a native session: the review → fix → re-
 ### Plugin defect found and fixed
 
 `scripts/build_plugin.py` on `plugin-marketplace` hard-coded two agents, so the published plugin never carried `aidlc-design-reviewer` or `aidlc-threat-modeler` although the README said "all four agents"; it also rewrote only `python3 scripts/aidlc.py mode` to the plugin root, leaving `status`, `current`, `conventions` and `doctor` pointing at a path that does not exist in an adopting repository, and did not bundle `templates/conventions/`. Fixed: agents are discovered from `.claude/agents/`, every helper mention is rewritten, the conventions defaults are bundled, and `aidlc.py new` resolves the intent template in the plugin layout. Loaded with `--plugin-dir` in an empty repository on Claude Code 2.1.274: **17** namespaced `lbvs-aidlc:aidlc*` commands and **5** namespaced agents.
+
+## Glossaries, repository profile, conventions checker and playbooks
+
+### Exercised behavior
+
+- `check` → **151 required assets; 435 local links resolve**; export **170 files** including `docs/glossary/` (Logicbroker 58 terms rendered from the Confluence draft, Virtualstock 51 terms from the engineer's file, the comparison guide, entry template), `docs/playbooks/`, the repo-profile template and the `aidlc-conventions-checker` agent with its omp counterpart; the exported tree passes its own `check`.
+- **`profile`** on a fixture: `fresh` with the recorded commit at HEAD; `stale (1 manifest commit(s) since …)` after a commit touching a listed manifest; `missing` without the file; `stale (… not in this repository's history)` for an unknown revision.
+- **Native Claude Code 2.1.274 (export, no tools):** the init event listed all **17** `aidlc*` commands and all **six** `aidlc*` agents including `aidlc-conventions-checker`.
+
+[Evidence](evidence/context-stores-smoke.json).
+
+### Limits
+
+Not driven natively: a repository profile written by `/aidlc-onboard`, the checker delegation and the reshaped question in `/aidlc-ship`, *Save as playbook* from a spike, the plan's playbook citation and build's Runs bump, and the new-term glossary offer in intent/design. The glossaries are unreviewed drafts; every entry is `Pending`.

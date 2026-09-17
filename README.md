@@ -7,10 +7,11 @@ Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-na
 ## What you get
 
 - **17 slash commands** (`/aidlc*`): one orchestrator, the stage skills, a bug-fix loop, ticket intake, a time-boxed spike, a setup wizard, shipping, onboarding and lessons.
-- **5 subagents** that work in a fresh context and report back: a Bash-capable verifier and four read-only critics (repository scout, design reviewer, threat modeler, test critic).
+- **6 subagents** that work in a fresh context and report back: a Bash-capable verifier, a pre-PR conventions checker that runs only the repository's documented commands, and four read-only critics (repository scout, design reviewer, threat modeler, test critic).
 - **4 small hooks**: package check and project-mode line at session start, protection of a failing test while you fix the bug, and descriptive worktree names (`aidlc/vs-1234-order-export`).
-- **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons — all Markdown, all written only after you confirm.
-- **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `conventions`, `package` and friends.
+- **Repository context that is read, not re-derived**: a committed repository profile (`docs/repo-profile.md`), the company glossary (`docs/glossary/` — Logicbroker and Virtualstock), playbooks for repeatable procedures, and platform facts. Stages read these first and scout only what is missing or stale.
+- **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons, playbooks — all Markdown, all written only after you confirm.
+- **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `profile`, `conventions`, `package` and friends.
 - Optional extras: 37 vendored [ECC](https://github.com/affaan-m/ECC) pattern skills, ADR and doc-coauthoring skills, Compound Engineering brainstorming for non-engineers, MCP declarations for Context7, GitHub and Jira.
 
 Everything Claude does here is advisory instruction plus your confirmation. The skills are not security controls; your repository's permissions, branch protection and CI still apply.
@@ -91,7 +92,7 @@ claude:  Intent saved: changes/vs-1234-order-export/intent.md
 | build | code, one task at a time; ticks `[x]` after that task's own check passes | Runs the repository's pre-commit/lint before calling a task done. |
 | verify | a table `R-ID | check | observed result | not run (reason)` | Offers `aidlc-test-critic` to critique the tests. Never fixes code. |
 | review | `review.md` — findings with stable IDs, **Important** or **nit** | Uses the bundled `/code-review`. Then asks: *Fix findings*, *Re-review at higher effort*, *Open PR*, *Capture lesson*, *Done*. |
-| ship | commit `VS-1234: …`, push `aidlc/<id>`, PR from a template | `/aidlc-ship` asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Never merges. |
+| ship | commit `VS-1234: …`, push `aidlc/<id>`, PR from a template | `/aidlc-ship` first runs `aidlc-conventions-checker` (documented lint/test commands, diff vs conventions, commit hygiene, glossary drift). Clean: asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Important findings: *Fix findings first* / *Ship anyway* / *Stop here*, and the PR body lists what was accepted. Never merges. |
 
 **The review loop.** Important findings go back to build with their IDs, then verify, then a re-review one effort tier up (`high` → `xhigh`). After three fix cycles it always stops and asks, whatever the flow policy.
 
@@ -137,8 +138,11 @@ Change IDs match `^[a-z0-9]+(-[a-z0-9]+)*$`; prefix your ticket key so branches 
 | `aidlc-design-reviewer` | read-only | design — READY / NOT READY on `spec.md`/`plan.md` against intent, ADRs, platform, EARS coverage |
 | `aidlc-threat-modeler` | read-only | design — STRIDE table when a threat-model offer is accepted |
 | `aidlc-test-critic` | read-only | verify, review — tests vs requirement IDs, coupling, missing failure cases, flaky patterns |
+| `aidlc-conventions-checker` | read-only + Bash for documented commands | ship — runs the profile's lint/format/test commands verbatim, checks the diff against conventions, commit titles, generated paths and glossary terms |
 
 All verdicts are advisory input to the stage summary, never approvals. `/aidlc-init` can add repository-specific ones.
+
+**Why not a persona per role, like the AWS AI-DLC?** Its fourteen agents (architect, product, developer, quality, operations, …) mostly carry a *viewpoint*; here those viewpoints live in the stage skills, which run in the main conversation where you can steer them. A separate agent is worth its startup context only when it needs a **fresh context** (so it cannot be swayed by the session that wrote the code), a **bounded tool set** (the checker may run commands; the critics may not), or **repository-specific knowledge** too large to load every session — which is what `/aidlc-init` proposes when a repository shows the need.
 
 ## What accumulates
 
@@ -150,6 +154,9 @@ All verdicts are advisory input to the stage summary, never approvals. `/aidlc-i
 | `docs/references/libraries.md` | which library pages answered real questions, with gotchas | design, plan, build, fix |
 | `docs/solutions/` | one verified lesson per file with Confidence / Observations / Scope | `/aidlc-learn` |
 | `docs/platform/platform.md` | this repository's environments, orb pin, deployment authority | you, via `/aidlc-init` |
+| `docs/repo-profile.md` | stack, commands, conventions, generated paths, ownership — with `Last verified: <date> at <commit>`; `python3 scripts/aidlc.py profile` says fresh or stale | `/aidlc-onboard`, `/aidlc-init` (scout report, written on confirmation) |
+| [`docs/glossary/`](docs/glossary/README.md) | the Logicbroker and Virtualstock glossaries: term, aliases, evidence, sources pinned to a commit, review state; each links its Confluence review copy | domain owners via Confluence, copied back in a reviewed PR; stages flag *new terms* and offer an entry |
+| `docs/playbooks/` | repeatable procedures (release, migration, data fix) with steps, verification, rollback and a `Runs` count; a Verified playbook run three times is proposed as a repository skill | spike (*Save as playbook*), learn; plan cites them, build follows them |
 
 A lesson seen in two or more changes at confidence ≥ 0.8 is *proposed* as a rule for `AGENTS.md` — never written automatically.
 
@@ -157,7 +164,7 @@ A lesson seen in two or more changes at confidence ≥ 0.8 is *proposed* as a ru
 
 Verified natively: the commands load in Claude Code (also namespaced from the plugin) and Oh My Pi; all hooks fire; `/aidlc` resolves the change, asks the flow policy and creates the worktree; a driven trial ran the intent stage with Compound Engineering brainstorming. Details and limits in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
-**Not yet driven end to end — the next thing to do:** one real change through `/aidlc-ticket <VS key>` → design → plan → build → verify → review → `/aidlc-ship` in a repository where Jira is authenticated. That single run exercises the review loop, the reviewer and test-critic agents, Context7 lookups, EARS tracing and shipping, none of which has been observed live yet. `/aidlc-init` and `/aidlc-fix` on a real defect are also untested in a native session.
+**Not yet driven end to end — the next thing to do:** one real change through `/aidlc-ticket <VS key>` → design → plan → build → verify → review → `/aidlc-ship` in a repository where Jira is authenticated. That single run exercises the review loop, the reviewer, test-critic and conventions-checker agents, Context7 lookups, EARS tracing and shipping, none of which has been observed live yet. `/aidlc-init`, `/aidlc-onboard` writing a repository profile, a playbook saved from a spike, and `/aidlc-fix` on a real defect are also untested in a native session.
 
 ## Learn more
 

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "scope": "Glossary store (Logicbroker, Virtualstock, comparison), repository profile + helper profile subcommand, aidlc-conventions-checker wired into ship, playbooks store wired into spike/learn/plan/build",
+  "host": {
+    "claude": "2.1.274",
+    "model": "claude-sonnet-5",
+    "setting_sources": "project,local",
+    "tools": "none"
+  },
+  "helper": {
+    "check": "PASS: 151 required assets; 435 local links resolve.",
+    "export_files": 170,
+    "profile_fixture": [
+      "fresh",
+      "stale (1 manifest commit)",
+      "missing",
+      "stale (unknown revision)"
+    ]
+  },
+  "native_catalog": {
+    "aidlc_commands": [
+      "aidlc",
+      "aidlc-build",
+      "aidlc-design",
+      "aidlc-fix",
+      "aidlc-handoff",
+      "aidlc-ideate",
+      "aidlc-init",
+      "aidlc-intent",
+      "aidlc-learn",
+      "aidlc-onboard",
+      "aidlc-plan",
+      "aidlc-resume",
+      "aidlc-review",
+      "aidlc-ship",
+      "aidlc-spike",
+      "aidlc-ticket",
+      "aidlc-verify"
+    ],
+    "aidlc_agents": [
+      "aidlc-conventions-checker",
+      "aidlc-design-reviewer",
+      "aidlc-repo-scout",
+      "aidlc-test-critic",
+      "aidlc-threat-modeler",
+      "aidlc-verifier"
+    ]
+  },
+  "not_exercised": [
+    "profile written by /aidlc-onboard in a native session",
+    "aidlc-conventions-checker delegation from /aidlc-ship",
+    "Save as playbook from a spike",
+    "new-term glossary offer"
+  ],
+  "cleanup": {
+    "export_removed": true
+  }
+}
