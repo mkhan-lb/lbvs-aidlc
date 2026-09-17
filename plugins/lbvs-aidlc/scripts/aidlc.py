@@ -13,6 +13,10 @@ from urllib.parse import unquote, urlsplit
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 CHANGE_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+STAGE_FILES = (("intent", "intent.md"), ("spec", "spec.md"), ("plan", "plan.md"),
+               ("evidence", "evidence.md"), ("review", "review.md"))
+NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
+              "evidence": "review", "review": "done"}
 SKILLS = ("intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
           "handoff", "resume", "ideate")
 MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
@@ -35,7 +39,8 @@ REQUIRED_ASSETS = (
     "docs/WORKFLOW.md", "docs/USAGE.md",
     ".omp/AGENTS.md", ".omp/RULES.md", ".omp/config.yml", ".worktreeinclude",
     ".mcp.json", ".claude/settings.json",
-    ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh", ".claude/hooks/protect-tests.sh",
+    ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
+    ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/aidlc-review/references/review-options.md",
     ".claude/skills/aidlc-intent/templates/intent.md",
@@ -204,6 +209,141 @@ def print_mode(root):
     print("Override with .aidlc/mode containing greenfield or brownfield.")
 
 
+def git_out(root, *args):
+    result = subprocess.run(("git", "-C", str(root)) + args, capture_output=True, text=True,
+                            timeout=15, check=False)
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def change_stages(root):
+    """Report each change directory with the stage artifacts actually present."""
+    changes = root / "changes"
+    if not changes.is_dir() or changes.is_symlink():
+        return []
+    rows = []
+    for directory in sorted(p for p in changes.iterdir() if p.is_dir() and not p.is_symlink()):
+        present = [name for name, file in STAGE_FILES if (directory / file).is_file()]
+        handoffs = directory / "handoffs"
+        rows.append({
+            "id": directory.name,
+            "present": present,
+            "reached": present[-1] if present else "",
+            "handoffs": sum(1 for p in handoffs.glob("*.md")) if handoffs.is_dir() else 0,
+        })
+    return rows
+
+
+def branch_change_id(root):
+    """Recover the change ID from the branch name, including EnterWorktree's sanitised form."""
+    branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+    for prefix in ("aidlc/", "aidlc+", "worktree-aidlc/", "worktree-aidlc+"):
+        if branch.startswith(prefix):
+            candidate = branch[len(prefix):]
+            if CHANGE_ID.fullmatch(candidate):
+                return candidate, "branch " + branch
+    return None, None
+
+
+def current_change(root):
+    """Resolve the change in play without the engineer repeating its ID."""
+    change_id, source = branch_change_id(root)
+    if change_id:
+        return change_id, source
+    pointer = root / ".aidlc" / "current"
+    if pointer.is_file():
+        candidate = pointer.read_text(encoding="utf-8").strip()
+        if CHANGE_ID.fullmatch(candidate):
+            return candidate, ".aidlc/current"
+    open_changes = [row["id"] for row in change_stages(root) if row["reached"] != "review"]
+    if len(open_changes) == 1:
+        return open_changes[0], "the only change without review.md"
+    return None, None
+
+
+def print_status(root):
+    rows = change_stages(root)
+    change_id, source = current_change(root)
+    if not rows:
+        print("No changes yet. Start one with /aidlc <change-id>.")
+    for row in rows:
+        marker = "*" if row["id"] == change_id else " "
+        missing = [name for name, _ in STAGE_FILES if name not in row["present"]]
+        print("{} {:<28} reached: {:<9} next: {:<7} have: {:<34} missing: {}{}".format(
+            marker, row["id"], row["reached"] or "-", NEXT_STAGE.get(row["reached"], "?"),
+            ",".join(row["present"]) or "-", ",".join(missing) or "-",
+            "  handoffs: {}".format(row["handoffs"]) if row["handoffs"] else ""))
+    if change_id:
+        print("Current change: {} (from {}).".format(change_id, source))
+    else:
+        print("Current change: none resolved; name one or start /aidlc <change-id>.")
+    print("Presence of a file is not proof the stage is complete; read the artifact.")
+    return 0
+
+
+def print_current(root):
+    change_id, source = current_change(root)
+    if not change_id:
+        print("No current change resolved. Ask the engineer for the ID or start /aidlc <change-id>.")
+        return 1
+    print("{}\t{}".format(change_id, source))
+    return 0
+
+
+def worktree_path(root, name):
+    """Create or reuse a descriptive worktree; replaces Claude Code's default naming."""
+    slug = re.sub(r"[^A-Za-z0-9._+/-]", "-", name).strip("-/")
+    if not slug or ".." in slug.split("/"):
+        raise ValueError("unusable worktree name: {!r}".format(name))
+    match = re.fullmatch(r"aidlc[+/](.+)", slug)
+    change_id = match.group(1) if match else slug
+    # An explicit aidlc prefix, or a name that is already a change under changes/, gets the
+    # descriptive branch; anything else keeps Claude Code's default shape.
+    if match or (CHANGE_ID.fullmatch(change_id) and (root / "changes" / change_id).is_dir()):
+        branch, directory = "aidlc/" + change_id, "aidlc+" + change_id
+    else:
+        branch, directory = "worktree-" + slug, slug.replace("/", "+")
+    destination = root / ".claude" / "worktrees" / directory
+    if destination.is_dir():
+        return destination
+    existing = git_out(root, "rev-parse", "--verify", "--quiet", "refs/heads/" + branch)
+    add = ["worktree", "add", str(destination)]
+    add += [branch] if existing else ["-b", branch, "HEAD"]
+    result = subprocess.run(["git", "-C", str(root)] + add, capture_output=True, text=True,
+                            timeout=120, check=False)
+    if result.returncode:
+        raise ValueError("git worktree add failed: {}".format(result.stderr.strip() or result.returncode))
+    # This hook replaces the default behaviour, so .worktreeinclude is ours to honour.
+    include = root / ".worktreeinclude"
+    if include.is_file():
+        patterns = [line.strip() for line in include.read_text(encoding="utf-8").splitlines()
+                    if line.strip() and not line.startswith("#")]
+        for pattern in patterns:
+            listed = git_out(root, "ls-files", "--others", "--ignored", "--exclude-standard", "--", pattern)
+            for relative in (line for line in listed.splitlines() if line):
+                source, target = root / relative, destination / relative
+                if source.is_file() and not source.is_symlink() and not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+    return destination
+
+
+def create_worktree():
+    """WorktreeCreate hook: read the requested name on stdin, print the worktree path."""
+    payload = json.loads(sys.stdin.read() or "{}")
+    name = payload.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("WorktreeCreate input has no usable name")
+    root = Path(payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
+    top = git_out(root, "rev-parse", "--show-toplevel")
+    if not top:
+        raise ValueError("worktree creation needs a git repository")
+    destination = worktree_path(Path(top), name)
+    print("AIDLC worktree: {} on branch {}".format(
+        destination, git_out(destination, "rev-parse", "--abbrev-ref", "HEAD")), file=sys.stderr)
+    print(destination)
+    return 0
+
+
 def package(destination):
     """Export declared resources and their local links; never overlay a repository."""
     destination = destination.absolute()
@@ -356,13 +496,16 @@ def doctor(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="target project for new/doctor/mode (default: current directory)")
+    parser.add_argument("--root", type=Path, default=Path.cwd(), help="target project for new/doctor/mode/status/current (default: current directory)")
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="create only a draft intent; refuse to overwrite work")
     new.add_argument("change_id")
     commands.add_parser("check", help="check this package's required assets and local links")
     commands.add_parser("doctor", help="inspect local prerequisites without changing configuration")
     commands.add_parser("mode", help="report greenfield or brownfield for the target project; .aidlc/mode overrides")
+    commands.add_parser("status", help="list changes under changes/ with the stage artifacts present")
+    commands.add_parser("current", help="print the change ID in play (branch, .aidlc/current, or the only open change)")
+    commands.add_parser("worktree", help="WorktreeCreate hook: read the requested name on stdin, print the worktree path")
     export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
     export.add_argument("destination", type=Path)
     args = parser.parse_args()
@@ -378,6 +521,12 @@ def main():
         if args.command == "mode":
             print_mode(args.root.resolve())
             return 0
+        if args.command == "status":
+            return print_status(args.root.resolve())
+        if args.command == "current":
+            return print_current(args.root.resolve())
+        if args.command == "worktree":
+            return create_worktree()
         return doctor(args.root.resolve())
     except (OSError, ValueError) as error:
         print("ERROR: {}".format(error), file=sys.stderr)

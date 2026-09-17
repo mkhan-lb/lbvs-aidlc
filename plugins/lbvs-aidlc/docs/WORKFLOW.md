@@ -6,7 +6,7 @@ Current scope: the engineer-led part of the [Anthropic playbook](https://claude.
 
 `intent.md` → `spec.md` → `plan.md` → code and ordinary verification → `review.md` / PR findings → fixes and re-review. Bug fixes add `evidence.md`; proven non-obvious work may add one lesson.
 
-`/aidlc <change-id>` runs this loop. It proposes a worktree, reads the project mode, runs each stage skill in order and stops at a stage gate before the next one. Each stage reads the previous artifacts rather than relying on a long chat transcript. You can also invoke any stage skill directly, and Claude may load a stage skill when your request matches its `when_to_use` triggers; either way the same gate applies. Revise earlier decisions when new information appears: update the affected files and make the change visible.
+`/aidlc [change-id]` runs this loop. The argument is optional: the orchestrator resolves the change ID itself (see [change IDs](#change-ids-you-do-not-have-to-remember)), states one flow policy for the run, proposes a worktree, reads the project mode, runs each stage skill in order and stops at a stage gate before the next one unless the stated policy allows auto-advance. Each stage reads the previous artifacts rather than relying on a long chat transcript. You can also invoke any stage skill directly, and Claude may load a stage skill when your request matches its `when_to_use` triggers; either way the same gate applies. Revise earlier decisions when new information appears: update the affected files and make the change visible.
 
 | Activity | Input | Work | Output and next action |
 | --- | --- | --- | --- |
@@ -19,9 +19,27 @@ Current scope: the engineer-led part of the [Anthropic playbook](https://claude.
 | Fix (`/aidlc-fix`) | A reported bug, incident or review finding | Reproduce, commit a failing test, fix without touching protected tests, verify | `evidence.md` with references, reproduction, fix, verification; offer a lesson |
 | Learn | Proven, verified, non-obvious work | Capture one lesson or skip | `<root>/solutions/...` note; corrections that recur go into `AGENTS.md`/rules through review |
 
-### Stage gates
+### Stage gates and the flow policy
 
-At the end of every stage the skill summarises the artifact path, decisions taken, open questions and checks run, then asks with AskUserQuestion, options exactly **Proceed to \<next stage\>**, **Revise this stage**, **Stop here**. Only **Proceed** invokes the next stage skill through the Skill tool; there is no auto-advance, and a summary is not approval. Stage order: intent → design → plan → build → verify → review. After review the options are **Fix findings (build)**, **Capture lesson (aidlc-learn)**, **Done**.
+At the end of every stage the skill summarises the artifact path, decisions taken, open questions and checks run with their results. What happens next depends on the **flow policy**, which the orchestrator states once per run, verbatim, in the conversation:
+
+- `Flow policy: confirm each stage` — the default, and what every skill assumes when no policy was stated.
+- `Flow policy: auto-advance when clear, stop before build`
+- `Flow policy: auto-advance when clear, including build`
+
+A stage may auto-advance only when **all** of these hold: the stated policy is an auto-advance one; the artifact was saved *and* read back in this run; it records no open questions, unresolved decisions or missing inputs; no check failed and no required check is "not run"; no requested CE review is pending; the next stage is not `aidlc-build` unless the policy includes build; and the next step is not a commit, push, PR, merge, publication or deployment. The skill then prints one line—`Auto-advancing to <next stage> (policy: <policy>; no open questions, checks: <summary>)`—invokes the next stage skill through the Skill tool with the bare change ID, and says that you can interrupt.
+
+Otherwise it asks with AskUserQuestion, options exactly **Proceed to \<next stage\>**, **Revise this stage**, **Stop here**; after review the options are **Fix findings (build)**, **Capture lesson (aidlc-learn)**, **Done**. It always asks when the policy is confirm-each-stage, when any condition above is unmet, at `aidlc-review`, when the transition would start implementation under a "stop before build" policy, or when a stage ended read-only or unsaved. `/aidlc-fix` keeps every question it already had: the failing-test commit choice and its closing gate are always asked. A summary is not approval, no gate is ever answered on your behalf, and an auto-advance policy is never assumed or claimed when none was stated. Stage order: intent → design → plan → build → verify → review.
+
+### Change IDs you do not have to remember
+
+A change ID still matches `^[a-z0-9]+(-[a-z0-9]+)*$`, so a ticket key fits as a lowercase prefix: `vs-1234-order-export`. You rarely need to type one:
+
+- `python3 scripts/aidlc.py status` lists every `changes/<id>/` with which stage artifacts exist (intent, spec, plan, evidence, review), the stage reached, the next stage, the handoff count and a marker on the change currently in play. A present file is not proof that its stage is finished.
+- `python3 scripts/aidlc.py current` prints `<change-id>\t<source>` and exits 1 when nothing resolves. Resolution order: the branch name (`aidlc/<id>`, `aidlc+<id>`, `worktree-aidlc/<id>`, `worktree-aidlc+<id>`), then `.aidlc/current`, then the only change without `review.md`.
+- `.aidlc/current` is a machine-local pointer, ignored by Git and never exported or carried by a handoff. The orchestrator writes the resolved ID there so a later session in the same checkout finds it.
+
+Every ID-taking skill follows the same rule: a valid ID in the argument wins; an empty argument falls back to `current`, and the skill says which source it used; an argument carrying extra prose contributes only a leading valid token, with the rest treated as context. When nothing resolves the skill asks, proposing a slug derived from your actual request and prefixed with the ticket key when one is known—it never invents a ticket key, and never creates `changes/<id>/` from an unresolved ID. `/aidlc-ideate` is the exception: it takes a topic ID, has no `current` fallback and asks when the topic is absent.
 
 ### Project mode and onboarding
 
@@ -29,7 +47,9 @@ At the end of every stage the skill summarises the artifact path, decisions take
 
 ### Worktrees
 
-Every new change or bug fix should run in its own worktree. Step 0 of `/aidlc` and `/aidlc-fix`: if the current checkout is not already a dedicated branch/worktree for this change, propose one named `aidlc/<change-id>`—in Claude Code the EnterWorktree tool when available, otherwise `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`—and ask before creating it. `.worktreeinclude` copies `.env` and `.claude/settings.local.json` into new worktrees.
+Every new change or bug fix should run in its own worktree. Step 0 of `/aidlc` and `/aidlc-fix` proposes one and asks before creating it; if a worktree for this change already exists, it is entered rather than duplicated. In Claude Code the route is the EnterWorktree tool with the name `aidlc/<change-id>`. This project registers a `WorktreeCreate` hook (`.claude/hooks/worktree-create.sh` → `python3 scripts/aidlc.py worktree`) that replaces the host's default naming, so the result is the directory `.claude/worktrees/aidlc+<change-id>` on branch exactly `aidlc/<change-id>`, branched from local `HEAD`. Because a `WorktreeCreate` hook replaces the default behaviour, the hook also honours `.worktreeinclude` itself and copies `.env` and `.claude/settings.local.json` into the new tree. A name that is not `aidlc/<something>` keeps the ordinary `worktree-<name>` branch; an existing worktree directory is reused; a missing or unusable name fails the hook, and the worktree creation fails with it rather than falling back to a generic name.
+
+The hook leaves no host-side worktree marker, so Claude Code's own worktree sweep does not manage these directories: remove one yourself with `git worktree remove .claude/worktrees/aidlc+<change-id>` when the change is done. Where the tool or the hook is unavailable, `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>` remains the documented fallback, and the `.worktreeinclude` files must be copied by hand.
 
 ## Files per change
 
@@ -39,15 +59,15 @@ Use `changes/<change-id>/` with `intent.md`, `spec.md`, `plan.md` and, when usef
 python3 scripts/aidlc.py new example-change
 ```
 
-Replace the ID with the real change. Use lowercase letters/digits separated by single hyphens. Templates are starting instructions, not completed work. Do not invent facts to fill them. See [artifact conventions](ARTIFACTS.md).
+Replace the ID with the real change; a ticket key can prefix it (`vs-1234-order-export`). Use lowercase letters/digits separated by single hyphens. `python3 scripts/aidlc.py status` shows which changes already exist and how far each one got. Templates are starting instructions, not completed work. Do not invent facts to fill them. See [artifact conventions](ARTIFACTS.md).
 
 ## Skills, agents and hooks
 
-`/aidlc <change-id>` orchestrates. The stage skills `aidlc-intent`, `aidlc-design`, `aidlc-plan`, `aidlc-build`, `aidlc-verify`, `aidlc-review`, plus `aidlc-fix`, `aidlc-onboard` and `aidlc-learn`, are model-invocable and user-invocable: invoke `/aidlc-<stage> <change-id>` directly or let Claude load one when your request matches its triggers. Three utilities are manual-only (`disable-model-invocation: true`): `/aidlc-handoff <change-id>` saves a requested continuity snapshot; `/aidlc-resume <change-id>` orients without starting work; `/aidlc-ideate <topic-id>` compares directions before a change is selected. See [practical usage recipes](USAGE.md) and [bundled skills and plugins by stage](PLUGINS.md).
+`/aidlc [change-id]` orchestrates. The stage skills `aidlc-intent`, `aidlc-design`, `aidlc-plan`, `aidlc-build`, `aidlc-verify`, `aidlc-review`, plus `aidlc-fix`, `aidlc-onboard` and `aidlc-learn`, are model-invocable and user-invocable: invoke `/aidlc-<stage> [change-id]` directly or let Claude load one when your request matches its triggers. Three utilities are manual-only (`disable-model-invocation: true`): `/aidlc-handoff <change-id>` saves a requested continuity snapshot; `/aidlc-resume <change-id>` orients without starting work; `/aidlc-ideate <topic-id>` compares directions before a change is selected. See [practical usage recipes](USAGE.md) and [bundled skills and plugins by stage](PLUGINS.md).
 
-Skills are project-scoped bundles under `.claude/skills/`, with templates and references read on demand; shared docs and the helper stay at their repository locations, so copying one skill does not install its dependencies. Two subagents live under `.claude/agents/`: `aidlc-verifier` (Bash-capable fresh check) and `aidlc-repo-scout` (Read, Glob, Grep only). Three hooks are registered in `.claude/settings.json`: `check-package.sh` (SessionStart, read-only package check), `project-mode.sh` (SessionStart, injects the project-mode line) and `protect-tests.sh` (PreToolUse on `Edit|Write|MultiEdit|NotebookEdit`, denies edits to any path listed in `.aidlc/fix/*.json` while the marker exists). Hooks are deterministic guardrails for this loop, not approval or security enforcement. Shared instructions live in `AGENTS.md`; `CLAUDE.md` imports it with `@AGENTS.md` and adds a Claude-specific section, and `.omp/AGENTS.md` imports `@../AGENTS.md` for Oh My Pi.
+Skills are project-scoped bundles under `.claude/skills/`, with templates and references read on demand; shared docs and the helper stay at their repository locations, so copying one skill does not install its dependencies. Two subagents live under `.claude/agents/`: `aidlc-verifier` (Bash-capable fresh check) and `aidlc-repo-scout` (Read, Glob, Grep only). Four hooks are registered in `.claude/settings.json`: `check-package.sh` (SessionStart, read-only package check), `project-mode.sh` (SessionStart, injects the project-mode line), `protect-tests.sh` (PreToolUse on `Edit|Write|MultiEdit|NotebookEdit`, denies edits to any path listed in `.aidlc/fix/*.json` while the marker exists) and `worktree-create.sh` (WorktreeCreate, names the worktree and branch as above). The helper behind them exposes `check`, `doctor`, `new`, `mode`, `status`, `current`, `worktree` and `package`. Hooks are deterministic guardrails for this loop, not approval or security enforcement. Shared instructions live in `AGENTS.md`; `CLAUDE.md` imports it with `@AGENTS.md` and adds a Claude-specific section, and `.omp/AGENTS.md` imports `@../AGENTS.md` for Oh My Pi.
 
-Supply exactly one validated ID as the slash-command argument: a change ID except ideation's topic ID. Discuss task/context, source selection and CE choice in conversation rather than appending them to the argument. In a read-only session, return proposed content; save only through the normal authorised writable workflow. Plan mode does not authorise implementation or a potentially-writing upstream call.
+Pass at most one validated ID as the slash-command argument—a change ID, except ideation's topic ID—and leave it empty when the workflow can resolve it as described above. Discuss task/context, the flow policy, source selection and CE choice in conversation rather than appending them to the argument. In a read-only session, return proposed content; save only through the normal authorised writable workflow. Plan mode does not authorise implementation or a potentially-writing upstream call.
 
 Standalone planning is supported for an already-understood engineering task. State which artifacts are absent; do not fabricate them or pretend the whole chain has been followed.
 
