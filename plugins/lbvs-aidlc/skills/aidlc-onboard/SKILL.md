@@ -1,18 +1,22 @@
 ---
 name: aidlc-onboard
 description: Onboard AIDLC onto an existing codebase by scouting its conventions, choosing modernize or stay-legacy with the user, and proposing a repository CLAUDE.md plus path-scoped rules that are written only on confirmation.
-when_to_use: Use when the project mode is brownfield and no repository CLAUDE.md or conventions record exists yet, or when the user says "onboard", "brownfield", "existing codebase", "conventions", "what does this repo do", or "set up Claude for this repo".
+when_to_use: Use when the project mode is brownfield and no repository CLAUDE.md or conventions record exists yet, when the mode is greenfield and default conventions have not been offered, or when the user says "onboard", "brownfield", "existing codebase", "conventions", "what does this repo do", or "set up Claude for this repo".
 ---
 
 # Onboard an existing codebase
 
 Contract: ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md. Paths are repository-root relative; bundled files are relative to this skill directory.
 
-Everything before step 5 is read-only. Do not install plugins, commit, push, or change settings. Recommendations are not permission to act on them.
+Everything before step 5 is read-only, except the greenfield `conventions --apply` in step 1, which runs only on the user's explicit choice. Do not install plugins, commit, push, or change settings. Recommendations are not permission to act on them.
 
 ## 1. Establish mode
 
-Read the `AIDLC project mode:` line from session context, or run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`. If the mode is greenfield, say so and stop unless the user explicitly wants an onboarding pass anyway. If `.aidlc/mode` and `docs/onboarding.md` already exist, summarise the recorded decision and ask whether to refresh it before doing any scouting.
+Read the `AIDLC project mode:` line from session context, or run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`. If `.aidlc/mode` and `docs/onboarding.md` already exist, summarise the recorded decision and ask whether to refresh it before doing any scouting.
+
+**Greenfield:** say so and, unless the user explicitly wants a full onboarding pass anyway, do only this: run `python3 scripts/aidlc.py conventions` (report only) and use AskUserQuestion with exactly "Adopt default conventions (`python3 scripts/aidlc.py conventions --apply`)", "Keep my own tooling", "Decide later". Run `--apply` only on the first choice; it copies missing defaults from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` via authenticated `gh api` (never a raw link), and `docs/platform/platform.md` is filled once per service. Then stop.
+
+**Brownfield:** run `python3 scripts/aidlc.py conventions` (report only) so the digest and step 4 can record which conventions files the repository already owns; never apply defaults over an existing repository.
 
 ## 2. Scout (delegate)
 
@@ -40,7 +44,7 @@ Record the answer for step 5. Do not proceed on an assumed answer.
 
 ## 4. Draft instructions (proposal only)
 
-Draft a repository `CLAUDE.md` of at most 60 lines, following the playbook shape: project one-liner; `## Commands` (build, test, lint, run, verbatim from the scout with source paths verified); `## Conventions`; `## Architecture` (directory → purpose, frozen or generated areas); `## Things Claude gets wrong here` (seed from hotspots and convention conflicts; leave a note that the team adds an entry whenever Claude repeats a mistake). If a `CLAUDE.md` already exists, draft additions and clearly mark what is new; never rewrite existing policy.
+Draft a repository `CLAUDE.md` of at most 60 lines, following the playbook shape: project one-liner; `## Commands` (build, test, lint, run, verbatim from the scout with source paths verified); `## Conventions` (the repository's existing tooling as reported by `conventions` — formatter, linter, pre-commit, editorconfig — cited by path; defaults are offered only when a file is genuinely absent and never overwrite); `## Architecture` (directory → purpose, frozen or generated areas); `## Things Claude gets wrong here` (seed from hotspots and convention conflicts; leave a note that the team adds an entry whenever Claude repeats a mistake). If a `CLAUDE.md` already exists, draft additions and clearly mark what is new; never rewrite existing policy. When the repository deploys to the cloud, add a one-line pointer to `docs/platform/platform.md` and note whether it is filled.
 
 Draft path-scoped `.claude/rules/<topic>.md` files only where a convention applies to a subtree (e.g. `paths: ["src/api/**"]`), one topic per file, each under 30 lines.
 

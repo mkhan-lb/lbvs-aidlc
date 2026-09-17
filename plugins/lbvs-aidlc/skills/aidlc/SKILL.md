@@ -29,7 +29,7 @@ Auto-advance means a stage that saved and read back its artifact, with no open q
 
 ## Step 0c — worktree
 
-Check the current branch/worktree (`git rev-parse --abbrev-ref HEAD`, `git worktree list`). If a worktree for this change already exists, enter it rather than creating another. Otherwise propose one and, on agreement, call the EnterWorktree tool with the name `aidlc/<change-id>`: this project's `WorktreeCreate` hook turns that into the directory `.claude/worktrees/aidlc+<change-id>` on branch `aidlc/<change-id>`, branched from local `HEAD`, and copies `.worktreeinclude` files. Accept the resulting branch name; never rename it. Where the hook or tool is unavailable, fall back to `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask before creating it; continue in place only if the user declines. Never switch branches, stash or commit on the user's behalf.
+Check the current branch/worktree (`git rev-parse --abbrev-ref HEAD`, `git worktree list`). If a worktree for this change exists, enter it. Otherwise propose one and, on agreement, call the EnterWorktree tool with the name `aidlc/<change-id>`: the `WorktreeCreate` hook creates `.claude/worktrees/aidlc+<change-id>` on branch `aidlc/<change-id>` from local `HEAD` and copies `.worktreeinclude` files. Accept the resulting branch name; never rename it. Without the hook or tool, fall back to `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask before creating; continue in place only if the user declines. Never switch branches, stash or commit on the user's behalf.
 
 ## Step 1 — project mode
 
@@ -41,7 +41,7 @@ Ask with AskUserQuestion: "Feature/change", "Bug fix" or "Spike/investigation". 
 
 ## Step 3 — resume point
 
-Glob `changes/<change-id>/`. Derive the latest real stage from what exists: no directory → intent; `intent.md` → design; `spec.md` → plan; `plan.md` whose implementation handoff records no completed work → build; recorded implementation without verification evidence → verify; verification evidence without `review.md` → review; `review.md` → the post-review menu. Read the artifacts you rely on; never infer completion from a filename or a handoff summary, and never create or backfill an artifact to make the chain look complete. Present the derived point and confirm with AskUserQuestion: "Resume at <stage>", "Start from intent", "Stop here". If `changes/<change-id>/handoffs/` exists, mention `/aidlc-resume <change-id>` for orienting from a snapshot; do not read snapshot bodies here.
+Glob `changes/<change-id>/`. Derive the real stage: no directory → intent; `intent.md` → design; `spec.md` → plan; `plan.md` recording no completed work → build; recorded implementation without verification evidence → verify; evidence without `review.md` → review; `review.md` → the post-review menu. Read the artifacts you rely on; never infer completion from a filename or handoff summary, and never create or backfill an artifact to complete the chain. Confirm with AskUserQuestion: "Resume at <stage>", "Start from intent", "Stop here". If `changes/<change-id>/handoffs/` exists, mention `/aidlc-resume <change-id>`; do not read snapshot bodies here.
 
 ## Step 4 — run the stages
 
@@ -52,7 +52,7 @@ Stage-specific handling:
 - **Intent:** a user who prefers guided discovery may select CE brainstorming; the intent skill owns that optional route. Do not select it for them.
 - **Plan:** produced read-only; nothing is written to `plan.md`. "Proceed to build" means the user confirms the exact proposal above; supply that exact text to build with the requested action — **save and implement** unless the user said **save only**, which stops after the save. If the session is still read-only, ask for the normal writable transition before invoking build.
 - **Build:** stops after saving when a requested CE document review is pending; return to the user rather than waiving it.
-- **Review:** its gate offers "Fix findings (build)", "Capture lesson (aidlc-learn)", "Done". Fix findings re-enters build with the agreed finding IDs, then verify and re-review; the lesson option is optional and skips honestly when nothing durable qualifies.
+- **Review:** gate options, exactly: "Fix findings (build)", "Re-review at higher effort", "Open PR (aidlc-ship)", "Capture lesson (aidlc-learn)", "Done". Loop: standard-tier review → Important findings → fix (build, agreed finding IDs) → verify → escalated re-review … until a pass returns zero Important findings or **3 fix cycles** have run, then always stop and ask. Under `auto-advance when clear, including build` those hops may auto-continue up to the cap, announced each time; the gate is still asked. `aidlc-ship` asks before any commit, push or PR.
 
 ## Final report
 

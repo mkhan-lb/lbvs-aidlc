@@ -20,7 +20,7 @@ Important findings would break behaviour, leak data, weaken a required control, 
 
 Inspect actual check results, relevant runtime evidence, and the full change. A green package-integrity check is not proof of application correctness or operational readiness. Check that a fix did not weaken the test that demonstrated the original defect.
 
-After changes, re-review the affected revision and resolve findings with evidence. Repeated mistakes inform reviewed updates to CLAUDE.md or the relevant skill. Check whether the change makes existing context stale. The tech lead periodically tunes review signal and nit volume as described by the source.
+After changes, re-review the affected revision and resolve findings with evidence. **Loop:** the first pass runs at the standard tier (`/code-review high`), each re-review after a fix pass at escalated (`/code-review xhigh`), maximum or cloud only on the engineer's explicit choice; the review → fix → verify → re-review loop stops when a pass returns zero Important findings or after 3 fix cycles, then the engineer decides. Finding IDs (`R1, R2 …`) stay stable across passes. Repeated mistakes inform reviewed updates to CLAUDE.md or the relevant skill. Check whether the change makes existing context stale. The tech lead periodically tunes review signal and nit volume as described by the source.
 
 ## Existing reviewer and engineer handoff
 
