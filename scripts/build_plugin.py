@@ -23,6 +23,12 @@ REWRITES = (
     (re.compile(r"(?<![/\w])docs/(WORKFLOW|USAGE|ARTIFACTS|PLUGINS|COMPATIBILITY)\.md"), ROOT + r"/docs/\1.md"),
     (re.compile(r"python3 scripts/aidlc\.py"), 'python3 "' + ROOT + '/scripts/aidlc.py"'),
     (re.compile(r"`REVIEW\.md`"), "`REVIEW.md` (the repository's own file, else `" + ROOT + "/REVIEW.md`)"),
+    # Repository-layout paths to files the plugin ships elsewhere.
+    (re.compile(r"(?<!\w)(?:\.\./)*\.claude/skills/"), ROOT + "/skills/"),
+    (re.compile(r"(?<!\w)(?:\.\./)*\.claude/agents/"), ROOT + "/agents/"),
+    (re.compile(r"(?<![\w/])\.claude/hooks/protect-tests\.sh"), ROOT + "/hooks/protect-tests.sh"),
+    (re.compile(r"(?<![\w/])\.claude/hooks/worktree-(create|remove)\.sh"), ROOT + r"/hooks/worktree-\1.sh"),
+    (re.compile(r"(?<![\w/])docs/vendor/(aws-aidlc/NOTICE\.md|ecc/LICENSE)"), ROOT + r"/docs/vendor/\1"),
 )
 
 
@@ -68,14 +74,17 @@ def main():
         if source.is_file():
             copy_rewritten(source, PLUGIN_ROOT / "templates/conventions" / source.name)
     copy_rewritten(PACKAGE_ROOT / ".claude/hooks/protect-tests.sh", PLUGIN_ROOT / "hooks/protect-tests.sh")
+    for notice in ("docs/vendor/aws-aidlc/NOTICE.md", "docs/vendor/ecc/LICENSE"):
+        copy_rewritten(PACKAGE_ROOT / notice, PLUGIN_ROOT / notice)
 
+    helper = 'python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py"'
     hooks = {
         "hooks": {
             "SessionStart": [{
                 "matcher": "startup|resume",
                 "hooks": [{
                     "type": "command",
-                    "command": 'python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" --root "${CLAUDE_PROJECT_DIR}" mode',
+                    "command": helper + ' --root "${CLAUDE_PROJECT_DIR}" mode',
                     "timeout": 10,
                 }],
             }],
@@ -86,6 +95,14 @@ def main():
                     "command": 'sh "${CLAUDE_PLUGIN_ROOT}/hooks/protect-tests.sh"',
                     "timeout": 10,
                 }],
+            }],
+            # create_worktree()/remove_worktree() take the repository from the hook payload's cwd,
+            # so the same helper serves the adopting repository from inside the plugin.
+            "WorktreeCreate": [{
+                "hooks": [{"type": "command", "command": helper + " worktree", "timeout": 120}],
+            }],
+            "WorktreeRemove": [{
+                "hooks": [{"type": "command", "command": helper + " worktree-remove", "timeout": 60}],
             }],
         }
     }

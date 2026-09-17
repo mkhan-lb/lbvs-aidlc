@@ -33,7 +33,7 @@ Write `.aidlc/fix/<change-id>.json`:
 {"change_id": "<change-id>", "protected": ["<repository-relative test path>"]}
 ```
 
-While the marker exists, `.claude/hooks/protect-tests.sh` denies Edit/Write/MultiEdit/NotebookEdit on any listed path (exact or glob); tell the user it is in force. If you come to believe the test is wrong, stop and explain; the user lifts protection by deleting the marker. Never work around the hook (shell redirection, renaming, a second copy).
+While the marker exists, `${CLAUDE_PLUGIN_ROOT}/hooks/protect-tests.sh` denies Edit/Write/MultiEdit/NotebookEdit on any listed path (exact or glob); tell the user it is in force. If you come to believe the test is wrong, stop and explain; the user lifts protection by deleting the marker. Never work around the hook (shell redirection, renaming, a second copy).
 
 ## 4. Implement the fix
 

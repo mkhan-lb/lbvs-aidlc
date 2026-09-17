@@ -29,7 +29,7 @@ On confirmation write the bare ID to `.aidlc/current` (machine-local, gitignored
 
 ## 3. Write intent.md
 
-Read `CLAUDE.md`, the intent template at `.claude/skills/lbvs-aidlc-intent/templates/intent.md` and any existing `changes/<change-id>/intent.md` (preserve existing content; append, do not replace). Create `changes/<change-id>/intent.md` from the template, substituting only literal `{{change_id}}`, and fill:
+Read `CLAUDE.md`, the intent template at `${CLAUDE_PLUGIN_ROOT}/skills/lbvs-aidlc-intent/templates/intent.md` and any existing `changes/<change-id>/intent.md` (preserve existing content; append, do not replace). Create `changes/<change-id>/intent.md` from the template, substituting only literal `{{change_id}}`, and fill:
 
 - **Context and sources:** ticket key/number, URL, type, status, reporter/assignee only if returned, the tool that fetched it, and the fetch time. Name the ticket as the authoritative external record.
 - **Problem / Desired outcome:** the ticket's description and acceptance criteria in the ticket's own terms — quote or closely paraphrase, mark anything absent as `not stated in ticket`, and separate observed behavior from assumptions.
@@ -44,7 +44,3 @@ Summarise: ticket reference and fetch tool, change ID and its source, intent pat
 ## Boundaries
 
 Never write back to Jira or GitHub, commit, push or create a worktree here. Never invent ticket content or a key. If the fetched record contradicts conversation input, record both and surface the discrepancy rather than choosing.
-
-## Sources
-
-[Anthropic AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook), Plan "Capture as intent.md" (P01) and "Legacy systems and the source of truth" (X01); [Claude Code skills](https://code.claude.com/docs/en/skills); [Claude Code MCP](https://code.claude.com/docs/en/mcp).

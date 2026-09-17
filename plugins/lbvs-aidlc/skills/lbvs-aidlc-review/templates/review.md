@@ -4,7 +4,7 @@ Change ID: {{change_id}}
 Latest pass: <N> · tier <standard / escalated / maximum / cloud> · execution status <prepared — not run / running / returned / partial / failed>
 Open Important findings: <count or 0> · fix cycles used: <n> of 3
 
-Report findings and actual evidence, not approval. Follow `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), and `.claude/skills/lbvs-aidlc-review/references/review-options.md`. Use this shape in conversation; persist to `changes/{{change_id}}/review.md` only when specifically requested after review results return. Preparation alone is not an executed review. Keep the review report-only; do not run the application/checks, fix code, publish, or install anything.
+Report findings and actual evidence, not approval. Follow `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), and `${CLAUDE_PLUGIN_ROOT}/skills/lbvs-aidlc-review/references/review-options.md`. Use this shape in conversation; persist to `changes/{{change_id}}/review.md` only when specifically requested after review results return. Preparation alone is not an executed review. Keep the review report-only; do not run the application/checks, fix code, publish, or install anything.
 
 ## Same-change intent and policy
 

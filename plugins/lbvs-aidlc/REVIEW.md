@@ -24,7 +24,7 @@ After changes, re-review the affected revision and resolve findings with evidenc
 
 ## Existing reviewer and engineer handoff
 
-Use an existing review capability, supplying the artifact and verification context rather than implementing a new review engine. [Review options](.claude/skills/lbvs-aidlc-review/references/review-options.md) distinguishes built-in commands, plugins and hosted services, including their posting behavior.
+Use an existing review capability, supplying the artifact and verification context rather than implementing a new review engine. [Review options](${CLAUDE_PLUGIN_ROOT}/skills/lbvs-aidlc-review/references/review-options.md) distinguishes built-in commands, plugins and hosted services, including their posting behavior.
 
 The reviewer reports findings; the engineer decides what to fix. Keep findings local by default, then verify fixes and re-review the changed result. Do not approve, publish comments, merge or release unless explicitly instructed and permitted. Existing repository rules remain in force, but this package does not implement or require a new approval boundary.
 

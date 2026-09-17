@@ -3,7 +3,7 @@ name: lbvs-aidlc-conventions-checker
 description: Advisory pre-PR check of a change against the repository profile — documented lint/format/test commands run verbatim, diff vs conventions, delivery hygiene, glossary drift. Delegate from lbvs-aidlc-ship.
 tools: Read, Glob, Grep, Bash
 ---
-<!-- Ideas adapted from awslabs/aidlc-workflows core/agents/aidlc-quality-agent.md and core/agents/aidlc-developer-agent.md (MIT-0, see docs/vendor/aws-aidlc/NOTICE.md) and affaan-m/ECC agents/code-reviewer.md (MIT, see docs/vendor/ecc/LICENSE); rewritten, no upstream text copied. -->
+<!-- Ideas adapted from awslabs/aidlc-workflows core/agents/aidlc-quality-agent.md and core/agents/aidlc-developer-agent.md (MIT-0, see ${CLAUDE_PLUGIN_ROOT}/docs/vendor/aws-aidlc/NOTICE.md) and affaan-m/ECC agents/code-reviewer.md (MIT, see ${CLAUDE_PLUGIN_ROOT}/docs/vendor/ecc/LICENSE); rewritten, no upstream text copied. -->
 
 # AIDLC conventions checker
 
@@ -22,7 +22,7 @@ The change ID from the parent. `docs/repo-profile.md` (when absent: `CLAUDE.md`,
 
 ## Posture
 
-Report only what you can point at: `file:line`, the convention it breaks and where that convention is written. Skip taste, unchanged code and anything a documented tool already enforces. Consolidate repeats. Important = fails a documented command, ships a secret, or hand-edits a generated path; everything else is a nit. Zero findings is a valid result; padding is not.
+Report only what you can point at: `file:line`, the convention it breaks and where that convention is written. Skip taste, unchanged code and anything a documented tool already enforces. Consolidate repeats. Important = fails a documented command, ships a secret, or hand-edits a generated path; everything else is a nit the engineer may ignore. Zero findings is a valid result; padding is not.
 
 ## Output
 

@@ -9,7 +9,7 @@ tools: Read, Glob, Grep
 
 ## Purpose
 
-<One paragraph: the subsystem or procedure this agent knows, the question it answers, and which AIDLC stage (design, plan, build, verify, review, fix) delegates to it. Name the gap it fills that lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic and the bundled Explore/Plan subagents do not.>
+<One paragraph: the subsystem or procedure this agent knows, the question it answers, and which AIDLC stage (design, plan, build, verify, review, fix, ship) delegates to it. Name the gap it fills that lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic, lbvs-aidlc-conventions-checker and the bundled Explore/Plan subagents do not.>
 
 ## Inputs it expects
 
@@ -44,4 +44,4 @@ Return exactly these headings, in this order, citing at least one repository-roo
 - Verdicts and recommendations are advisory; the engineer and the calling stage decide.
 - Existing `CLAUDE.md`, `AGENTS.md` and `.claude/rules/**` remain authoritative.
 
-<!-- Provenance: created by /lbvs-aidlc-init (lbvs-aidlc agent maker) on <YYYY-MM-DD> from the repository scout report; the shape mirrors .claude/agents/lbvs-aidlc-repo-scout.md. Keep this file under 3 KB — plugin agents cost startup context. -->
+<!-- Provenance: created by /lbvs-aidlc-init (lbvs-aidlc agent maker) on <YYYY-MM-DD> from the repository scout report; the shape mirrors ${CLAUDE_PLUGIN_ROOT}/agents/lbvs-aidlc-repo-scout.md. Keep this file under 3 KB — plugin agents cost startup context. -->

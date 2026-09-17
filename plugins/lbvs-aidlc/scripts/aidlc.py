@@ -42,7 +42,7 @@ REQUIRED_ASSETS = (
     ".vscode/settings.json", ".vscode/extensions.json",
     ".mcp.json", ".claude/settings.json",
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
-    ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh",
+    ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/lbvs-aidlc-review/references/review-options.md",
     ".claude/skills/lbvs-aidlc-intent/templates/intent.md",
@@ -285,7 +285,7 @@ def profile(root):
     if not file.is_file():
         print("profile: missing ({}). Write one with /lbvs-aidlc-onboard or /lbvs-aidlc-init; stages will scout until it exists.".format(PROFILE_PATH))
         return 0
-    head = file.read_text(encoding="utf-8").split("\n", 12)
+    head = file.read_text(encoding="utf-8").splitlines()[:12]
     verified = next((line for line in head if line.startswith("Last verified:")), "")
     manifests = next((line for line in head if line.startswith("Manifests:")), "")
     match = re.search(r"\bat ([0-9a-f]{7,40})\b", verified)
@@ -293,9 +293,14 @@ def profile(root):
         print("profile: present but its header lacks `Last verified: <date> at <commit>`; treat as stale.")
         return 0
     revision = match.group(1)
-    paths = manifests.partition(":")[2].split()
+    paths = [path for path in re.split(r"[\s,]+", manifests.partition(":")[2]) if path]
     if not git_out(root, "rev-parse", "--verify", "--quiet", revision + "^{commit}"):
         print("profile: stale (verified at {}, which is not in this repository's history).".format(revision[:12]))
+        return 0
+    tracked = set(git_out(root, "ls-files", "--", *paths).splitlines()) if paths else set()
+    unknown = [path for path in paths if path not in tracked]
+    if unknown:
+        print("profile: stale (Manifests lists path(s) git does not track: {}). Fix the header or refresh with /lbvs-aidlc-onboard.".format(", ".join(unknown)))
         return 0
     log = git_out(root, "log", "--format=%h", revision + "..HEAD", "--", *paths) if paths else ""
     commits = [line for line in log.split("\n") if line]
@@ -393,6 +398,8 @@ def worktree_path(root, name):
         raise ValueError("unusable worktree name: {!r}".format(name))
     match = re.fullmatch(r"aidlc[+/](.+)", slug)
     change_id = match.group(1) if match else slug
+    if match and not CHANGE_ID.fullmatch(change_id):
+        raise ValueError("aidlc/<change-id> must match ^[a-z0-9]+(-[a-z0-9]+)*$: {!r}".format(change_id))
     # An explicit aidlc branch prefix, or a name that is already a change under changes/, gets the
     # descriptive branch; anything else keeps Claude Code's default shape.
     if match or (CHANGE_ID.fullmatch(change_id) and (root / "changes" / change_id).is_dir()):
@@ -401,6 +408,8 @@ def worktree_path(root, name):
         branch, directory = "worktree-" + slug, slug.replace("/", "+")
     destination = root / ".claude" / "worktrees" / directory
     if destination.is_dir():
+        if not (destination / ".git").exists():
+            raise ValueError("{} exists but is not a git worktree; remove it or run `git worktree prune`".format(destination))
         return destination
     existing = git_out(root, "rev-parse", "--verify", "--quiet", "refs/heads/" + branch)
     add = ["worktree", "add", str(destination)]
@@ -409,35 +418,72 @@ def worktree_path(root, name):
                             timeout=120, check=False)
     if result.returncode:
         raise ValueError("git worktree add failed: {}".format(result.stderr.strip() or result.returncode))
-    # This hook replaces the default behaviour, so .worktreeinclude is ours to honour.
+    # This hook replaces the default behaviour, so .worktreeinclude is ours to honour. The file uses
+    # gitignore syntax, so let git evaluate it: copy the ignored files it selects.
     include = root / ".worktreeinclude"
     if include.is_file():
-        patterns = [line.strip() for line in include.read_text(encoding="utf-8").splitlines()
-                    if line.strip() and not line.startswith("#")]
-        for pattern in patterns:
-            listed = git_out(root, "ls-files", "--others", "--ignored", "--exclude-standard", "--", pattern)
-            for relative in (line for line in listed.splitlines() if line):
-                source, target = root / relative, destination / relative
-                if source.is_file() and not source.is_symlink() and not target.exists():
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(source, target)
+        ignored = set(git_out(root, "ls-files", "-z", "--others", "--ignored", "--exclude-standard").split("\0"))
+        wanted = set(git_out(root, "ls-files", "-z", "--others", "--ignored", "--exclude-from=" + str(include)).split("\0"))
+        for relative in sorted(path for path in ignored & wanted if path):
+            source, target = root / relative, destination / relative
+            if source.is_file() and not source.is_symlink() and not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
     return destination
+
+
+def main_checkout(start):
+    """The main working tree of the repository containing `start`, even when `start` is inside a linked worktree."""
+    common = git_out(start, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if not common:
+        return None
+    top = git_out(Path(common).parent, "rev-parse", "--show-toplevel")
+    return Path(top) if top else None
+
+
+def hook_payload():
+    payload = json.loads(sys.stdin.read() or "{}")
+    if not isinstance(payload, dict):
+        raise ValueError("hook input must be a JSON object")
+    return payload
 
 
 def create_worktree():
     """WorktreeCreate hook: read the requested name on stdin, print the worktree path."""
-    payload = json.loads(sys.stdin.read() or "{}")
+    payload = hook_payload()
     name = payload.get("name")
     if not isinstance(name, str) or not name.strip():
         raise ValueError("WorktreeCreate input has no usable name")
-    root = Path(payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
-    top = git_out(root, "rev-parse", "--show-toplevel")
-    if not top:
+    start = Path(payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
+    top = main_checkout(start)
+    if top is None:
         raise ValueError("worktree creation needs a git repository")
-    destination = worktree_path(Path(top), name)
+    destination = worktree_path(top, name)
     print("AIDLC worktree: {} on branch {}".format(
         destination, git_out(destination, "rev-parse", "--abbrev-ref", "HEAD")), file=sys.stderr)
     print(destination)
+    return 0
+
+
+def remove_worktree():
+    """WorktreeRemove hook: remove a worktree this hook created; keep dirty trees and unmerged branches."""
+    payload = hook_payload()
+    target = payload.get("worktree_path")
+    if not isinstance(target, str) or not target.strip():
+        raise ValueError("WorktreeRemove input has no worktree_path")
+    target = Path(target).resolve()
+    top = main_checkout(Path(payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd()))
+    if top is None or target.parent != (top / ".claude" / "worktrees").resolve():
+        raise ValueError("refusing to remove {}: not under {}/.claude/worktrees".format(target, top))
+    branch = git_out(target, "rev-parse", "--abbrev-ref", "HEAD") if target.is_dir() else ""
+    result = subprocess.run(["git", "-C", str(top), "worktree", "remove", str(target)],
+                            capture_output=True, text=True, timeout=60, check=False)
+    if result.returncode:
+        raise ValueError("git worktree remove refused (uncommitted work is kept): {}".format(result.stderr.strip()))
+    # Delete only fully merged auto-named branches; aidlc/<id> branches carry the change and stay.
+    if branch.startswith("worktree-"):
+        subprocess.run(["git", "-C", str(top), "branch", "-d", branch], capture_output=True, text=True, timeout=15, check=False)
+    print("AIDLC worktree removed: {}".format(target), file=sys.stderr)
     return 0
 
 
@@ -555,6 +601,78 @@ def check_package():
             errors.append("skill invocation mode differs from inventory: {}".format(name))
         if re.search(r"^(allowed-tools|hooks|model|agent|context):", frontmatter, re.M):
             errors.append("skill must not grant tools or override the runtime: {}".format(name))
+        if name in SKILL_DIRECTORIES:
+            errors.extend(check_aidlc_skill(name, text, frontmatter))
+    errors.extend(check_agents())
+    errors.extend(check_instructions_size())
+    return finish_check(errors, assets, link_count)
+
+
+SKILL_KEYS = frozenset(("name", "description", "when_to_use", "argument-hint", "disable-model-invocation"))
+SKILL_BYTES = {"lbvs-aidlc": 7788}
+SKILL_BYTES_DEFAULT = 7168
+LISTING_CHARS = 1536  # Claude Code truncates description + when_to_use beyond this in the skill listing.
+AGENT_KEYS = frozenset(("name", "description", "tools"))
+AGENT_BODY_BYTES = 3072
+INSTRUCTION_LINES = 60
+
+
+def frontmatter_fields(frontmatter):
+    return {match.group(1): match.group(2).strip() for match in re.finditer(r"^([A-Za-z_-]+):\s*(.*)$", frontmatter, re.M)}
+
+
+def check_aidlc_skill(name, text, frontmatter):
+    """The size and listing rules every AIDLC skill is written against; keeps them a check, not prose."""
+    errors = []
+    size = len(text.encode("utf-8"))
+    cap = SKILL_BYTES.get(name, SKILL_BYTES_DEFAULT)
+    if size > cap:
+        errors.append("skill exceeds its size budget ({} > {} bytes): {}".format(size, cap, name))
+    fields = frontmatter_fields(frontmatter)
+    unexpected = sorted(set(fields) - SKILL_KEYS)
+    if unexpected:
+        errors.append("skill frontmatter has undeclared keys {}: {}".format(unexpected, name))
+    listing = len(fields.get("description", "")) + len(fields.get("when_to_use", ""))
+    if listing > LISTING_CHARS:
+        errors.append("skill description + when_to_use exceed the listing cap ({} > {} chars): {}".format(listing, LISTING_CHARS, name))
+    return errors
+
+
+def check_agents():
+    """Agent files are the whole system prompt of a subagent: one definition, small body, mirrored description."""
+    errors = []
+    for file in sorted((PACKAGE_ROOT / ".claude/agents").glob("*.md")):
+        text = file.read_text(encoding="utf-8")
+        if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+            errors.append("missing agent frontmatter: {}".format(file.name))
+            continue
+        frontmatter, _, body = text[4:].partition("\n---\n")
+        fields = frontmatter_fields(frontmatter)
+        if fields.get("name") != file.stem:
+            errors.append("agent name does not match filename: {}".format(file.name))
+        if not fields.get("description"):
+            errors.append("agent has no description: {}".format(file.name))
+        unexpected = sorted(set(fields) - AGENT_KEYS)
+        if unexpected:
+            errors.append("agent frontmatter has undeclared keys {}: {}".format(unexpected, file.name))
+        if len(body.encode("utf-8")) > AGENT_BODY_BYTES:
+            errors.append("agent body exceeds {} bytes: {}".format(AGENT_BODY_BYTES, file.name))
+        mirror = PACKAGE_ROOT / ".omp/agents" / file.name
+        if not mirror.is_file():
+            errors.append("agent has no .omp/agents mirror: {}".format(file.name))
+        elif frontmatter_fields(mirror.read_text(encoding="utf-8").split("---", 2)[1]).get("description") != fields.get("description"):
+            errors.append("agent description differs between .claude/agents and .omp/agents: {}".format(file.name))
+    return errors
+
+
+def check_instructions_size():
+    lines = (PACKAGE_ROOT / "AGENTS.md").read_text(encoding="utf-8").count("\n")
+    if lines > INSTRUCTION_LINES:
+        return ["AGENTS.md is {} lines; keep it at most {} (facts Claude cannot infer; procedures belong in skills)".format(lines, INSTRUCTION_LINES)]
+    return []
+
+
+def finish_check(errors, assets, link_count):
     if errors:
         for error in errors:
             print("ERROR: " + error, file=sys.stderr)
@@ -603,9 +721,13 @@ def report_mcp(root):
         print("MCP: no .mcp.json in the target project")
         return
     try:
-        servers = json.loads(config.read_text(encoding="utf-8")).get("mcpServers", {})
+        data = json.loads(config.read_text(encoding="utf-8"))
     except ValueError as error:
         print("MCP: .mcp.json is not valid JSON ({})".format(error))
+        return
+    servers = data.get("mcpServers", {}) if isinstance(data, dict) else None
+    if not isinstance(servers, dict):
+        print("MCP: .mcp.json must be a JSON object with an `mcpServers` object")
         return
     if not servers:
         print("MCP: .mcp.json declares no project servers")
@@ -674,6 +796,7 @@ def main():
     commands.add_parser("status", help="list changes under changes/ with the stage artifacts present")
     commands.add_parser("current", help="print the change ID in play (branch, .aidlc/current, or the only open change)")
     commands.add_parser("worktree", help="WorktreeCreate hook: read the requested name on stdin, print the worktree path")
+    commands.add_parser("worktree-remove", help="WorktreeRemove hook: remove a hook-created worktree; keeps uncommitted work and aidlc/<id> branches")
     conv = commands.add_parser("conventions", help="compare repository conventions with the package defaults; --apply copies only missing defaults")
     conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
     commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
@@ -698,12 +821,14 @@ def main():
             return print_current(args.root.resolve())
         if args.command == "worktree":
             return create_worktree()
+        if args.command == "worktree-remove":
+            return remove_worktree()
         if args.command == "conventions":
             return conventions(args.root.resolve(), apply=args.apply)
         if args.command == "profile":
             return profile(args.root.resolve())
         return doctor(args.root.resolve(), install=getattr(args, "install", False))
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("ERROR: {}".format(error), file=sys.stderr)
         return 1
 
