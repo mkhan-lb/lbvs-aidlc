@@ -32,18 +32,20 @@ The plugin carries the AIDLC skills, both agents, the project-mode and test-prot
 - **Hooks stay narrow and deterministic.** Two `SessionStart` context hooks (package check, project mode) and one `PreToolUse` guardrail that exists only while a bug fix is in progress. No approval gates or formatters — those belong to the adopting repository.
 - **Bugs leave evidence.** `/aidlc-fix` commits the failing test before the fix, blocks edits to it while fixing, records `changes/<id>/evidence.md` with Jira/PR/incident references, and offers `/aidlc-learn`.
 - **Brownfield is detected, not assumed.** `mode` classifies the repository at session start (≥10 code files or ≥20 commits; `.aidlc/mode` overrides); `/aidlc-onboard` scouts read-only and asks modernize vs stay-legacy before drafting a repository `CLAUDE.md`.
-- **Every change runs in a worktree** named `aidlc/<change-id>`; `.worktreeinclude` carries `.env` and local settings into it.
+- **Every change runs in a worktree** on branch `aidlc/<change-id>`; `.worktreeinclude` carries `.env` and local settings into it.
 - **Non-technical entry** is optional Compound Engineering brainstorming; **caveman** is per-engineer opt-in; **ECC skills** are vendored and untouched by AIDLC work.
-
-## Status
-
 
 ## Working without ceremony
 
 - **No IDs to remember.** `/aidlc` with no argument resolves the change from the branch (`aidlc/<id>`), then `.aidlc/current`, then the only change without `review.md`, and asks only if none of those answer. `python3 scripts/aidlc.py status` lists every change with the stage artifacts present, the stage reached and the next one; `current` prints just the ID and its source.
 - **Descriptive branches with your ticket key.** Change IDs are `^[a-z0-9]+(-[a-z0-9]+)*$`, so prefix the ticket: `vs-1234-order-export`. The `WorktreeCreate` hook then produces `.claude/worktrees/aidlc+vs-1234-order-export` on branch **`aidlc/vs-1234-order-export`** (branched from local `HEAD`) instead of Claude Code's default `worktree-…` name, and copies `.worktreeinclude` files itself. Non-AIDLC worktree names keep the default shape. Because the hook replaces the host's creation logic, Claude Code's worktree sweep leaves these alone: remove one with `git worktree remove`.
 - **Gates or auto-advance, your choice.** `/aidlc` asks the flow policy once per run: *confirm each stage*, *auto-advance when clear, stop before build*, or *auto-advance when clear, including build*. Auto-advance requires the stage to have saved **and read back** its artifact with no open questions, no failed or missing required check and no pending CE review; it announces each hop. Review always asks, and so does every commit, push or deployment.
-Verified in native sessions (see [verification](docs/VERIFICATION.md#company-aidlc-restructure)): all 13 `aidlc*` commands load from the export and, namespaced, from the plugin; both `SessionStart` hooks fire; the test-protection hook denies edits to a protected test and allows others; Oh My Pi receives the imported instructions, sticky rules and skills. Not yet driven end to end in a native session: a full `/aidlc` stage-gate conversation, `/aidlc-fix` on a real defect, `EnterWorktree`, and CE brainstorming — the next trial.
+
+## Status
+
+Verified in native Claude Code and Oh My Pi sessions — see [verification](docs/VERIFICATION.md): the 13 `aidlc*` commands load from the export and, namespaced, from the plugin; all four hooks fire; the test-protection hook denies edits to a protected reproduction test and allows others; `/aidlc` with no argument resolves the change, asks the flow policy and creates `aidlc/<change-id>`; a driven trial ran `EnterWorktree`, the stage gates and real `compound-engineering:ce-brainstorm`, saving and reading back an intent. Five defects that trial surfaced are fixed and recorded there.
+
+Still not driven end to end: design → review, `/aidlc-fix` on a real defect, `/aidlc-learn`, an observed `Auto-advancing to …` hop, and CE's non-fast path.
 
 ## Start locally
 
