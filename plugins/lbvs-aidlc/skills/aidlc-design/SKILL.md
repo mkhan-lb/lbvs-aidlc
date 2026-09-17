@@ -25,13 +25,17 @@ Change ID: `$ARGUMENTS`. A single token matching `^[a-z0-9]+(-[a-z0-9]+)*$` is t
 - Create or carefully update `changes/<change-id>/spec.md` from the template; substitute only literal `{{change_id}}`. Preserve existing human decisions. In plan/read-only mode, return the proposal labelled **not saved**.
 - **Read back.** After saving, Read the file and compare it with the intended content and the code actually inspected; correct within this save and Read again. A Write acknowledgement is not verification.
 
+## Knowledge records (offered, never automatic)
+
+When the spec introduces or changes an architectural boundary, technology choice or contract, use AskUserQuestion to offer recording an ADR via the `architecture-decision-records` skill (`docs/adr/NNNN-short-title.md` from `docs/adr/template.md`, plus a row in `docs/adr/README.md`). When it introduces a new external interface, data store, credential or trust boundary, offer a threat model at `docs/security/threat-models/<name>.md` from `docs/security/threat-model-template.md`, plus a row in `docs/security/README.md`. Write a record only on explicit confirmation, from the spec and code actually inspected, then Read it back and link it from the spec.
+
 ## Optional CE document review
 
 Only when the user explicitly selects it. Follow [Optional CE document review](${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#optional-ce-document-review) with `changes/<change-id>/spec.md` as the sole target. Review an existing spec without redrafting it first; for draft-then-review, save the exact proposal first (read-only mode hands off the save, never a scratch copy). The pass is report-only: no fixes, annotations, acceptance or implementation. Unavailable CE: offer install/reload or explicitly labelled ordinary work; never substitute silently.
 
 ## Stage gate
 
-Present requirements, design and open choices for feedback; record known decisions simply, not as formal acceptance. Summarise: artifact path (or **proposed — not saved**), decisions recorded, open questions, review findings if CE ran, checks run (normally none).
+Present requirements, design and open choices for feedback; record known decisions simply, not as formal acceptance. Summarise: artifact path (or **proposed — not saved**), decisions recorded, knowledge records offered or written, open questions, review findings if CE ran, checks run (normally none).
 
 **Flow policy.** One policy is stated per run: `confirm each stage` (the default; assume it when none was stated), `auto-advance when clear, stop before build`, or `auto-advance when clear, including build`. Auto-advance only when all of these hold: the policy is an auto-advance one; `spec.md` was saved **and** read back this run; it records no open questions, unresolved decisions or missing inputs; no check failed and no required check is "not run"; no requested CE review is pending; and the next step is not a commit, push, PR, merge, publication or deployment. Then print one line — `Auto-advancing to aidlc-plan (policy: <policy>; no open questions, checks: <summary>)` — say the engineer can interrupt, and invoke `aidlc-plan` via the Skill tool with the bare change ID.
 

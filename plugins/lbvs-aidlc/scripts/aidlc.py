@@ -18,7 +18,7 @@ STAGE_FILES = (("intent", "intent.md"), ("spec", "spec.md"), ("plan", "plan.md")
 NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
               "evidence": "review", "review": "done"}
 SKILLS = ("intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
-          "handoff", "resume", "ideate")
+          "ticket", "spike", "handoff", "resume", "ideate")
 MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
 SKILL_DIRECTORIES = ("aidlc",) + tuple("aidlc-" + name for name in SKILLS)
 CODE_SUFFIXES = frozenset((
@@ -53,9 +53,13 @@ REQUIRED_ASSETS = (
     ".claude/skills/aidlc-handoff/templates/handoff.md",
     ".claude/skills/aidlc-learn/templates/learning.md",
     ".claude/skills/aidlc-ideate/templates/ideation.md",
-    "docs/deferred/templates/incident.md",
+    ".claude/skills/aidlc-spike/templates/spike.md",
+    "docs/adr/README.md", "docs/adr/template.md",
+    "docs/incidents/README.md", "docs/incidents/template.md",
+    "docs/security/README.md", "docs/security/threat-model-template.md",
     ".claude/agents/aidlc-verifier.md", ".claude/agents/aidlc-repo-scout.md",
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
+    "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",
     "mcp-configs/ecc.mcp-servers.example.json",
 ) + tuple(".claude/skills/{}/SKILL.md".format(name) for name in SKILL_DIRECTORIES)
 
@@ -91,47 +95,50 @@ def new_change(root, change_id):
     print("No approval, commit, push, or deployment was performed.")
 
 
+VENDOR_MANIFESTS = ("docs/vendor/ecc/manifest.json", "docs/vendor/anthropic-skills/manifest.json")
+
+
 def ecc_inventory():
-    """Read the pinned import inventory without discovering arbitrary skill files."""
-    manifest = PACKAGE_ROOT / "docs/vendor/ecc/manifest.json"
-    for component in (manifest, *manifest.parents):
-        if component == PACKAGE_ROOT:
-            break
-        if component.is_symlink():
-            raise ValueError("refusing a symlinked ECC manifest: {}".format(manifest))
-    data = json.loads(manifest.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or data.get("schema_version") != 1:
-        raise ValueError("unsupported ECC manifest schema")
-    skills = data.get("skills")
-    if not isinstance(skills, list) or not skills:
-        raise ValueError("ECC manifest must declare its imported skills")
+    """Read every pinned import inventory without discovering arbitrary skill files."""
     files = []
     modes = {}
-    for skill in skills:
-        if not isinstance(skill, dict):
-            raise ValueError("invalid ECC skill entry")
-        name, manual = skill.get("name"), skill.get("manual")
-        if (not isinstance(name, str) or not CHANGE_ID.fullmatch(name)
-                or name.startswith("aidlc-") or name in modes or not isinstance(manual, bool)):
-            raise ValueError("invalid or duplicate ECC skill name/invocation mode")
-        resources = skill.get("files")
-        if not isinstance(resources, list) or not resources:
-            raise ValueError("ECC skill has no declared resources: {}".format(name))
-        prefix = ".claude/skills/{}/".format(name)
-        paths = []
-        for resource in resources:
-            relative = resource.get("path") if isinstance(resource, dict) else None
-            if (not isinstance(relative, str) or not relative.startswith(prefix)
-                    or "\\" in relative or ".." in Path(relative).parts
-                    or relative != Path(relative).as_posix()):
-                raise ValueError("invalid ECC resource path: {!r}".format(relative))
-            paths.append(relative)
-        if prefix + "SKILL.md" not in paths:
-            raise ValueError("ECC skill is missing its declared entrypoint: {}".format(name))
-        files.extend(paths)
-        modes[name] = manual
+    for relative in VENDOR_MANIFESTS:
+        manifest = PACKAGE_ROOT / relative
+        for component in (manifest, *manifest.parents):
+            if component == PACKAGE_ROOT:
+                break
+            if component.is_symlink():
+                raise ValueError("refusing a symlinked vendor manifest: {}".format(manifest))
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("unsupported vendor manifest schema: {}".format(relative))
+        skills = data.get("skills")
+        if not isinstance(skills, list) or not skills:
+            raise ValueError("vendor manifest must declare its imported skills: {}".format(relative))
+        for skill in skills:
+            if not isinstance(skill, dict):
+                raise ValueError("invalid vendor skill entry in {}".format(relative))
+            name, manual = skill.get("name"), skill.get("manual")
+            if (not isinstance(name, str) or not CHANGE_ID.fullmatch(name)
+                    or name.startswith("aidlc-") or name in modes or not isinstance(manual, bool)):
+                raise ValueError("invalid or duplicate vendor skill name/invocation mode: {!r}".format(name))
+            resources = skill.get("files")
+            if not isinstance(resources, list) or not resources:
+                raise ValueError("vendor skill has no declared resources: {}".format(name))
+            prefix = ".claude/skills/{}/".format(name)
+            paths = []
+            for resource in resources:
+                path = resource.get("path") if isinstance(resource, dict) else None
+                if (not isinstance(path, str) or not path.startswith(prefix)
+                        or "\\" in path or ".." in Path(path).parts or path != Path(path).as_posix()):
+                    raise ValueError("invalid vendor resource path: {!r}".format(path))
+                paths.append(path)
+            if prefix + "SKILL.md" not in paths:
+                raise ValueError("vendor skill is missing its declared entrypoint: {}".format(name))
+            files.extend(paths)
+            modes[name] = manual
     if len(files) != len(set(files)):
-        raise ValueError("duplicate ECC resource paths")
+        raise ValueError("duplicate vendor resource paths")
     return tuple(files), modes
 
 
@@ -468,17 +475,82 @@ def check_package():
     return 0
 
 
-def doctor(root):
+OPTIONAL_TOOLS = (
+    # executable, purpose, ordered install candidates (prerequisite executable, argv)
+    ("graphify", "code knowledge graph used by aidlc-repo-scout, aidlc-fix and aidlc-onboard",
+     (("uv", ["uv", "tool", "install", "graphifyy"]), ("pipx", ["pipx", "install", "graphifyy"]))),
+    ("codegraph", "local pre-indexed symbol/call graph exposed as the codegraph MCP server",
+     (("npm", ["npm", "install", "-g", "@colbymchenry/codegraph"]),)),
+    ("gh", "GitHub CLI for PR references in evidence.md and the github MCP token",
+     (("brew", ["brew", "install", "gh"]),)),
+    ("omp", "Oh My Pi host (optional second harness)", ()),
+)
+MCP_AUTH = {
+    "context7": ("optional", "CONTEXT7_API_KEY", "works anonymously with lower rate limits; set the key (value `Bearer <key>`) for more"),
+    "github": ("required", "GITHUB_PERSONAL_ACCESS_TOKEN", "PAT with repo scope; `gh auth token` prints one for the logged-in account"),
+    "atlassian": ("oauth", None, "OAuth 2.1 in the browser on first use: run /mcp in Claude Code and authenticate"),
+    "codegraph": ("binary", None, "local stdio server; needs the codegraph executable and `codegraph init` in the repository"),
+}
+
+
+def install_optional(executable, candidates):
+    for prerequisite, argv in candidates:
+        if shutil.which(prerequisite):
+            print("  installing with: {}".format(" ".join(argv)))
+            result = subprocess.run(argv, check=False)
+            if result.returncode == 0 and shutil.which(executable):
+                print("  installed: {}".format(shutil.which(executable)))
+                return True
+            print("  install command exited {}".format(result.returncode))
+            return False
+    print("  no supported installer found ({}); see docs/PLUGINS.md".format(
+        ", ".join(prerequisite for prerequisite, _ in candidates) or "manual install only"))
+    return False
+
+
+def report_mcp(root):
+    config = root / ".mcp.json"
+    if not config.is_file():
+        print("MCP: no .mcp.json in the target project")
+        return
+    try:
+        servers = json.loads(config.read_text(encoding="utf-8")).get("mcpServers", {})
+    except ValueError as error:
+        print("MCP: .mcp.json is not valid JSON ({})".format(error))
+        return
+    if not servers:
+        print("MCP: .mcp.json declares no project servers")
+        return
+    print("MCP servers declared in .mcp.json (Claude asks once per project before connecting):")
+    for name in sorted(servers):
+        kind, variable, note = MCP_AUTH.get(name, ("unknown", None, "auth requirements not catalogued here"))
+        state = ""
+        if variable:
+            state = " — {} is {}".format(variable, "set" if os.environ.get(variable) else "NOT set")
+        print("  {}: auth {}{}; {}".format(name, kind, state, note))
+    print("  Jira/Confluence go through the atlassian server; nothing here stores credentials in the repository.")
+
+
+def doctor(root, install=False):
     missing = []
     for executable in ("python3", "git", "claude"):
         path = shutil.which(executable)
         print("{}: {}".format(executable, path or "MISSING"))
         if path is None:
             missing.append(executable)
-    for optional, hint in (("graphify", "optional: `uv tool install graphifyy` gives /graphify and graphify query for code relationships"),
-                           ("gh", "optional: GitHub CLI for PR references in evidence.md"),
-                           ("omp", "optional: Oh My Pi host")):
-        print("{}: {}".format(optional, shutil.which(optional) or "not installed ({})".format(hint)))
+    print("Optional tools (skills use them when present):")
+    for executable, purpose, candidates in OPTIONAL_TOOLS:
+        path = shutil.which(executable)
+        if path:
+            print("  {}: {}".format(executable, path))
+            continue
+        commands = " | ".join(" ".join(argv) for _, argv in candidates) or "manual install; see docs/PLUGINS.md"
+        print("  {}: not installed — {}. Install: {}".format(executable, purpose, commands))
+        if install and candidates:
+            install_optional(executable, candidates)
+    if not install:
+        print("  Run `python3 scripts/aidlc.py doctor --install` to run the listed installers for the missing tools.")
+    report_mcp(root)
     if shutil.which("git"):
         try:
             result = subprocess.run(
@@ -494,7 +566,7 @@ def doctor(root):
                 missing.append("git repository")
             else:
                 print("git repository: " + result.stdout.strip())
-    print("NOT CHECKED: Claude authentication/entitlements, policy owners, branch protection,")
+    print("NOT CHECKED: Claude authentication/entitlements, MCP connectivity, policy owners, branch protection,")
     print("managed controls, CI credentials, deployment, monitoring, and incident integrations.")
     print("See docs/PREREQUISITES.md. Tool presence does not establish operational readiness.")
     return 1 if missing else 0
@@ -507,7 +579,8 @@ def main():
     new = commands.add_parser("new", help="create only a draft intent; refuse to overwrite work")
     new.add_argument("change_id")
     commands.add_parser("check", help="check this package's required assets and local links")
-    commands.add_parser("doctor", help="inspect local prerequisites without changing configuration")
+    doc = commands.add_parser("doctor", help="inspect local prerequisites and MCP auth needs; --install runs the listed installers for missing optional tools")
+    doc.add_argument("--install", action="store_true", help="install missing optional tools with the available package manager (uv/pipx, npm, brew)")
     commands.add_parser("mode", help="report greenfield or brownfield for the target project; .aidlc/mode overrides")
     commands.add_parser("status", help="list changes under changes/ with the stage artifacts present")
     commands.add_parser("current", help="print the change ID in play (branch, .aidlc/current, or the only open change)")
@@ -533,7 +606,7 @@ def main():
             return print_current(args.root.resolve())
         if args.command == "worktree":
             return create_worktree()
-        return doctor(args.root.resolve())
+        return doctor(args.root.resolve(), install=getattr(args, "install", False))
     except (OSError, ValueError) as error:
         print("ERROR: {}".format(error), file=sys.stderr)
         return 1
