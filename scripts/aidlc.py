@@ -81,7 +81,11 @@ def new_change(root, change_id):
     if not root.is_dir():
         raise ValueError("target root must be an existing directory")
     # Read the template before creating anything; failure must not leave an empty change.
-    content = (PACKAGE_ROOT / ".claude/skills/aidlc-intent/templates/intent.md").read_text(encoding="utf-8")
+    # The plugin build lays skills out under skills/ instead of .claude/skills/.
+    template = PACKAGE_ROOT / ".claude/skills/aidlc-intent/templates/intent.md"
+    if not template.is_file():
+        template = PACKAGE_ROOT / "skills/aidlc-intent/templates/intent.md"
+    content = template.read_text(encoding="utf-8")
     content = content.replace("{{change_id}}", change_id)
     changes = root / "changes"
     if changes.is_symlink():
