@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "scope": "Company AIDLC restructure: orchestrated stages, fix loop, onboarding, project mode, AGENTS.md import model, omp config",
+  "package": {
+    "required_assets": 103,
+    "local_links": 256,
+    "export_files": 114,
+    "root_check_exit": 0,
+    "export_exit": 0,
+    "exported_check_exit": 0,
+    "exported_mode_line": "AIDLC project mode: greenfield — 1 code files (threshold 10); 0 commits (threshold 20)",
+    "local_settings_exported": false,
+    "claude_first_line": "@AGENTS.md",
+    "agents_is_symlink": false
+  },
+  "mode_smoke": {
+    "package_root": "greenfield — 1 code files; 0 commits",
+    "fixture_12_py_files": "brownfield — 12+ code files",
+    "override_greenfield": "greenfield — declared in .aidlc/mode",
+    "invalid_override_exit": 1,
+    "hook_exit": 0
+  },
+  "native_claude": {
+    "version": "2.1.273",
+    "model": "claude-sonnet-5",
+    "args": [
+      "claude",
+      "-p",
+      "Hook smoke only, not AIDLC work. Step 1: use the Edit tool to change \"assert 1 == 2\" to \"assert 1 == 1\" in tests/test_repro.py. Step 2: whether or not step 1 succeeded, use the Edit tool to change \"free\" to \"edited\" in tests/other.txt. Then report exactly: (a) the two SessionStart hook messages you received, (b) for each edit whether it was allowed or denied and the denial reason verbatim, (c) which slash commands starting with \"aidlc\" are available to you. Do not retry denied edits, do not run shell commands, do not invoke skills.",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      "--include-hook-events",
+      "--setting-sources",
+      "project,local",
+      "--strict-mcp-config",
+      "--mcp-config",
+      "<TRIAL>/export with spaces/.mcp.json",
+      "--settings",
+      "{\"autoMemoryEnabled\":false}",
+      "--tools",
+      "Read,Edit",
+      "--allowedTools",
+      "Read,Edit",
+      "--permission-mode",
+      "dontAsk",
+      "--permission-prompts",
+      "none",
+      "--no-session-persistence"
+    ],
+    "exit_code": 0,
+    "aidlc_commands": [
+      "aidlc",
+      "aidlc-build",
+      "aidlc-design",
+      "aidlc-fix",
+      "aidlc-handoff",
+      "aidlc-ideate",
+      "aidlc-intent",
+      "aidlc-learn",
+      "aidlc-onboard",
+      "aidlc-plan",
+      "aidlc-resume",
+      "aidlc-review",
+      "aidlc-verify"
+    ],
+    "hook_responses": [
+      {
+        "name": "SessionStart:startup",
+        "exit": 0,
+        "out": "AIDLC project mode: greenfield — 2 code files (threshold 10); 0 commits (threshold 20)"
+      },
+      {
+        "name": "SessionStart:startup",
+        "exit": 0,
+        "out": "PASS: 103 required assets; 256 local links resolve."
+      },
+      {
+        "name": "PreToolUse:Edit",
+        "exit": 0,
+        "out": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"aidlc-fix protects tests/test_repro.py while change 'demo-1' is in progress (marker .aidlc/fix/demo-1.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.\"}}"
+      },
+      {
+        "name": "PreToolUse:Edit",
+        "exit": 0,
+        "out": ""
+      }
+    ],
+    "protected_edit_denied": true,
+    "unprotected_edit_allowed": true,
+    "protected_file_unchanged": true,
+    "result": "**(a) SessionStart hook messages:**\n1. \"AIDLC project mode: greenfield — 2 code files (threshold 10); 0 commits (threshold 20)\" (with note: Override with .aidlc/mode containing greenfield or brownfield.)\n2. \"PASS: 103 required assets; 256 local links resolve.\" (with note: Package integrity only: approvals, service integrations, and model behavior are not verified here.)\n\n**(b) Edit results:**\n- `tests/test_repro.py`: **Denied**. Reason verbatim: \"aidlc-fix protects tests/test_repro.py while change 'demo-1' is in progress (marker .aidlc/fix/demo-1.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.\"\n- `tests/other.txt`: **Allowed**. Edit succeeded (\"free\" → \"edited\").\n\n**(c) Slash commands starting with \"aidlc\" available to me:** `/aidlc`, `/aidlc-onboard`, `/aidlc-fix`, `/aidlc-learn`, `/aidlc-handoff`, `/aidlc-resume`, `/aidlc-ideate`.",
+    "stdout_sha256": "7cb9fb4fbc5d1134f3097b4fabcd3c4fe290b89341d3f4327c33c80d7fdbbd3c"
+  },
+  "native_omp": {
+    "version": "18.1.21",
+    "context_and_rules": {
+      "args": [
+        "omp",
+        "-p",
+        "--no-session",
+        "--no-tools",
+        "--max-time",
+        "180",
+        "--thinking",
+        "off",
+        "--no-title",
+        "Discovery smoke only. Without using any tools, answer in three short lines: (1) quote the first heading of the repo-rules context file you were given and the section title that mentions \"/skill:aidlc\"; (2) quote one sticky rule you were given about committing; (3) list the skill names starting with \"aidlc\" that appear in your available skills list. Do not start any workflow."
+      ],
+      "exit_code": 0,
+      "stdout": "1. First heading: `# lbvs-aidlc`; section mentioning `/skill:aidlc`: `## Oh My Pi`.\n2. Sticky rule: \"Never commit, push, create remotes, change global settings or deploy without explicit authorisation in this conversation.\"\n3. No skills list was provided to me in this session (Skills & Rules section contains only the sticky rules, no `skill://` entries); the repo-rules file names `aidlc`, `aidlc-fix`, `aidlc-onboard`, `aidlc-learn`, `aidlc-handoff`, `aidlc-resume`, `aidlc-ideate`, and `aidlc-build` under `.claude/skills/`, but none appear as discovered skills in my context."
+    },
+    "skills": {
+      "args": [
+        "omp",
+        "-p",
+        "--no-session",
+        "--tools",
+        "read",
+        "--max-time",
+        "180",
+        "--thinking",
+        "off",
+        "--no-title",
+        "Discovery smoke only. Do not call any tool. List, comma-separated, every skill name starting with \"aidlc\" that appears in your available skills list, then the total count of skills listed."
+      ],
+      "exit_code": 0,
+      "stdout": "aidlc, aidlc-build, aidlc-design, aidlc-fix, aidlc-intent, aidlc-learn, aidlc-onboard, aidlc-plan, aidlc-review, aidlc-verify\n\nTotal skills listed: 39"
+    }
+  },
+  "limits": [
+    "Only startup hooks exercised, not resume.",
+    "Hook denial exercised with a seeded marker; the full /aidlc-fix conversation flow, EnterWorktree and stage gates were not driven end to end.",
+    "omp first run used --no-tools, so its skills list is omitted by design; the second run with the read tool listed 10 model-invocable aidlc skills (manual-only skills are hidden from the list but reachable via /skill:).",
+    "Codex was not re-run after replacing the symlink with an @AGENTS.md import; Codex reads the standalone AGENTS.md directly.",
+    "No plugin installed; no commits made by the smoke."
+  ],
+  "cleanup": {
+    "owned_trial_tree_removed": true
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "schema_version": 1,
+  "scope": "Minimal project configuration and shared instruction alias, not ECC runtime installation",
+  "shared_files": [
+    ".mcp.json",
+    ".claude/settings.json",
+    ".claude/hooks/check-package.sh",
+    ".claude/rules/package-maintenance.md"
+  ],
+  "instruction_alias": {
+    "path": "AGENTS.md",
+    "target": "CLAUDE.md",
+    "relative": true
+  },
+  "local_settings": {
+    "path": ".claude/settings.local.json",
+    "content": {},
+    "ignored": true,
+    "exported": false
+  },
+  "initial_export": {
+    "required_assets": 91,
+    "local_links": 244,
+    "files": 101,
+    "root_check_exit": 0,
+    "export_exit": 0,
+    "exported_check_exit": 0
+  },
+  "boundary_smoke": {
+    "passed": 15,
+    "cases": [
+      {
+        "case": "export preserves relative instruction alias and excludes local settings",
+        "passed": true
+      },
+      {
+        "case": "alias shares edits and exports through parent-relative Markdown links",
+        "passed": true,
+        "exit_code": 0,
+        "stdout": "Created standalone package: <TRIAL>/alias updates and links export (101 files)\nExisting repositories are never overlaid. Review and merge adoption changes explicitly.\nShared project configuration is included. No existing/local/global settings, permissions, plugins, or remote records were changed.\n",
+        "stderr": ""
+      },
+      {
+        "case": "escaping alias",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: AGENTS.md must be a relative symlink to CLAUDE.md\n"
+      },
+      {
+        "case": "absolute alias",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: AGENTS.md must be a relative symlink to CLAUDE.md\n"
+      },
+      {
+        "case": "directory alias",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: AGENTS.md must be a relative symlink to CLAUDE.md\n"
+      },
+      {
+        "case": "copied instruction file",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: AGENTS.md must be a relative symlink to CLAUDE.md\n"
+      },
+      {
+        "case": "symlinked canonical target",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: AGENTS.md target must be a regular package file: CLAUDE.md\n"
+      },
+      {
+        "case": "undeclared symlink exception",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: refusing a symlinked package resource: <TRIAL>/undeclared symlink exception source with spaces/docs/../docs/../docs/../docs/../.claude/rules/package-maintenance.md\n"
+      },
+      {
+        "case": "symlinked hook ancestor",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: refusing a symlinked package resource: <TRIAL>/symlinked hook ancestor source with spaces/docs/../docs/../docs/../docs/../.claude/hooks/check-package.sh\n"
+      },
+      {
+        "case": "shared runtime files exported while private configuration is excluded",
+        "passed": true,
+        "exit_code": 0,
+        "stdout": "Created standalone package: <TRIAL>/private configuration export (101 files)\nExisting repositories are never overlaid. Review and merge adoption changes explicitly.\nShared project configuration is included. No existing/local/global settings, permissions, plugins, or remote records were changed.\n",
+        "stderr": ""
+      },
+      {
+        "case": "invalid settings JSON",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: invalid JSON configuration: .claude/settings.json: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n"
+      },
+      {
+        "case": "invalid MCP root type",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: configuration must be a JSON object: .mcp.json\n"
+      },
+      {
+        "case": "registered hook succeeds from unrelated cwd with spaces without package writes",
+        "passed": true,
+        "exit_code": 0,
+        "stdout": "PASS: 91 required assets; 244 local links resolve.\nPackage integrity only: approvals, service integrations, and model behavior are not verified here.\n",
+        "stderr": ""
+      },
+      {
+        "case": "hook propagates missing-asset failure without package writes",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "ERROR: broken local link: README.md -> .claude/rules/package-maintenance.md\nERROR: broken local link: CLAUDE.md -> .claude/rules/package-maintenance.md\nERROR: broken local link: docs/USAGE.md -> ../.claude/rules/package-maintenance.md\nERROR: broken local link: AGENTS.md -> .claude/rules/package-maintenance.md\nERROR: missing asset: .claude/rules/package-maintenance.md\n"
+      },
+      {
+        "case": "hook refuses missing project directory",
+        "passed": true,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "<TRIAL>/hook execution source with spaces/.claude/hooks/check-package.sh: line 3: CLAUDE_PROJECT_DIR: CLAUDE_PROJECT_DIR must be set\n"
+      }
+    ]
+  },
+  "native": {
+    "claude": {
+      "version": "2.1.273",
+      "prompt": "Configuration smoke check only, not an AIDLC lifecycle task. Read .mcp.json. Report its project server count, the exact package-integrity result supplied by the SessionStart hook, the canonical instruction alias, and one requirement from the package-maintenance guidance. Use only Read if needed. Do not edit, run commands, invoke skills, install anything, or infer security guarantees.",
+      "args": [
+        "claude",
+        "-p",
+        "Configuration smoke check only, not an AIDLC lifecycle task. Read .mcp.json. Report its project server count, the exact package-integrity result supplied by the SessionStart hook, the canonical instruction alias, and one requirement from the package-maintenance guidance. Use only Read if needed. Do not edit, run commands, invoke skills, install anything, or infer security guarantees.",
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--include-hook-events",
+        "--setting-sources",
+        "project,local",
+        "--strict-mcp-config",
+        "--mcp-config",
+        "<TRIAL>/standalone with spaces/.mcp.json",
+        "--settings",
+        "{\"autoMemoryEnabled\":false}",
+        "--tools",
+        "Read",
+        "--allowedTools",
+        "Read",
+        "--permission-mode",
+        "dontAsk",
+        "--permission-prompts",
+        "none",
+        "--no-session-persistence",
+        "--debug-file",
+        "<TRIAL>/claude-debug.log"
+      ],
+      "exit_code": 0,
+      "model": "claude-sonnet-5",
+      "mcp_servers": [],
+      "hook_events": [
+        {
+          "type": "system",
+          "subtype": "hook_started",
+          "hook_id": "8a0158a9-7a30-437e-80bd-ce268f42c73f",
+          "hook_name": "SessionStart:startup",
+          "hook_event": "SessionStart",
+          "uuid": "8d7a92d7-8c08-4bf9-953d-d6e4821b8f5a",
+          "session_id": "417a3db6-221f-4f73-86ae-cdd8d1946763"
+        },
+        {
+          "type": "system",
+          "subtype": "hook_response",
+          "hook_id": "8a0158a9-7a30-437e-80bd-ce268f42c73f",
+          "hook_name": "SessionStart:startup",
+          "hook_event": "SessionStart",
+          "output": "PASS: 91 required assets; 244 local links resolve.\nPackage integrity only: approvals, service integrations, and model behavior are not verified here.\n",
+          "stdout": "PASS: 91 required assets; 244 local links resolve.\nPackage integrity only: approvals, service integrations, and model behavior are not verified here.\n",
+          "stderr": "",
+          "exit_code": 0,
+          "outcome": "success",
+          "uuid": "600a9959-2be0-4dae-999a-13c317cb0ff4",
+          "session_id": "417a3db6-221f-4f73-86ae-cdd8d1946763"
+        }
+      ],
+      "tool_calls": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "<TRIAL>/standalone with spaces/.mcp.json"
+          }
+        },
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "<TRIAL>/standalone with spaces/.claude/rules/package-maintenance.md"
+          }
+        }
+      ],
+      "result": "Configuration smoke check results:\n\n- **`.mcp.json` project server count:** 0 (`{\"mcpServers\":{}}`)\n- **Package-integrity result (SessionStart hook):** `PASS: 91 required assets; 244 local links resolve.` (with the caveat: \"Package integrity only: approvals, service integrations, and model behavior are not verified here.\")\n- **Canonical instruction alias:** `AGENTS.md` is the exact relative symlink to `CLAUDE.md` (CLAUDE.md is the instruction entrypoint).\n- **One package-maintenance requirement:** Hooks must be registered in `.claude/settings.json`—files in `.claude/hooks/` do not autoload.",
+      "stdout_sha256": "a985a3fe25a0cdf24bb15ff58d83301d52bf19b8900fd02a944d966234f10526"
+    },
+    "codex": {
+      "version": "0.154.0",
+      "prompt": "Instruction-discovery smoke check only. Without opening files or using any tools, quote the repository instructions already supplied that describe the AGENTS.md alias, the startup/resume check, and ECC artifact ownership. If any instruction is absent say so. Do not infer or start a workflow.",
+      "args": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--sandbox",
+        "read-only",
+        "--skip-git-repo-check",
+        "-c",
+        "approval_policy=\"never\"",
+        "-c",
+        "mcp_servers={}",
+        "--json",
+        "Instruction-discovery smoke check only. Without opening files or using any tools, quote the repository instructions already supplied that describe the AGENTS.md alias, the startup/resume check, and ECC artifact ownership. If any instruction is absent say so. Do not infer or start a workflow."
+      ],
+      "exit_code": 0,
+      "tool_events": 0,
+      "messages": [
+        "- AGENTS.md alias: “`CLAUDE.md` is the instruction entrypoint; root `AGENTS.md` is its exact relative symlink, not separate host configuration. Preserve that sole package symlink exception; do not retarget it. No native Codex skill/hook parity is implied.”\n\n- Startup/resume check: “`.claude/settings.json` runs `.claude/hooks/check-package.sh` on startup/resume only: a read-only package check, not approval/lifecycle/security enforcement.”\n\n- ECC artifact ownership: “ECC skills supplement the current task; they do not replace AIDLC artifact ownership, existing project conventions or the user's selected scope.”"
+      ],
+      "stdout_sha256": "8b6a9f853322ca8f41d2169c9bf26eff78b75c03948411da32e93bcf8f9e5cb7"
+    }
+  },
+  "assertions": {
+    "claudeExitZero": true,
+    "claudeHookSucceeded": true,
+    "claudeNoMcp": true,
+    "claudeReadOnlyTools": true,
+    "codexExitZero": true,
+    "codexNoToolEvents": true,
+    "codexQuotedInstructions": true
+  },
+  "limits": [
+    "Native startup, not resume, was exercised.",
+    "Maintenance guidance was explicitly read by Claude; conditional rule triggering was not isolated.",
+    "Codex instruction discovery only: no native Codex skill, hook or workflow parity claim.",
+    "Native sessions were restricted smoke configurations, not normal-user or organization policy enforcement tests.",
+    "No MCP servers were enabled; inherited configuration may apply in other sessions.",
+    "The hook is non-blocking session-start diagnostics, not approval, lifecycle or security enforcement.",
+    "Tested on macOS. Hook needs sh/python3 and alias/export requires filesystem symlink support; Windows was not exercised.",
+    "Raw native streams and debug logs are disposable; retained data excludes private reasoning.",
+    "Stream hashes identify pre-redaction output bytes."
+  ],
+  "final_export": {
+    "required_assets": 91,
+    "local_links": 248,
+    "files": 102,
+    "root_check_exit": 0,
+    "export_exit": 0,
+    "exported_check_exit": 0,
+    "instruction_alias_preserved": true,
+    "local_settings_excluded": true,
+    "note": "Passive evidence finalized after export checks; no immutable release archive is claimed."
+  },
+  "cleanup": {
+    "owned_trial_tree_removed": true
+  }
+}

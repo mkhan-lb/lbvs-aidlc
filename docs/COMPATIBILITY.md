@@ -1,0 +1,67 @@
+# Playbook and product compatibility
+
+Checked against official documentation on 16 September 2026. This records documented capabilities, not a claim that an account or environment has them enabled. The article is preserved in [the source snapshot](sources/anthropic-playbook.md); source IDs and implementation state are in [coverage](COVERAGE.md).
+
+**Current scope:** the operational controls and services below are deferred reference research, not prerequisites for the [engineer workflow](WORKFLOW.md). See [review options](../.claude/skills/aidlc-review/references/review-options.md) for the current built-in/manual alternatives; future delivery will use CircleCI.
+
+## Locally implemented mechanisms
+
+- Project skills use `.claude/skills/<name>/SKILL.md`; custom commands are now part of the skill mechanism. The `aidlc` orchestrator and the stage/fix/onboard/learn skills are model-invocable and user-invocable, with `when_to_use` triggers; only `aidlc-handoff`, `aidlc-resume` and `aidlc-ideate` set `disable-model-invocation: true`. Stage advancement is a user answer to an AskUserQuestion gate, and the next stage is invoked through the Skill tool—prompt-level orchestration, **not unattended jobs**. [Skills reference](https://code.claude.com/docs/en/skills).
+- The [official directory guide](https://code.claude.com/docs/en/claude-directory) permits root `CLAUDE.md` and on-demand supporting files inside skill bundles; subagent definitions remain separate under `.claude/agents/`. These bundles are project-scoped and rely on shared repository docs/helper code, not standalone skill installation or plugin packaging. `docs/WORKFLOW.md` is prose, not executable dynamic orchestration in `.claude/workflows/*.js`; authored `changes/<id>/` records are neither native settings nor runtime memory.
+- Shared `.claude/settings.json` uses the official schema and registers three hooks: `SessionStart` → `check-package.sh` (read-only package check) and `project-mode.sh` (prints the `AIDLC project mode:` line as context), and `PreToolUse` with matcher `Edit|Write|MultiEdit|NotebookEdit` → `protect-tests.sh`, which denies edits to paths listed in `.aidlc/fix/*.json`. The deny is deterministic while the marker exists, but hook startup, timeout and malformed-output failures fall through to normal permission flow, so it is a guardrail for the fix loop, not a security boundary. Path-scoped `.claude/rules/*.md` supply guidance, not enforcement. [Hooks](https://code.claude.com/docs/en/hooks) and [rules](https://code.claude.com/docs/en/memory).
+- Project `.mcp.json` contains only `{"mcpServers":{}}`. `.claude/settings.local.json` was created as `{}` here, is ignored and is never exported. Neither empty file clears inherited user/managed settings, hooks or MCP connections. No project servers, tool grants, model/provider selection or telemetry are added. Project customizations remain subject to effective host policy.
+- Root `AGENTS.md` holds the canonical shared instructions; `CLAUDE.md` is `@AGENTS.md` plus a Claude-specific section, and `.omp/AGENTS.md` imports `@../AGENTS.md` for Oh My Pi. Claude resolves `@path` imports at launch; other hosts read `AGENTS.md` directly. No symlink is used, so checkout/export no longer depends on filesystem symlink support. Export copies settings, hooks, rules, `.worktreeinclude` and the empty MCP map; local settings, `.aidlc/` and credentials stay excluded. Export never mutates an existing repository or global settings; adoption is an explicit reviewed merge. The earlier native Codex instruction-discovery smoke ran against the symlinked layout; no native Codex skill/hook parity is claimed and no `.agents/skills` mirror is supplied. See [runtime-file usage](USAGE.md#project-runtime-files-and-shared-instructions).
+- `allowed-tools` is a temporary pre-approval grant, not a tool allowlist. The supplied skills do not use it to pretend to be read-only. [Skill permission controls](https://code.claude.com/docs/en/skills#pre-approve-tools-for-a-skill).
+- A custom subagent's `tools` list restricts its available tools, but giving it Bash still permits side effects within the session's permissions. The verifier's instruction not to edit is not a sandbox. [Subagent reference](https://code.claude.com/docs/en/sub-agents).
+- Native plan mode is read-only and its native plan storage is not automatically the reviewed `changes/<id>/plan.md` artifact. The supplied plan skill proposes content, then requires an authorised writable handoff to persist it. [Permission modes](https://code.claude.com/docs/en/permission-modes).
+- The optional ECC import adds 26 discoverable reference/pattern skills and 11 explicit-invocation operational skills. They inherit the current provider and normal permissions; imported frontmatter does not grant tools or install hooks. The small native setup above is authored for this project, not copied ECC runtime configuration. Pinned provenance and adaptations live in the [manifest](vendor/ecc/manifest.json). The [MCP catalog](../mcp-configs/ecc.mcp-servers.example.json) is inactive reference material, not a connection or compatibility claim. See [usage and boundaries](USAGE.md#12-use-the-optional-ecc-skill-library).
+- Worktrees: the EnterWorktree tool and `.worktreeinclude` are Claude Code features; where unavailable, `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>` is the documented fallback and the copied local files must be recreated by hand. `python3 scripts/aidlc.py mode` is plain Python and works in any host; only its SessionStart injection is Claude-specific.
+
+## Conflicts and qualifications requiring care
+
+| Source example or claim | Current documented qualification | Implementation treatment |
+| --- | --- | --- |
+| Auto mode / auto-accept terminology | `auto`, `acceptEdits`, `dontAsk` and `bypassPermissions` are distinct. Project/local `permissions.defaultMode: auto` is ignored; auto availability depends on provider, model and policy. | Do not install a misleading auto default or substitute bypass mode. User/managed selection and verified controls are prerequisites. |
+| Nonempty `RELEASE_APPROVAL` in the sample hook | A local environment flag does not authenticate a release manager or bind a decision to a revision. Hook `ask` addresses the controlling session user, not a named external authority. | Query the selected authoritative release approval in the eventual integration; no copied sample authoriser is installed. |
+| Hooks always enforce the gate | Some startup, timeout, exit-code and malformed-output failures continue normal permission flow. Async hooks cannot gate. Bash-only matchers omit edits and MCP calls. | Exercise failure and bypass scenarios; external permission/release boundaries must still hold when a hook fails. |
+| Domain list blocks all egress | `sandbox.network.allowedDomains` alone pre-allows hosts; it is not a complete locked allowlist. Managed `allowManagedDomainsOnly` is a separate control. Shell sandbox controls do not cover every tool/process. | No blanket egress guarantee from the example JSON. Verify the actual network boundary. |
+| No unsandboxed commands | `allowUnsandboxedCommands: false` removes the retry escape hatch, but `excludedCommands` remains an exception and can be widened locally; current docs state no managed-only lockdown for that array. | Do not promise an unbypassable endpoint sandbox. An administrator must establish the required execution boundary. |
+| Marketplace/sideload settings guarantee every customization is approved | They do not alone disable normal home/project skills and agents. `strictPluginOnlyCustomization` is separate and can prevent this repo-local package from loading. | Choose a supported managed/approved distribution deliberately; repository assets are not automatically centrally enforced. |
+| `allowManagedMcpServersOnly: true` means an MCP allowlist exists | It selects the managed allowlist; it does not populate `allowedMcpServers`. | Name and deploy the actual approved servers before claiming a restricted tool surface. |
+| `Bash(git *)` is a safe inner loop | This permits matching mutating Git operations too. Text matching is not a universal program identity or network boundary. | Scope actual allowed operations; do not copy broad grants as harmless defaults. |
+| All hook decisions provide the needed audit automatically | OpenTelemetry must be enabled and collected; built-in events are not a signed named-approver or per-policy wait ledger. | Define explicit event/identity collection for the source's measures. |
+| Sample minimum client version guarantees current hook behaviour | Current docs describe hook/auto fixes after the example's 2.1.193 floor. | Verify installed semantics; a version floor is not evidence that all controls work. |
+
+All setting names in the article's managed JSON are documented currently; the issue is their scope and guarantees, not invented syntax. The article itself calls the JSON a starting point to tailor, not a configuration to copy.
+
+Primary references: [settings](https://code.claude.com/docs/en/settings-reference), [permission modes](https://code.claude.com/docs/en/permission-modes), [hook decisions and exit codes](https://code.claude.com/docs/en/hooks), [sandbox limits](https://code.claude.com/docs/en/sandboxing#keep-developers-from-widening-the-policy), [managed settings](https://code.claude.com/docs/en/managed-settings), [server-managed delivery](https://code.claude.com/docs/en/server-managed-settings), [telemetry](https://code.claude.com/docs/en/monitoring-usage).
+
+## Service-specific prerequisites
+
+### Deferred hosted PR review and the source's GitHub Actions example
+
+The official `anthropics/claude-code-action@v1` supports the source's integration route; current inputs and security guidance must be followed. It needs a selected remote, runner, model credentials/federation and authorised GitHub identity. A workflow file cannot install branch protection or nominate real code owners.
+
+Do not use `pull_request_target` plus untrusted checkout to expose secrets to fork PRs. Restoring trusted Claude configuration does not make PR-controlled build scripts safe. The managed Code Review product is separate: its check is neutral, and `@claude review` requests another review rather than fixing comments. Fixes can use an ordinary engineer-directed build pass; a GitHub action is an optional integration, not a prerequisite. No remote integration is configured here.
+
+Sources: [GitHub Actions](https://code.claude.com/docs/en/github-actions), [official action contract](https://raw.githubusercontent.com/anthropics/claude-code-action/main/action.yml), [action security](https://raw.githubusercontent.com/anthropics/claude-code-action/main/docs/security.md), [managed Code Review](https://code.claude.com/docs/en/code-review).
+
+### Hosted Claude Security
+
+The article's recurring-scan play is the hosted service, not a local security-review prompt/plugin. Current official setup still requires Enterprise, web access, Extra Usage/funding, premium scan seats, an installed repository app and administrator enablement. Current product pages say Mythos 5.1 rather than the article's Mythos 5. The setup tutorial supports connected GitHub Enterprise Server as well as github.com and points to `/admin-settings/claude-security`, differing from the article's older setup path.
+
+No public API payload/signature contract is established by these pages. Do not invent a hosted scan client or claim a local plugin implements this integration. Entitlement, UI setup and actual scan evidence remain outstanding.
+
+Sources: [product](https://claude.com/product/claude-security), [official setup](https://academy.claude.com/tutorials/getting-started-with-claude-security), [distinct local plugin](https://code.claude.com/docs/en/claude-security).
+
+### Claude Tag
+
+Current setup requires first-party Team/Enterprise access, Routines, funding, compatible retention/encryption policy, Claude Owner and Slack administration. Teams is described as coming soon, not an available reference surface. Repository and operational investigation need explicit app grants/service credentials; the tagging user's personal connectors are not automatically channel access.
+
+Channel credentials are scoped by the administrator and available to people in that covered channel. Sandbox-local files are ephemeral, so the source's committed lessons need real durable publication. No workspace or service credentials have been configured by this package.
+
+Sources: [Tag overview](https://claude.com/docs/claude-tag/overview), [setup](https://claude.com/docs/claude-tag/admins/setup-overview), [security and data](https://claude.com/docs/claude-tag/concepts/security-and-data).
+
+## Decision
+
+Preserve the playbook's control objectives and record differences rather than copying overclaimed guarantees. Local assets remain usable without asserting that external controls exist. The unresolved access and environment choices in [prerequisites](PREREQUISITES.md) block integrated verification, not the source map or local draft workflows.

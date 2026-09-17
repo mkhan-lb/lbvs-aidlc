@@ -1,0 +1,306 @@
+{
+  "upstream_commit": "8321021c54d670126ce3b2969d5deb880b4b0c2a",
+  "imported_skills": 37,
+  "reference_skills": 26,
+  "manual_skills": 11,
+  "imported_bundle_files": 48,
+  "mcp_catalog_entries": 34,
+  "source_files_verified": 47,
+  "supplementary_license_verified": true,
+  "package_cases": [
+    {
+      "case": "all-48-imported-resources-match-baseline",
+      "exit_code": 0
+    },
+    {
+      "case": "existing-destination-preserved",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: package destination already exists: <trial>/standalone export\n"
+    },
+    {
+      "case": "missing-declared-resource",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: missing package resource: .claude/skills/postgres-patterns/SUPABASE-LICENSE\n"
+    },
+    {
+      "case": "declared-file-as-directory",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: required package asset is not a file: .claude/skills/postgres-patterns/SUPABASE-LICENSE\n"
+    },
+    {
+      "case": "symlinked-declared-resource",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: refusing a symlinked package resource: <trial>/symlinked-declared-resource/.claude/skills/postgres-patterns/SUPABASE-LICENSE\n"
+    },
+    {
+      "case": "manifest-path-escape",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: invalid ECC resource path: '../../outside.txt'\n"
+    },
+    {
+      "case": "unlinked-declared-resource",
+      "exit_code": 0,
+      "stdout": "Created standalone package: <trial>/unlinked-declared-resource-export (96 files)\nExisting repositories are never overlaid. Review and merge adoption changes explicitly.\nNo Git repository, plugin installation, settings, permissions, or remote records were changed.\n",
+      "stderr": ""
+    },
+    {
+      "case": "undeclared-runtime-files-excluded",
+      "exit_code": 0,
+      "stdout": "Created standalone package: <trial>/undeclared-runtime-files-excluded-export (95 files)\nExisting repositories are never overlaid. Review and merge adoption changes explicitly.\nNo Git repository, plugin installation, settings, permissions, or remote records were changed.\n",
+      "stderr": ""
+    },
+    {
+      "case": "fenced-example-links-not-dependencies",
+      "exit_code": 0,
+      "stdout": "Created standalone package: <trial>/fenced-example-links-not-dependencies-export (95 files)\nExisting repositories are never overlaid. Review and merge adoption changes explicitly.\nNo Git repository, plugin installation, settings, permissions, or remote records were changed.\n",
+      "stderr": ""
+    },
+    {
+      "case": "real-missing-link-rejected",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: missing package resource: .claude/skills/api-design/missing-reference.md\n"
+    },
+    {
+      "case": "manual-invocation-contract-checked",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: skill invocation mode differs from inventory: canary-watch\n"
+    },
+    {
+      "case": "exported-helper-loads-original-template",
+      "exit_code": 0,
+      "stdout": "Created draft: <trial>/draft-target/changes/imported-library-smoke/intent.md\nRefine the intent with the engineer, then use aidlc-design for the spec.\nNo approval, commit, push, or deployment was performed.\n",
+      "stderr": ""
+    }
+  ],
+  "native_cases": [
+    {
+      "name": "native-api-design",
+      "prompt": "Use the project api-design skill: load it through the Skill tool, then critique this fictional API in at most 180 words. GET /api/getOrders accepts tenant_id directly from a query string, returns HTTP 200 with {error:\"not authorized\"} on failed authorization, and returns every historical order with no pagination. We want tenant isolation and a stable REST contract. Do not edit files, execute commands, access credentials, fetch web content or call remote systems. Read only relevant project skill/reference files if needed. Report design findings only; do not claim runtime checks.",
+      "exit_code": 0,
+      "version": "2.1.273",
+      "model": "claude-sonnet-5",
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "mcp_servers": [],
+      "project_commands": [
+        "aidlc-build",
+        "aidlc-design",
+        "aidlc-handoff",
+        "aidlc-ideate",
+        "aidlc-intent",
+        "aidlc-learn",
+        "aidlc-plan",
+        "aidlc-resume",
+        "aidlc-review",
+        "aidlc-verify",
+        "api-design",
+        "backend-patterns",
+        "canary-watch",
+        "codebase-onboarding",
+        "coding-standards",
+        "contract-first",
+        "design-system",
+        "django-celery",
+        "django-security",
+        "documentation-lookup",
+        "dotnet-patterns",
+        "e2e-testing",
+        "error-handling",
+        "eval-harness",
+        "fastapi-patterns",
+        "frontend-design-direction",
+        "frontend-patterns",
+        "gan-style-harness",
+        "git-workflow",
+        "github-ops",
+        "golang-patterns",
+        "golang-testing",
+        "growth-log",
+        "inherit-legacy-style",
+        "jira-integration",
+        "kubernetes-patterns",
+        "mcp-server-patterns",
+        "parallel-execution-optimizer",
+        "postgres-patterns",
+        "production-audit",
+        "python-patterns",
+        "python-testing",
+        "react-patterns",
+        "react-performance",
+        "react-testing",
+        "security-review",
+        "terminal-ops"
+      ],
+      "calls": [
+        {
+          "name": "Skill",
+          "input": {
+            "skill": "api-design"
+          }
+        }
+      ],
+      "skill_loads": [
+        {
+          "base": "Base directory for this skill: <trial>/native-api-design/.claude/skills/api-design",
+          "original_context_sha256": "22c6c04ce5830abcda151065b328a12b21708befe082fabf6ac50ffc4407817f"
+        }
+      ],
+      "direct_slash_invocation": false,
+      "result": "## Findings\n\n**Naming/verbs:** `GET /api/getOrders` should be `GET /api/v1/orders` — no verb in URL, plural noun, and add version path for a stable contract.\n\n**Tenant isolation (critical):** `tenant_id` from a client-supplied query string lets any caller pass another tenant's ID (IDOR/BOLA). Tenant must be derived server-side from authenticated identity/token claims, never trusted from client input. If a tenant selector is genuinely needed (e.g., admin cross-tenant access), it must be re-validated against the caller's actual permissions server-side.\n\n**Status codes:** Returning `200 OK` with `{error:\"not authorized\"}` breaks the HTTP contract — clients can't rely on status codes and may treat the payload as success. Use `401` for missing/invalid auth, `403` for authenticated-but-forbidden, with the standard `{\"error\":{\"code\",\"message\"}}` shape.\n\n**Pagination:** Returning the full historical order set with no pagination is unbounded and will degrade under scale; add cursor-based pagination (`cursor`/`limit`) with `meta.has_next`/`next_cursor`, or offset pagination if admin-only.\n\n**Contract stability:** No versioning present — add `/v1/` now before any breaking changes are needed.\n\n**Summary:** Fix tenant derivation from auth context, correct status codes, add pagination, and adopt REST-conventional naming/versioning.",
+      "result_type": "success",
+      "turns": 3,
+      "permission_denials": [],
+      "unchanged_imported_files": 48,
+      "original_stream_sha256": "d7c706905db19b84af422cc0dffb64a7c3f1cf81e785caca46149dc43fb670f1"
+    },
+    {
+      "name": "native-canary-watch",
+      "prompt": "/canary-watch\nRead-only preflight only. No deployed URL, credentials, baseline or approved monitoring window is supplied. State the missing prerequisites and which checks are not measured; do not select a target, make network requests, start a watcher/scheduler, save logs, notify anyone, or change files/settings. Use the imported project skill, not a guessed CLI. Keep the response under 180 words.",
+      "exit_code": 0,
+      "version": "2.1.273",
+      "model": "claude-sonnet-5",
+      "tools": [
+        "Glob",
+        "Grep",
+        "Read",
+        "Skill"
+      ],
+      "mcp_servers": [],
+      "project_commands": [
+        "aidlc-build",
+        "aidlc-design",
+        "aidlc-handoff",
+        "aidlc-ideate",
+        "aidlc-intent",
+        "aidlc-learn",
+        "aidlc-plan",
+        "aidlc-resume",
+        "aidlc-review",
+        "aidlc-verify",
+        "api-design",
+        "backend-patterns",
+        "canary-watch",
+        "codebase-onboarding",
+        "coding-standards",
+        "contract-first",
+        "design-system",
+        "django-celery",
+        "django-security",
+        "documentation-lookup",
+        "dotnet-patterns",
+        "e2e-testing",
+        "error-handling",
+        "eval-harness",
+        "fastapi-patterns",
+        "frontend-design-direction",
+        "frontend-patterns",
+        "gan-style-harness",
+        "git-workflow",
+        "github-ops",
+        "golang-patterns",
+        "golang-testing",
+        "growth-log",
+        "inherit-legacy-style",
+        "jira-integration",
+        "kubernetes-patterns",
+        "mcp-server-patterns",
+        "parallel-execution-optimizer",
+        "postgres-patterns",
+        "production-audit",
+        "python-patterns",
+        "python-testing",
+        "react-patterns",
+        "react-performance",
+        "react-testing",
+        "security-review",
+        "terminal-ops"
+      ],
+      "calls": [],
+      "skill_loads": [],
+      "direct_slash_invocation": true,
+      "result": "## Canary Watch — Preflight Only\n\nNo check can run. Missing prerequisites:\n\n- **Deployed URL** — no target/staging/production endpoint selected\n- **Credentials** — none supplied for any protected endpoint/API\n- **Baseline** — no prior metrics (LCP/CLS/console/API latency) to diff against\n- **Approved monitoring window** — no interval/duration/stop condition authorized for a sustained watch\n\nPer this skill, a quick check requires a selected URL and a sustained watch additionally requires an interval, duration, request limit, and a supervised runtime to enforce them — none present.\n\n**Not measured:** HTTP status, console errors, network failures, performance (LCP/CLS/INP), content presence, API health, static asset checks, SSE stream connectivity. No status is inferred as healthy for any of these.\n\nNo network requests, target selection, watcher/scheduler, log writes, notifications, or file/setting changes were made.\n\n**To proceed:** provide the URL(s) to check, any required credentials, a baseline (or accept \"first run, no baseline\"), and — for sustained monitoring — interval/duration/stop condition.",
+      "result_type": "success",
+      "turns": 1,
+      "permission_denials": [],
+      "unchanged_imported_files": 48,
+      "original_stream_sha256": "0583c7f7c857e7ce04a027385e031c57a004048e9c6ca00129a5c44d4a7ca306"
+    }
+  ],
+  "example_corrections": {
+    "go_pool": {
+      "before": {
+        "exit_code": 1,
+        "stdout": "saved result after reuse: other\n"
+      },
+      "after": {
+        "exit_code": 0,
+        "stdout": "saved result after reuse: first\n"
+      },
+      "method": "Actual go run of the imported pooled-buffer example plus a reuse harness; isolated GOCACHE."
+    },
+    "django_csrf": {
+      "before_token": null,
+      "after": [
+        {
+          "url": "/api/endpoint/",
+          "token": "masked-rendered-token",
+          "mode": "same-origin"
+        }
+      ],
+      "method": "JavaScript VM with document/fetch stubs; not a Django application or browser-security test."
+    }
+  },
+  "limits": [
+    "Two native read-only prompt scenarios, not execution of all 37 workflows or certification of all framework examples.",
+    "Strict empty MCP configuration, project-only settings, Skill/Read/Glob/Grep tools, hooks/auto-memory disabled, dontAsk permissions, no session persistence requested; no bypass flags or provider/model selection overrides.",
+    "The direct canary slash invocation emitted no separate Skill event; its observed response and zero tool calls are retained.",
+    "Native CLI may make internal model/network requests; tool traces do not instrument every host filesystem operation.",
+    "No MCP server, production target, Jira/GitHub write, scheduler, autonomous GAN runner, evaluator service, deployment or persistent integration was activated.",
+    "Supplementary Supabase license pin is not asserted to be ECC original derivation revision; Vercel MIT declaration/attribution retained without inventing a missing standalone notice.",
+    "Imported hashes record baseline content, not authenticity or complete security review."
+  ],
+  "initial_export": {
+    "files": 95,
+    "root_check": "PASS: 86 required assets; 225 local links resolve.",
+    "export_check": "PASS: 86 required assets; 225 local links resolve."
+  },
+  "final_export": {
+    "files": 96,
+    "root_check": "PASS: 86 required assets; 230 local links resolve.",
+    "export_check": "PASS: 86 required assets; 230 local links resolve.",
+    "all_commands_exited": 0
+  },
+  "active_configuration_check": {
+    "project_mcp_json": false,
+    "project_settings": false,
+    "active_hooks": false,
+    "active_rules": false,
+    "agents_skill_mirror": false
+  },
+  "cleanup": {
+    "owned_trial_tree_removed": true,
+    "absence_confirmed_by": "stat ENOENT",
+    "native_processes_exited": true,
+    "matching_native_project_or_task_directories_found": 0,
+    "removed_contents": [
+      "temporary ECC checkout",
+      "standalone exports",
+      "native fixture workspaces and raw streams",
+      "disposable package smoke and scenarios",
+      "pooled-buffer programs and isolated Go cache",
+      "agent import reports"
+    ],
+    "limits": "Only owned artifacts removed. No claim that every host cache or filesystem operation was instrumented. Passive evidence finalised after export; no immutable release archive retained."
+  }
+}

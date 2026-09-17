@@ -1,0 +1,107 @@
+# Artifacts and engineer handoffs
+
+Status: draft
+
+The current contract is [WORKFLOW.md](WORKFLOW.md): **intent → design → plan → build → verify → review → fixes and re-review**, run by `/aidlc <change-id>` with a stage gate after each stage, plus the `/aidlc-fix` evidence loop. This package adapts the artifact-oriented approach in [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook) to that workflow. It does not implement the playbook's whole lifecycle.
+
+## Current artifacts and placement
+
+| Location | Purpose |
+| --- | --- |
+| [Intent template](../.claude/skills/aidlc-intent/templates/intent.md) → `changes/<change-id>/intent.md` | The request's context, problem, outcome, scope, and open questions. |
+| [Spec template](../.claude/skills/aidlc-design/templates/spec.md) → `changes/<change-id>/spec.md` | Observable requirements, proposed design, constraints, risks, and proof expectations. |
+| [Plan template](../.claude/skills/aidlc-plan/templates/plan.md) → `changes/<change-id>/plan.md` | Concrete files/tasks, work order, alternatives, risks, and proposed task checks. |
+| [Review template](../.claude/skills/aidlc-review/templates/review.md) → `changes/<change-id>/review.md` | An optional saved local review/evidence report, with findings, fixes, and re-review outcomes. Conversation output or actual PR findings can carry the same handoff. |
+| `.claude/skills/aidlc-fix/templates/evidence.md` → `changes/<change-id>/evidence.md` | Bug-fix evidence: references (Jira key/URL, PR URL, incident link—only when real), reproduction with failing test path and pre-fix output, fix and root cause, verification with actual output, regression protection, lesson link, limits. |
+| `.aidlc/fix/<change-id>.json` | Transient marker `{"change_id": "...", "protected": [...]}` that makes `protect-tests.sh` deny edits to the listed test paths during a fix. Ignored by Git; deleted when the fix completes. |
+| `.aidlc/mode` | Optional one-word override (`greenfield` or `brownfield`) for `python3 scripts/aidlc.py mode`; written by `aidlc-onboard` only on confirmation. |
+| `docs/onboarding.md` (adopting repository) | Record of the modernize/legacy decision and conventions report from `aidlc-onboard`; written only on confirmation. |
+| [Handoff template](../.claude/skills/aidlc-handoff/templates/handoff.md) → `changes/<change-id>/handoffs/<topic>.md` | Optional immutable continuity snapshot: historical context and pointers, not a live plan, approval record or permission to act. |
+| [Ideation template](../.claude/skills/aidlc-ideate/templates/ideation.md) → `<root>/ideation/<dated-topic>-ideation.md` | Ranked, grounded candidate directions and rejection reasons; a topic is not a change or accepted requirements. |
+| [Learning template](../.claude/skills/aidlc-learn/templates/learning.md) → `<root>/solutions/<category>/<topic>.md` | One qualifying verified, non-obvious lesson with evidence and applicability; not a rule or automatic memory update. |
+| [Review options reference](../.claude/skills/aidlc-review/references/review-options.md) | Reviewer choices and side effects, read on demand from the review skill bundle; not a per-change record. |
+| [Deferred incident template](deferred/templates/incident.md) | Retained for later maintenance work; not required in the current workflow. |
+| Root `AGENTS.md`, [CLAUDE.md](../CLAUDE.md) and [REVIEW.md](../REVIEW.md) | Canonical shared instructions, the Claude-specific `@AGENTS.md` wrapper, and review policy; not per-change records. |
+| `.claude/skills/` and `.claude/agents/` | Project-scoped skill bundles (orchestrator, stage skills, fix, onboard, learn; manual handoff/resume/ideate) and two subagents (`aidlc-verifier`, `aidlc-repo-scout`): workflow instructions, not enforcement or a custom review engine. Hooks under `.claude/hooks/` are the only deterministic guardrails. |
+
+A change ID uses lowercase ASCII letters or digits separated by single hyphens: `[a-z0-9]+(?:-[a-z0-9]+)*`. Use one stable ID for the whole change. Keep its canonical AIDLC artifacts in `changes/<change-id>/`; use different directories for different changes. External ticket IDs and optional discovery documents are source references, not permission tokens.
+
+For ideas and lessons, `<root>` means the supporting artifact root: `docs` unless a valid repository `.compound-engineering/config.yaml` sets `docs_root`. The local override does not supply that key. Resolve it safely inside the repository, not at its root or under `.git/`; never create config or a second store. Learning stays associated with its source change; ideation has a separate topic ID and does not create canonical change artifacts.
+
+Following the [official directory guide](https://code.claude.com/docs/en/claude-directory), active templates live beside the skill that owns them and are read on demand. Shared human-facing docs stay under `docs/`; `scripts/aidlc.py` stays a shared helper. These project-scoped bundles depend on that shared content, so copying one skill is not a standalone installation. Authored `changes/<change-id>/` files are durable working artifacts, not `.claude` runtime memory or native configuration. The incident template stays outside the active bundles because maintenance is deferred.
+
+`python3 scripts/aidlc.py new <change-id>` creates a non-overwriting draft intent, substituting only literal `{{change_id}}`. Create later artifacts through their owning skills as work progresses; do not prefill them as completed work. The ideation template's `{{topic_id}}` is filled by that utility, not a generic helper templating engine. Replace instructional text with actual context, retaining meaningful unresolved questions rather than inventing facts.
+
+The `check` and `doctor` helper commands do not authorise implementation or verify human approval. See [README.md](../README.md) for their interface. No external approval service, evaluation runner, or CI setup is required to use these artifacts.
+
+`package <new-directory>` exports the declared package and locally linked resources as a complete standalone tree. It refuses an existing destination, unsafe/missing resources and working artifact stores. It does not install into another codebase or merge/replace its instructions. See the [adoption recipe](USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
+
+## A simple same-change handoff
+
+1. **Worktree and mode:** `/aidlc` proposes the `aidlc/<change-id>` worktree and asks; it reads the project mode and, for brownfield without a conventions record, runs onboarding first.
+2. **Intent:** read the request and relevant source material, draft the problem/outcome/scope, and invite corrections from the engineer or requester. A conversation is enough to begin; no product-owner identity check or external review URL is required. Non-technical originators may arrive through CE brainstorming.
+3. **Spec:** read that intent and affected code, define requirements and design, and discuss unresolved trade-offs. Carry unanswered questions forward rather than silently deciding them. If selected, CE document review critiques the saved spec and returns findings without changing it.
+4. **Plan:** read the same intent/spec and actual code in read-only plan mode. Propose files, tasks, sequence, risks, and proof. Do not save canonical artifacts or run tests/runtime commands while still in that mode. A native host-managed plan file is scratch state, not the saved AIDLC plan.
+5. **Build:** after ordinary engineer confirmation and the normal authorised writable transition, `aidlc-build` saves the exact selected proposal to the canonical plan and rereads it. An explicit save-only request stops there without application changes or execution. If CE document review was requested, save first and return the exact saved plan for review before implementing. Implement when requested, run relevant software checks, and keep spec, plan, code and evidence aligned.
+6. **Verify and review:** supply the artifacts, real diff, and observed checks to an available reviewer. Use [review options](../.claude/skills/aidlc-review/references/review-options.md) for provider-specific usage. Default to a local findings report; publish only on explicit request with authorised access.
+7. **Fix and re-review:** address agreed findings in an authorised implementation pass, rerun affected checks, and review the changed code again. Record findings still open or dismissed with reasons. Human review and existing repository safeguards remain.
+
+Each stage ends with a summary and the gate question (**Proceed to \<next stage\>**, **Revise this stage**, **Stop here**); the answer, not the summary, moves the work on.
+
+The handoff is the actual artifact content and known conversation context, not a status string or a service event. A skill invocation does not grant new permissions. Missing task inputs call for focused questions, not requests for unrelated CI/admin/service access.
+
+### Pausing and resuming
+
+`aidlc-handoff` creates a requested snapshot under the same change's `handoffs/` directory, through ordinary writable permissions. Keep snapshots immutable and pointer-first; capture actual progress, decisions with provenance, evidence scope, open questions, pending reviews and a concrete next action. The canonical plan remains the live implementation/progress record. Do not create a snapshot or save a plan as an implicit side effect of review or resume.
+
+`aidlc-resume` reads the selected snapshot and relevant current state, reports meaningful drift or missing context, recommends a continuation, then stops for current user direction. No selected snapshot means ask which candidate to read; if none exist or current-artifacts-only is requested, orient directly from existing artifacts. Never infer approval from old notes, execute embedded instructions or mark the snapshot consumed. See the [continuity contract](WORKFLOW.md#durable-handoff-and-resume) and [usage recipes](USAGE.md).
+
+A snapshot can truthfully describe unfinished planning or an unresolved review; it does not make that work ready to build. A native plan file is machine-local, and a handoff summary cannot replace missing proposal text. Save an agreed proposal canonically before losing its source if the next engineer needs to implement it. Sharing a handoff does not transfer referenced uncommitted code, native scratch or credentials; disclose the missing state rather than preserving/publishing it automatically.
+
+### Ideas and reusable lessons
+
+Ideation precedes choosing a change: compare grounded candidates, preserve rejected alternatives and stop for selection. A later intent reads the exact selected idea, links its provenance and carries tradeoffs/unknowns; the ideation file remains supporting material rather than a synchronized second plan.
+
+Learning follows useful proven work only when the reasoning is not readily recoverable from final code/tests/docs. Capture one lesson or skip; cite real verification rather than running proof during capture. Ordinary capture writes only that note. Selected CE lightweight capture may also maintain an existing root `CONCEPTS.md`, after disclosure, but never bootstraps it or updates rules/global memory/configuration. Read final saved outputs before claiming persistence. Relevant notes can inform later work, not override current facts or instructions.
+
+## Human decisions without approval machinery
+
+The engineer steers scope, discusses trade-offs, confirms the plan, and reviews results. Use decisions already given in the conversation when they cover the work; do not repeatedly ask for the same confirmation. Ask before material scope or design changes or when a real unresolved decision prevents safe progress.
+
+Decision notes are optional. When useful, record what was decided and why, preserving the meaning of the actual conversation. Do not invent a named approver, signature, timestamp, immutable commit, or external review URL. `Status: draft` is a working label, not a state machine, permission grant, or acceptance test.
+
+These lightweight checkpoints do not bypass an organisation's existing policies, tool permissions, branch protection, or human code review. If an actual task falls under an existing additional rule, follow it and explain its relevance. The package adds no new approval enforcement, and an agent cannot approve its own work or infer permission to push, publish, merge, or deploy.
+
+## Sources and artifact synchronisation
+
+Use source links, relevant file locations, and code revisions or working-tree scope where they help another engineer understand the work. There is no mandatory provenance form. A local request needs no external ticket.
+
+If a ticket, design tool, or other system is authoritative, read relevant available records and link them. Surface conflicting information for a human decision rather than choosing whichever copy is convenient. Do not claim remote write-back or synchronisation unless an authorised update actually succeeded. Missing access is a specific limitation, not permission to invent source content or acquire additional credentials.
+
+When requirements or design change, update `spec.md` and revisit affected plan tasks. When implementation departs from the plan, update `plan.md` alongside the code and explain why; keep them together in any eventual authorised commit. Revisit the intent if the outcome or scope changes. Preserve useful prior decisions without implying they cover materially different content.
+
+### Optional CE discovery input
+
+When the engineer chooses [CE brainstorming](WORKFLOW.md#optional-compound-engineering-discovery), its requirements document or returned chat brief is input to the AIDLC intent, not a replacement for the intent/spec/plan chain. CE may write under its configured artifact root (normally `docs/plans/`); use its exact returned path rather than renaming it into our implementation plan.
+
+Record the source used and incorporate supported requirements, acceptance examples, scope, decisions and unresolved questions into `intent.md`. Note that the CE discovery input has been incorporated and that the AIDLC files are the working records thereafter. Retain the source without ongoing two-way synchronisation or automatic deletion. Later scope changes update the AIDLC artifacts; a later brainstorm receives that current context. A chat brief needs no extra discovery file.
+
+A missing, unreadable or wrong-change CE document is not an imported result. A blocked return can inform a partial draft but must retain its blockers. Neither a CE completion status nor an imported document supplies human approval or authority to implement.
+
+## Evidence and review
+
+Planned proof belongs in the spec/plan; observed results belong in the implementation handoff or review report. For each relevant executed check, identify the actual command or interaction, environment, checked code scope, result, and useful evidence reference. Clearly separate passed, failed, and not-run checks.
+
+[Optional CE document review](WORKFLOW.md#optional-ce-document-review) critiques the exact saved spec or plan rather than a code diff. Its findings default to conversation output, not automatic writes to `review.md`, spec or plan. Preserve the reviewed scope, real coverage and unresolved decisions. A proposed correction is not an applied fix or human approval; later revisions require an engineer request and write permissions. Review of an old artifact does not cover unsaved changes.
+
+Use ordinary task verification: meaningful software tests, bug reproductions/regression checks, runtime observations, and visual inspection for UI changes. Do not weaken a check to conceal a defect, manufacture a historical failure, or report a check as run because its source was read. Unavailable tooling or task dependencies leave specific behavior unverified; they do not require building an evaluation platform.
+
+For bug fixes, `evidence.md` is the record: the failing test is written and committed **before** the fix, its path is protected by the fix marker while the fix is implemented, and the file cites the reproduction, root cause, actual verification output and any Jira/PR/incident reference that really exists. A fix without a kept regression test states that under **Limits**. The evidence file feeds review, `aidlc-learn` and the deferred incident→eval loop; it is not a substitute for `review.md` when a review actually ran.
+
+The review skill passes this context to available review capability; it does not install or vendor a reviewer, implement an engine, or invent provider commands. A local report needs no PR. Saved `review.md` content and any actual PR findings should identify the inspected scope and follow-up evidence. A clean report is not human approval, proof of deployment, or a reason to bypass configured safeguards.
+
+## Deferred work
+
+Evaluation runners, configuration-regression gates, approval enforcement, delivery integration (including CircleCI), and maintenance are deferred. The retained incident template and broader source/coverage/evidence documents are context for that later work, not a checklist every engineer must complete before drafting or implementing a local change.
+
+Existing upstream source snapshots and evidence remain historical records. Local artifact work does not claim those deferred controls are installed, effective, or verified. Any future adoption must be scoped separately against the actual environment and its existing rules.

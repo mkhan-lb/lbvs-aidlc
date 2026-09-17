@@ -1,0 +1,4 @@
+# Gitignored files copied into worktrees created for aidlc/<change-id> work
+.env
+.env.*
+.claude/settings.local.json

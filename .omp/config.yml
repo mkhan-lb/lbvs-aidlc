@@ -1,0 +1,5 @@
+# Project settings for Oh My Pi (omp). Shared instructions come from .omp/AGENTS.md, which imports
+# ../AGENTS.md; sticky rules from .omp/RULES.md. Claude-format skills, agents and hooks under .claude/
+# are discovered by the `claude` provider by default, so do not list `claude` in disabledProviders.
+skills:
+  enableSkillCommands: true

@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+**/.claude/settings.local.json
+**/.claude/worktrees/
+**/.claude/agent-memory-local/
+**/.aidlc/fix/
+CLAUDE.local.md
+.env
+.env.*
+!.env.example
