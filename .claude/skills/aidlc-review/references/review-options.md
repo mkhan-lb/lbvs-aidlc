@@ -71,11 +71,11 @@ Official sources: [local review](https://code.claude.com/docs/en/code-review#rev
 Documented local forms include:
 
 ```text
-/code-review medium main...my-feature
-/code-review medium
+/code-review high main...my-feature
+/code-review high
 ```
 
-The first is an **example ref range**, not an instruction to assume those branches. Replace it with the observed base/head refs or SHAs whose comparison matches the packet. Specify `medium` explicitly for reproducibility instead of inheriting a remembered effort. Other documented local efforts are `low`, `high`, `xhigh`, and `max`; selection may change coverage/confidence, not authorisation.
+The first is an **example ref range**, not an instruction to assume those branches. Replace it with the observed base/head refs or SHAs whose comparison matches the packet. State the effort explicitly for reproducibility: the tiers in `aidlc-review` map **standard** → `high` (first pass), **escalated** → `xhigh` (re-review after a fix pass), **maximum** → `max`, and **cloud** → `ultra` (multi-agent cloud review; costs more and needs the cloud feature). `low` and `medium` remain documented but are not used by the loop. Effort changes coverage/confidence, not authorisation.
 
 The second reviews commits ahead of upstream **plus** uncommitted changes. It is not a working-tree-only switch. Before handing it off, state whether upstream commits are present and whether that combined scope is intended. If they are outside the selected scope, do not quietly widen it: use a documented target matching the scope, select the OMP uncommitted menu when explicitly chosen, or report that exact targeting remains unresolved. File paths, branch names and ref ranges are documented targets, but a path target is not proof of complete multi-file or untracked coverage.
 
@@ -85,7 +85,7 @@ The local reviewer follows `CLAUDE.md` but **does not read `REVIEW.md` automatic
 
 Invoke the catalogued Skill only if it is actually callable and the required context/boundaries can be passed; otherwise the engineer types the documented command in their existing Claude session. Never substitute a fabricated Skill call or launch a hidden `claude -p` process. A launch acknowledgement is not a returned review. The docs say reviews normally return asynchronously in the conversation; `-p` and certain other foreground cases wait for the result, but AIDLC does not start a new session to force that behavior.
 
-Omit `--fix` (edits), `--comment` (posts), `--post`, and `ultra` (cloud review). `/simplify` is an editing cleanup workflow, not a report-only fallback. No runtime verification is authorised by this handoff; if the native workflow cannot respect that boundary, do not invoke it.
+Omit `--fix` (edits), `--comment` (posts) and `--post`. Use `ultra` only as the explicitly selected **cloud** tier — never as a default, and say what it costs before dispatching. `/simplify` is an editing cleanup workflow, not a report-only fallback. No runtime verification is authorised by this handoff; if the native workflow cannot respect that boundary, do not invoke it.
 
 ### Oh My Pi existing-session alternative
 

@@ -5,13 +5,13 @@ Use this guide for the conversation, command, expected result, and next action a
 ## Before you start
 
 - Open the intended repository in Claude Code with the complete project resources available. Copying one skill or using the helper's `--root` does not install the workflow. The [standalone export recipe](#11-export-and-adopt-without-overwriting-a-repository) produces a new tree; existing-repository adoption remains an explicit reviewed merge.
-- Every ID-taking AIDLC command accepts **at most one ID** matching `^[a-z0-9]+(-[a-z0-9]+)*$`, and a ticket key fits as a lowercase prefix (`vs-1234-order-export`). Omit the argument and the command resolves the change itself — branch name, then `.aidlc/current`, then the only change without `review.md` — and says which source it used. `/aidlc-ideate` still takes a topic ID before a change exists and has no such fallback; `/aidlc-onboard` takes no ID; `/aidlc-ticket` takes the ticket key or issue URL and derives the change ID for you. Put requests, paths, CE choices, the flow policy and review targets in conversation, never after the ID.
+- Every ID-taking AIDLC command accepts **at most one ID** matching `^[a-z0-9]+(-[a-z0-9]+)*$`, and a ticket key fits as a lowercase prefix (`vs-1234-order-export`). Omit the argument and the command resolves the change itself — branch name, then `.aidlc/current`, then the only change without `review.md` — and says which source it used. `/aidlc-ideate` still takes a topic ID before a change exists and has no such fallback; `/aidlc-onboard` takes no ID; `/aidlc-ticket` takes the ticket key or issue URL and derives the change ID for you; `/aidlc-ship [change-id]` resolves like the rest. Put requests, paths, CE choices, the flow policy, review tiers and review targets in conversation, never after the ID.
 - In the recipes, send the **Say** text as an ordinary conversation message, then invoke the separate **Run** slash command. Adapt the example scope to your application; do not copy its requirements blindly.
 - Use a normal writable session for saving artifacts, handoff creation, and implementation. Enter native plan/read-only mode yourself for `/aidlc-plan`; the agent does not change permissions. Confirmation of a proposal does not change the mode or authorise unrelated actions.
 - CE (Compound Engineering) is optional upstream tooling, not bundled prompts. It runs only when selected and the required skill is loaded in the current session. An installation record is not proof of availability. See [missing CE](#when-ce-or-a-source-is-unavailable).
 - Local work does not require a PR, CI, an approval service, or an evaluation runner. Existing repository rules, organisational safeguards, and tool permissions still apply. None of these commands implicitly authorises commit, stash, push, publication, merge, deployment, or remote-record updates.
 
-`/aidlc [change-id]` runs **intent → design → plan → build → verify → review**, resolving the ID itself when you omit it and stating one flow policy for the run: each stage then asks at its gate, or auto-advances when that policy allows it and nothing is open. It asks whether the work is a feature/change, a bug fix or a spike/investigation and routes the last two to `/aidlc-fix` and `/aidlc-spike`. You can also invoke any stage skill directly, and Claude may load one when your request matches. `/aidlc-ticket` starts a change from a Jira key or GitHub issue, `/aidlc-spike` records a time-boxed investigation, `/aidlc-fix` is the bug-fix evidence loop, `/aidlc-onboard` the brownfield entry and `/aidlc-learn` the lesson capture. **Handoff**, **resume** and **ideation** are the only manual-only utilities. Start each new change or fix in its own worktree — branch `aidlc/<change-id>`, directory `.claude/worktrees/aidlc+<change-id>`; the orchestrator proposes it and asks first.
+`/aidlc [change-id]` runs **intent → design → plan → build → verify → review**, resolving the ID itself when you omit it and stating one flow policy for the run: each stage then asks at its gate, or auto-advances when that policy allows it and nothing is open. It asks whether the work is a feature/change, a bug fix or a spike/investigation and routes the last two to `/aidlc-fix` and `/aidlc-spike`. After review it drives the [review loop](#local-implementation-review) — fix, verify, re-review at a higher tier, at most three fix cycles — and offers `/aidlc-ship` once a pass is clean. You can also invoke any stage skill directly, and Claude may load one when your request matches. `/aidlc-ticket` starts a change from a Jira key or GitHub issue, `/aidlc-spike` records a time-boxed investigation, `/aidlc-fix` is the bug-fix evidence loop, `/aidlc-onboard` the brownfield entry, `/aidlc-learn` the lesson capture and `/aidlc-ship` the commit/push/PR step that always asks. **Handoff**, **resume** and **ideation** are the only manual-only utilities. Start each new change or fix in its own worktree — branch `aidlc/<change-id>`, directory `.claude/worktrees/aidlc+<change-id>`; the orchestrator proposes it and asks first.
 
 ### Project runtime files and shared instructions
 
@@ -31,7 +31,7 @@ Keep these files with the complete package when adopting it:
 
 `.claude/settings.local.json` was created here as `{}` for local overrides. It is ignored, never exported and not required in an exported tree; create it there only if needed for separately reviewed local choices. Do not put credentials into shared files.
 
-Launch Claude from the adopted package root with `sh` and Python 3 available. When project hooks are allowed, the package check and mode line run on startup/resume, **not every turn or edit**; the test-protection hook runs on every edit tool call but denies only paths in an active fix marker, and the worktree hook runs only when a worktree is created. To investigate a failure, run the helper from that root — its subcommands are `check`, `doctor` (add `--install` to run the `uv`/`pipx`, `npm` or `brew` installer for each missing optional tool: `graphify`, `codegraph`, `gh`), `new`, `mode`, `status`, `current`, `worktree` and `package` (for example `python3 scripts/aidlc.py check`). `doctor` also lists every server in `.mcp.json` with the authentication it needs and whether the variable is set; it does not test connectivity. The hooks are integrity and guardrail aids, not lifecycle verification, an approval gate or security enforcement; apart from naming a worktree, they do not advance stages.
+Launch Claude from the adopted package root with `sh` and Python 3 available. When project hooks are allowed, the package check and mode line run on startup/resume, **not every turn or edit**; the test-protection hook runs on every edit tool call but denies only paths in an active fix marker, and the worktree hook runs only when a worktree is created. To investigate a failure, run the helper from that root — its subcommands are `check`, `doctor` (add `--install` to run the `uv`/`pipx`, `npm` or `brew` installer for each missing optional tool: `graphify`, `codegraph`, `gh`), `mode`, `status`, `current`, `conventions` (add `--apply` to copy only the missing default convention files; see [adopt or keep conventions](#adopt-or-keep-conventions)), `worktree`, `package` and `new` (for example `python3 scripts/aidlc.py check`). `doctor` also lists every server in `.mcp.json` with the authentication it needs and whether the variable is set; it does not test connectivity. The hooks are integrity and guardrail aids, not lifecycle verification, an approval gate or security enforcement; apart from naming a worktree, they do not advance stages.
 
 Project MCP declarations and the local settings object do not clear inherited user/managed configuration. Existing settings, hooks, permissions, plugins and MCP connections can still apply, and policy may restrict project customizations or block the declared servers. Review the effective configuration in your own session; this setup adds no tool grants. See [compatibility boundaries](COMPATIBILITY.md).
 
@@ -47,7 +47,7 @@ claude plugin install compound-engineering@compound-engineering-plugin --scope p
 
 Then `/reload-plugins` or a new session, and confirm `compound-engineering:ce-brainstorm` is listed. Cloud sessions install repo-declared plugins at start. If the plugin is missing, `aidlc-intent` says so and offers reload/install or ordinary clarification — it never pretends CE ran, and it decides availability from the session catalog alone rather than searching the filesystem.
 
-This package supplies exactly 15 `aidlc*` commands: `aidlc` plus `aidlc-build`, `aidlc-design`, `aidlc-fix`, `aidlc-handoff`, `aidlc-ideate`, `aidlc-intent`, `aidlc-learn`, `aidlc-onboard`, `aidlc-plan`, `aidlc-resume`, `aidlc-review`, `aidlc-spike`, `aidlc-ticket` and `aidlc-verify`. An earlier trial session with user-scope plugins enabled listed 21 `aidlc*` commands against the then 13: `aidlc-workflows@ai-skills` adds seven namespaced commands (`aidlc-workflows:doctor`, `:install`, `:providers`, `:service-plugin`, `:setup`, `:status`, `:update`) and `eng@ai-skills` adds `eng:aidlc-eval`. Those eight are namespaced, so they do not shadow the project skills; the confusion is for the reader, since a bare word like `status` or `doctor` may mean the plugin command `aidlc-workflows:status` or this package's helper subcommand `python3 scripts/aidlc.py status`. Check `/skills` when a command behaves unexpectedly: it lists each command's source.
+This package supplies exactly 16 `aidlc*` commands: `aidlc` plus `aidlc-build`, `aidlc-design`, `aidlc-fix`, `aidlc-handoff`, `aidlc-ideate`, `aidlc-intent`, `aidlc-learn`, `aidlc-onboard`, `aidlc-plan`, `aidlc-resume`, `aidlc-review`, `aidlc-ship`, `aidlc-spike`, `aidlc-ticket` and `aidlc-verify`. An earlier trial session with user-scope plugins enabled listed 21 `aidlc*` commands against the then 13: `aidlc-workflows@ai-skills` adds seven namespaced commands (`aidlc-workflows:doctor`, `:install`, `:providers`, `:service-plugin`, `:setup`, `:status`, `:update`) and `eng@ai-skills` adds `eng:aidlc-eval`. Those eight are namespaced, so they do not shadow the project skills; the confusion is for the reader, since a bare word like `status` or `doctor` may mean the plugin command `aidlc-workflows:status` or this package's helper subcommand `python3 scripts/aidlc.py status`. Check `/skills` when a command behaves unexpectedly: it lists each command's source.
 
 Declaring the plugin is not selecting it: every CE handoff still happens only when you ask for it in conversation, and skills say **prepared — not run** when it is unavailable. Run `/ce-setup` once per repository if you want a non-default `docs_root`; AIDLC reads `.compound-engineering/config.yaml` before touching solution or ideation stores.
 
@@ -69,7 +69,7 @@ The integration contracts were reviewed at CE **3.26.3**, commit `082c83e0537c80
 
 **Expect:** step 0 proposes the worktree for `aidlc/order-export` — the EnterWorktree tool, which this project's `WorktreeCreate` hook turns into `.claude/worktrees/aidlc+order-export` on branch `aidlc/order-export`, otherwise `git worktree add ../<repo>-order-export -b aidlc/order-export` — and waits for your answer. The orchestrator states the flow policy for the run (here `Flow policy: confirm each stage`, because you asked to stop at each gate), then reads the `AIDLC project mode:` line; brownfield with no repository `CLAUDE.md`/conventions record runs `/aidlc-onboard` first. It then asks the kind of work — **Feature/change**, **Bug fix** (hands over to `/aidlc-fix`) or **Spike/investigation** (hands over to `/aidlc-spike`). For a feature, each stage skill runs in order and ends with a summary—artifact path, decisions, open questions, checks run—and the question **Proceed to \<next stage\>** / **Revise this stage** / **Stop here**. Plan still runs read-only and build saves the confirmed plan first, as in the recipes below.
 
-**Next:** answer each gate. After review choose **Fix findings (build)**, **Capture lesson (aidlc-learn)** or **Done**. **Stop here** leaves the artifacts in place; re-run `/aidlc order-export` or the individual stage later. Nothing is committed, pushed or merged without your explicit instruction.
+**Next:** answer each gate. After review choose **Fix findings (build)**, **Re-review at higher effort**, **Open PR (aidlc-ship)**, **Capture lesson (aidlc-learn)** or **Done**. **Stop here** leaves the artifacts in place; re-run `/aidlc order-export` or the individual stage later. Nothing is committed, pushed or merged without your explicit instruction — `/aidlc-ship` asks before it commits.
 
 ### Run a change without remembering its ID
 
@@ -105,9 +105,9 @@ python3 scripts/aidlc.py status
 
 > Flow policy: auto-advance when clear, including build
 
-**Expect:** confirm-each-stage is the default and is also what every skill assumes if you say nothing. Under an auto-advance policy a stage continues on its own **only** when it saved and read back its artifact, recorded no open questions, unresolved decisions or missing inputs, had no failed check and no required check left "not run", has no pending requested CE review, and is not about to start build (unless you chose "including build") or a commit, push, PR, merge, publication or deployment. It then prints one line — `Auto-advancing to <next stage> (policy: ...; no open questions, checks: ...)` — invokes the next stage and reminds you that you can interrupt.
+**Expect:** confirm-each-stage is the default and is also what every skill assumes if you say nothing. Under an auto-advance policy a stage continues on its own **only** when it saved and read back its artifact, recorded no open questions, unresolved decisions or missing inputs, had no failed check and no required check left "not run", has no pending requested CE review, and is not about to start build (unless you chose "including build") or a commit, push, PR, merge, publication or deployment. It then prints one line — `Auto-advancing to <next stage> (policy: ...; no open questions, checks: ...)` — invokes the next stage and reminds you that you can interrupt. Under **including build** only, the review loop's fix → verify → re-review cycles may also continue by themselves, announcing each hop, until a pass is clean or three fix cycles have run.
 
-**Always asked:** review's gate, anything under confirm-each-stage, any unmet condition above, the step into build under "stop before build", a stage that ended read-only or unsaved, and both `/aidlc-fix` questions (authorising the failing-test commit and its closing gate). No gate is ever answered for you, and no skill claims a policy you did not state.
+**Always asked:** review's gate (the review pass always shows its findings and asks the post-review gate, whatever the policy), anything under confirm-each-stage, any unmet condition above, the step into build under "stop before build", a stage that ended read-only or unsaved, both `/aidlc-fix` questions (authorising the failing-test commit and its closing gate), and `/aidlc-ship`'s commit/push/PR question. No gate is ever answered for you, and no skill claims a policy you did not state.
 
 **Next:** change the policy at any time by stating a different one; the next stage uses the policy in force when it finishes.
 
@@ -125,9 +125,34 @@ python3 scripts/aidlc.py status
 /aidlc-onboard
 ```
 
-**Expect:** the read-only `aidlc-repo-scout` agent returns a structured conventions report (stack, layout, build/test/lint commands, naming, error handling, test patterns, hotspots, existing `CLAUDE.md`/`AGENTS.md`/`.cursorrules`, risks). You are asked **Modernize (adopt current patterns)**, **Stay legacy (inherit existing style)** or **Decide later**. Legacy invokes `inherit-legacy-style`; modernize recommends the `code-modernization` plugin and relevant pattern skills without installing them. Then a proposed repository `CLAUDE.md` (≤60 lines, including "Things Claude gets wrong here") and path-scoped `.claude/rules/` drafts are shown, with `/init` under `CLAUDE_CODE_NEW_INIT=1` offered as the alternative.
+**Expect:** the read-only `aidlc-repo-scout` agent returns a structured conventions report (stack, layout, build/test/lint commands, naming, error handling, test patterns, hotspots, existing `CLAUDE.md`/`AGENTS.md`/`.cursorrules`, risks), and `python3 scripts/aidlc.py conventions` runs in report mode — which convention files the repository already owns versus which defaults exist — with the repository's own tooling recorded in the `CLAUDE.md` draft, never replaced. You are asked **Modernize (adopt current patterns)**, **Stay legacy (inherit existing style)** or **Decide later**. Legacy invokes `inherit-legacy-style`; modernize recommends the `code-modernization` plugin and relevant pattern skills without installing them. Then a proposed repository `CLAUDE.md` (≤60 lines, including "Things Claude gets wrong here") and path-scoped `.claude/rules/` drafts are shown, with `/init` under `CLAUDE_CODE_NEW_INIT=1` offered as the alternative.
 
 **Next:** confirm explicitly to write the drafts, `.aidlc/mode` and `docs/onboarding.md`; otherwise nothing is written. Keep the repository `CLAUDE.md` short and edit it when Claude repeats a mistake.
+
+## Adopt or keep conventions
+
+The package ships defaults in [`templates/conventions/`](../templates/conventions/CONVENTIONS.md) — `.editorconfig`, `.pre-commit-config.yaml` (whitespace/EOF fixes, YAML/JSON validation, large-file and private-key detection, gitleaks, ruff, biome), `ruff.toml`, `biome.json` and `CONVENTIONS.md` (branch, commit-title and PR rules that `/aidlc-ship` follows). A **greenfield** repository adopts them; a **brownfield** repository keeps its own.
+
+**Prerequisite/mode:** any session for the report; a writable session and your explicit choice for `--apply`.
+
+**Run first:**
+
+```sh
+python3 scripts/aidlc.py conventions
+```
+
+**Expect:** one line per default file. `repository owns it: <files>` means an equivalent already exists (`pyproject.toml`, `.eslintrc*`/`eslint.config.*`, `.prettierrc`, `lefthook.yml`, `.husky`, `CONTRIBUTING.md` all count) and nothing will be copied for it; `missing — default available` means `--apply` would copy that file. The closing line depends on the project mode: greenfield is told to adopt or record its own conventions in `CLAUDE.md`; brownfield is told to keep its conventions, which `aidlc-onboard` records.
+
+**Then, greenfield only** — either accept the `/aidlc-onboard` offer **Adopt default conventions (`python3 scripts/aidlc.py conventions --apply`)** or run it yourself:
+
+```sh
+python3 scripts/aidlc.py conventions --apply
+pre-commit install
+```
+
+**Expect:** only the missing files are copied (`copied default`); an existing file is never overwritten, and the command says how many it copied. Review the diff, pin the hook revisions in `.pre-commit-config.yaml`, then install the hooks. Later, `aidlc-build` runs the repository's pre-commit/lint before declaring a task done; in a greenfield repository with none, it mentions `conventions --apply` rather than inventing a linter.
+
+**Brownfield:** run only the report; keep the repository's tooling and let `aidlc-onboard` record it in the `CLAUDE.md` draft. Copy a single default (`cp templates/conventions/.editorconfig .`) only where the repository truly has nothing for that concern. Changing a default in `templates/conventions/` is an ADR, not a drive-by edit. When the project also needs cloud delivery, read [`docs/platform/README.md`](platform/README.md): new services start from `Logicbroker/app-template` (fetch its `AGENT-SETUP.md` with an authenticated `gh api`; raw links 404) and each adopting repository fills its own [`docs/platform/platform.md`](platform/platform.md) for design and plan to read.
 
 ## 0. Compare ideas before choosing a change
 
@@ -257,7 +282,7 @@ Use this instead of a second discovery interview when the outcome or approach is
 /aidlc-design order-export
 ```
 
-**Expect:** `changes/order-export/spec.md` with observable requirements, boundaries, affected components, design choices, and open questions. If the design introduces or changes an architectural boundary, technology choice or contract, an AskUserQuestion offers to record an ADR through the `architecture-decision-records` skill (`docs/adr/NNNN-<title>.md` plus an index row, drafted for your confirmation); if it introduces a new external interface, data store, credential or trust boundary, a second question offers a threat model at `docs/security/threat-models/<name>.md` from the template. Declining either changes nothing. In read-only mode this is a proposal only; an explicit writable request to the same command owns saving it.
+**Expect:** `changes/order-export/spec.md` with observable requirements, boundaries, affected components, design choices, and open questions. Acceptance criteria are EARS lines with stable IDs — `R1.1 WHEN the user exports the filtered list THE export service SHALL stream rows in the current filter order`, `R1.2 IF the user lacks the orders permission THEN THE export service SHALL return 403` — and later tasks and checks refer to those IDs. Where the design leans on a library, framework or cloud API, the skill resolves current docs through the `context7` MCP (`resolve-library-id`, then `query-docs`) before writing and cites the Context7 ID and the repository's pinned version; a lookup that settled a real question adds a row to [`docs/references/libraries.md`](references/libraries.md). If `docs/platform/platform.md` exists it is read first, and a new data store, queue or integration gets a platform entry and a threat-model offer. Before the gate, the read-only `aidlc-design-reviewer` agent returns **READY** or **NOT READY** with numbered findings (requirements coverage and EARS quality, consistency with ADRs, platform fit, NFR gaps, missing threat model); the skill summarises that verdict as one input to your decision, never as approval. If the design introduces or changes an architectural boundary, technology choice or contract, an AskUserQuestion offers to record an ADR through the `architecture-decision-records` skill (`docs/adr/NNNN-<title>.md` plus an index row, drafted for your confirmation); if it introduces a new external interface, data store, credential or trust boundary, a second question offers a threat model at `docs/security/threat-models/<name>.md` from the template — accepted, it delegates the STRIDE table to the read-only `aidlc-threat-modeler` agent for you to confirm. Declining either changes nothing. In read-only mode this is a proposal only; an explicit writable request to the same command owns saving it.
 
 **Next:** discuss unresolved choices, then enter native plan mode.
 
@@ -275,7 +300,7 @@ Use this instead of a second discovery interview when the outcome or approach is
 /aidlc-plan order-export
 ```
 
-**Expect:** a code-grounded proposal in the conversation, not a write to `changes/order-export/plan.md`. The handoff identifies the exact proposal or any actual native scratch-plan path, outstanding decisions, and pending requested CE document review. A native plan file is machine-local scratch state, not the canonical plan or a CE review target.
+**Expect:** a code-grounded proposal in the conversation, not a write to `changes/order-export/plan.md`: numbered checkbox tasks such as `- [ ] T1.2 Add the streaming export endpoint … _Requirements: R1.1, R1.2_` with `depends on: T1.1` where order matters, and a coverage check that every R-ID from the spec appears in at least one task (or the exclusion is stated). Deployment, observability or promotion work appears as values files and pipeline config for the delivery orb named in `docs/platform/platform.md`, not hand-rolled infrastructure. The handoff identifies the exact proposal or any actual native scratch-plan path, outstanding decisions, and pending requested CE document review. A native plan file is machine-local scratch state, not the canonical plan or a CE review target.
 
 **Next:** discuss revisions and explicitly confirm the exact proposal. Preserve its complete text or actual accessible scratch file if changing sessions. A summary, status label, or handoff saying “confirmed” cannot recover a lost proposal or replace current-user confirmation.
 
@@ -353,7 +378,7 @@ CE document review critiques a document; `aidlc-review` later reviews implementa
 /aidlc-build order-export
 ```
 
-**Expect:** without a pending requested review, implementation, aligned artifacts, and actual passed/failed/not-run task-check evidence. With a pending requested CE document review, expect the save and an explicit stop for that review—not a build, automatic CE call, or invented approval.
+**Expect:** without a pending requested review, implementation one task at a time — in plan order, or the task you name — with spec and plan in context: each task's own check runs, and `[ ]` becomes `[x]` in `plan.md` only after that check passed, never ahead. Library code is written against Context7-resolved docs, and the repository's pre-commit/lint runs before a task is declared done (greenfield with none: the skill mentions `conventions --apply` instead of inventing a linter). Aligned artifacts and actual passed/failed/not-run task-check evidence follow. With a pending requested CE document review, expect the save and an explicit stop for that review—not a build, automatic CE call, or invented approval.
 
 **Next when stopped:** enter plan mode, run the saved-plan CE review recipe, and resolve findings. Then return to writable mode and explicitly request implementation with `/aidlc-build order-export`. If you decide not to use CE, say so explicitly; an unavailable plugin does not silently cancel a requested review.
 
@@ -505,7 +530,7 @@ The optional CE continuity contract was inspected at [CE 3.26.3, commit `082c83e
 /aidlc-verify order-export
 ```
 
-**Expect:** observed evidence and limitations, not automatic source edits or a saved report. If needed, separately request saving the evidence with writable permission. A build alone is not proof of behavior.
+**Expect:** a table `R-ID | check | observed result | not run (reason)` with one row per acceptance criterion from `spec.md`, so an uncovered requirement shows as a row rather than hiding behind a green command; plus observed evidence and limitations, not automatic source edits or a saved report. If needed, separately request saving the evidence with writable permission. A build alone is not proof of behavior.
 
 **Next:** request review of the actual diff and evidence, or direct fixes for demonstrated failures.
 
@@ -523,13 +548,13 @@ The optional CE continuity contract was inspected at [CE 3.26.3, commit `082c83e
 /aidlc-review order-export
 ```
 
-**Expect:** an actual returned report, a partial report with named gaps, or **prepared — not run** with a filled context packet and separate documented command. Loading/launching is not completion. The packet includes real tracked and untracked scope, artifact/policy contents, check evidence and prior findings. Save `changes/order-export/review.md` only on request after results return; the wrapper reads it back.
+**Expect:** an actual returned report, a partial report with named gaps, or **prepared — not run** with a filled context packet and separate documented command. The first pass runs at the **standard** tier (`/code-review high`); say `escalated`, `maximum` or `cloud` only if you want `xhigh`, `max` or `ultra` — cloud is multi-agent review that costs more and needs the cloud feature. Each finding is **Important** or **nit** per `REVIEW.md` and carries a stable ID (`R1`, `R2` …) that later passes reuse. Loading/launching is not completion. The packet includes real tracked and untracked scope, artifact/policy contents, check evidence and prior findings. `changes/order-export/review.md` records the pass with its tier, findings and disposition; the wrapper reads it back. The post-review gate then asks exactly **Fix findings (build)**, **Re-review at higher effort**, **Open PR (aidlc-ship)**, **Capture lesson (aidlc-learn)** or **Done**.
 
 Claude's bundled `/code-review` does not accept the packet as trailing notes: non-cloud trailing text is the review target, and its fork is not guaranteed to inherit parent chat. If the wrapper cannot establish a supported context channel, follow the reported transfer step rather than pretending that pasting a preceding message delivered the packet. Any resulting code-only review with unconfirmed artifact/policy coverage is partial.
 
 In an explicitly selected existing OMP session, `/review` → **Custom review instructions** accepts the completed packet. Include untracked file contents and confirm returned coverage. This is the OMP command, not Claude's `/review` alias. A catalogued OMP reviewer-agent invocation is another supported route when exposed; report that actual invocation, not a fictional menu interaction. See [provider recipes](../.claude/skills/aidlc-review/references/review-options.md#provider-recipes).
 
-**Next:** decide which findings to address, then request a scoped fix pass in writable mode.
+**Next:** decide which Important findings to address, then request a scoped fix pass in writable mode — or pick **Open PR (aidlc-ship)** when the pass returned zero Important findings.
 
 ### Fix agreed findings, then re-review
 
@@ -543,7 +568,7 @@ In an explicitly selected existing OMP session, `/review` → **Custom review in
 /aidlc-build order-export
 ```
 
-**Expect:** scoped fixes and fresh evidence. Unavailable checks remain not run; earlier review does not cover newly changed code.
+**Expect:** scoped fixes for the agreed finding IDs and fresh evidence. Unavailable checks remain not run; earlier review does not cover newly changed code.
 
 **Next, say:**
 
@@ -555,7 +580,25 @@ In an explicitly selected existing OMP session, `/review` → **Custom review in
 /aidlc-review order-export
 ```
 
-**Expect:** updated findings and remaining human decisions, not self-approval or delivery. Pause with a new handoff snapshot if continuity is needed; do not overwrite the earlier one.
+**Expect:** the re-review runs at the **escalated** tier (`/code-review xhigh`) and reassesses `R1`, `R2` … by ID: fixed, still open, or new. The loop — fix, verify, re-review — repeats until a pass returns zero Important findings or **three fix cycles** have run; either way it then stops and asks the post-review gate. Under `Flow policy: auto-advance when clear, including build` those cycles may run without a gate between them, each hop announced; under any other policy every hop asks. Updated findings and remaining human decisions, not self-approval or delivery. Pause with a new handoff snapshot if continuity is needed; do not overwrite the earlier one.
+
+### Ship a reviewed change
+
+**Prerequisite/mode:** writable session on branch `aidlc/order-export`; `changes/order-export/review.md` whose latest pass has zero open Important findings and `evidence.md` or verify evidence present — the skill reads both from disk and stops, pointing back at the review loop, when they are not there. `gh` authenticated (or the `github` MCP server) for the PR; `origin` reachable for the push.
+
+**Say:**
+
+> Ship order-export. Show me the diff first, then commit, push the branch and open the PR against main. Do not merge.
+
+**Run:**
+
+```text
+/aidlc-ship order-export
+```
+
+**Expect:** `git status` and a diff summary; the branch is confirmed as `aidlc/order-export` (a different branch needs your confirmation; the default branch is refused). Then the question, exactly **Commit, push and open PR**, **Commit only** or **Stop here** — always asked, whatever the flow policy. On the first option: one commit whose title is `VS-1234: add filtered order CSV export` when the ID starts with a Jira key (here, without one, a Conventional Commit type such as `feat: add filtered order CSV export`), whose body says why and ends `Change: order-export`, and which includes `changes/order-export/` alongside the code; `git push origin aidlc/order-export` (never force, never the default branch); `gh pr create --base main --title … --body-file <rendered template>` — or the github MCP when `gh` is absent — with the body rendered from the skill's `templates/pr-body.md`: Summary (from intent), Ticket link, Spec/plan links, Evidence (verification summary), Review (passes, tiers, findings closed), Knowledge records (ADR/incident/threat-model paths if any), Checklist (conventions run, tests, no secrets). The PR URL is read back and written under References in `evidence.md`/`review.md`. **Commit only** stops after the commit; **Stop here** changes nothing.
+
+**Next:** review the PR in GitHub. Merging, approving, enabling auto-merge and branch protection are never the skill's actions; CircleCI runs the pipeline from the PR and a human decides promotion. Capture a lesson with `/aidlc-learn order-export` if the change taught one.
 
 ### Fix a bug with an evidence record
 
@@ -571,9 +614,9 @@ In an explicitly selected existing OMP session, `/review` → **Custom review in
 /aidlc-fix csv-pagination-drop
 ```
 
-**Expect:** a worktree proposal for `aidlc/csv-pagination-drop` (directory `.claude/worktrees/aidlc+csv-pagination-drop`), a reproduction, a failing test and a request to authorise its commit (`test(csv-pagination-drop): reproduce <summary>`) — that question is always asked, whatever the flow policy. The marker `.aidlc/fix/csv-pagination-drop.json` lists the protected test paths; while it exists `protect-tests.sh` denies edits to them, including by the fixing agent. After the fix, the test is rerun and `/verify` runs where an app runtime exists. `changes/csv-pagination-drop/evidence.md` is written from the fix skill's template—references, reproduction with pre-fix output, files and root cause, verification commands with actual output, regression protection, lesson link, limits—and read back. When the report came through an alert or incident link, an AskUserQuestion offers to create `docs/incidents/YYYY-MM-DD-csv-pagination-drop.md` from `docs/incidents/template.md`, add its index row and link it from the evidence References; a security defect gets the same offer for `docs/security/findings/`. The closing gate is asked too: the marker is then deleted and `/aidlc-learn csv-pagination-drop` is offered.
+**Expect:** a worktree proposal for `aidlc/csv-pagination-drop` (directory `.claude/worktrees/aidlc+csv-pagination-drop`), a reproduction, a failing test and a request to authorise its commit (`test(csv-pagination-drop): reproduce <summary>`) — that question is always asked, whatever the flow policy. The marker `.aidlc/fix/csv-pagination-drop.json` lists the protected test paths; while it exists `protect-tests.sh` denies edits to them, including by the fixing agent. After the fix, the test is rerun and `/verify` runs where an app runtime exists. `changes/csv-pagination-drop/evidence.md` is written from the fix skill's template—references, the EARS triad (**Current:** `WHEN an order's status changes during pagination THE export drops it`; **Expected:** `WHEN an order's status changes during pagination THE export SHALL still include it once`; **Unchanged:** `THE export SHALL CONTINUE TO respect the active filter`) that the failing test and the protected regression tests map to, reproduction with pre-fix output, files and root cause, verification commands with actual output, regression protection, lesson link, limits—and read back. When the report came through an alert or incident link, an AskUserQuestion offers to create `docs/incidents/YYYY-MM-DD-csv-pagination-drop.md` from `docs/incidents/template.md`, add its index row and link it from the evidence References; a security defect gets the same offer for `docs/security/findings/`. The closing gate is asked too: the marker is then deleted and `/aidlc-learn csv-pagination-drop` is offered.
 
-**Next:** review the evidence, request `/aidlc-review` on the diff if wanted, and decide on the lesson. Committing the fix itself, opening the PR and updating Jira remain your explicit actions; add the PR URL to the evidence afterwards.
+**Next:** review the evidence, request `/aidlc-review` on the diff if wanted, and decide on the lesson. Committing the fix, pushing and opening the PR go through `/aidlc-ship csv-pagination-drop` (which titles the commit `PROJ-482: …` when the change ID starts with that key) or your own explicit actions; updating Jira remains yours. The PR URL lands in the evidence References either way.
 
 ## 10. Capture a durable lesson after proven work
 
@@ -591,7 +634,7 @@ This is optional, not a completion checklist. A routine fix whose reasoning is a
 /aidlc-learn order-export
 ```
 
-**Expect:** one saved/read-back note under `docs/solutions/<category>/`, or the valid configured root, **or an honest not-saved skip with a reason**. The note carries `Status: Verified` and `Last verified: <date> against <revision or environment>` so a later reader can tell how fresh it is; mark it `Needs re-check` or `Superseded by <path>` when that changes. Ordinary mode changes only the note, never the glossary, canonical change artifacts or global memory. It searches relevant existing lessons; an adequate duplicate is reused, and a stale same-topic note needs explicit update direction rather than another copy. A correction that keeps recurring belongs in `AGENTS.md` or a `.claude/rules/` file through review, not in another lesson.
+**Expect:** one saved/read-back note under `docs/solutions/<category>/`, or the valid configured root, **or an honest not-saved skip with a reason**. The note carries `Status: Verified` and `Last verified: <date> against <revision or environment>` so a later reader can tell how fresh it is; mark it `Needs re-check` or `Superseded by <path>` when that changes. It also carries `Confidence: 0.3` for a first observation (`0.5` at 3–5 observations, `0.7` at 6–10, `0.85` at 11+), `Observations: 1 (order-export)` and `Scope: project` or `team`. Ordinary mode changes only the note, never the glossary, canonical change artifacts or global memory. It searches relevant existing lessons; when the same topic already has a lesson, the skill offers to bump that lesson's Observations and Confidence (adding this change ID) instead of writing a duplicate, and a stale same-topic note needs explicit update direction rather than another copy. A lesson observed in two or more changes at confidence ≥0.8 is proposed to you as a candidate rule for `AGENTS.md` or a `.claude/rules/` file — proposed, never written by the skill. That is the whole of what was borrowed from ECC's `continuous-learning-v2`: its observation hooks and background observer were not imported.
 
 **Next:** retain the exact path and consult it when applicable to later work, checking current behavior rather than treating historical evidence as fresh proof. Another lesson requires a separate request.
 
@@ -618,7 +661,7 @@ python3 scripts/aidlc.py package /path/to/new-aidlc-copy
 python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
 ```
 
-**Expect:** a complete standalone tree with the declared skills (orchestrator, ticket intake, spike, stages, fix, onboard, utilities, the imported `architecture-decision-records` and `doc-coauthoring`), agents, bundled templates, shared docs/helper, `AGENTS.md`/`CLAUDE.md`, settings, the four hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/` and `docs/security/` indexes and templates, the vendor manifests and locally linked source/evidence dependencies. No `.git`, canonical change artifacts, solution/ideation stores, `.aidlc/`, local settings, arbitrary credentials/configs or plugin is copied. Existing destinations—including empty directories and symlinks—are refused, not merged. Missing/unsafe source dependencies fail before destination creation; an unexpected later copy error reports the partial new tree for inspection. Declared/linked content is copied verbatim, not secret-scanned; inspect it before sharing.
+**Expect:** a complete standalone tree with the declared skills (orchestrator, ticket intake, spike, stages, ship, fix, onboard, utilities, the imported `architecture-decision-records` and `doc-coauthoring`), the four agents, bundled templates, shared docs/helper, `AGENTS.md`/`CLAUDE.md`, settings, the four hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/references/` and `docs/platform/` indexes and templates, `templates/conventions/`, the vendor manifests and locally linked source/evidence dependencies. No `.git`, canonical change artifacts, solution/ideation stores, `.aidlc/`, local settings, arbitrary credentials/configs or plugin is copied. Existing destinations—including empty directories and symlinks—are refused, not merged. Missing/unsafe source dependencies fail before destination creation; an unexpected later copy error reports the partial new tree for inspection. Declared/linked content is copied verbatim, not secret-scanned; inspect it before sharing.
 
 **Next for standalone use:** launch Claude in the exported tree; create/refine an intent through the ordinary workflow. Establish Git history through your own normal process when needed—the exporter does not initialise or commit a repository.
 

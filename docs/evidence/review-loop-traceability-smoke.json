@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "scope": "Review loop and escalation, aidlc-ship, Kiro traceability, Context7 step, platform pointer, conventions defaults, instinct fields, two adapted reviewer agents",
+  "helper": {
+    "check": "PASS: 138 required assets; 358 local links resolve.",
+    "export_files": 153,
+    "conventions": {
+      "greenfield_report": "5 defaults listed as missing; --apply copied 5 files; re-apply copied 0 (idempotent)",
+      "brownfield_report": ".pre-commit-config.yaml and pyproject.toml recognised as repository-owned; defaults offered only for missing concerns"
+    }
+  },
+  "native": {
+    "claude": {
+      "version": "2.1.274 (export; project,local settings; no tools)",
+      "aidlc_commands": 16,
+      "commands": [
+        "aidlc",
+        "aidlc-build",
+        "aidlc-design",
+        "aidlc-fix",
+        "aidlc-handoff",
+        "aidlc-ideate",
+        "aidlc-intent",
+        "aidlc-learn",
+        "aidlc-onboard",
+        "aidlc-plan",
+        "aidlc-resume",
+        "aidlc-review",
+        "aidlc-ship",
+        "aidlc-spike",
+        "aidlc-ticket",
+        "aidlc-verify"
+      ]
+    },
+    "omp": {
+      "version": "18.1.21",
+      "task_agents": [
+        "aidlc-verifier",
+        "aidlc-repo-scout",
+        "aidlc-design-reviewer",
+        "aidlc-threat-modeler"
+      ],
+      "aidlc_skills_reported": 14,
+      "aidlc_skills_expected": 13,
+      "note": "the model counted 14 model-invocable aidlc skills where 13 are expected (16 minus 3 manual); the list was truncated in the answer, so the discrepancy is unresolved"
+    }
+  },
+  "skill_sizes_bytes": {
+    "aidlc": 7693,
+    "aidlc-review": 7164,
+    "aidlc-fix": 7164,
+    "aidlc-build": 7159
+  },
+  "limits": [
+    "None of the new flows (review loop with escalation, /aidlc-ship, EARS/task tracing, Context7 lookups, platform reads, conventions offer in onboarding, design-reviewer/threat-modeler delegation) was driven in a native session; this round verified packaging, catalog discovery and the deterministic helper only.",
+    "The omp skill count discrepancy (14 vs 13) was not investigated."
+  ],
+  "cleanup": {
+    "export_removed": true
+  }
+}

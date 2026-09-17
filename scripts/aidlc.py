@@ -18,7 +18,7 @@ STAGE_FILES = (("intent", "intent.md"), ("spec", "spec.md"), ("plan", "plan.md")
 NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
               "evidence": "review", "review": "done"}
 SKILLS = ("intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
-          "ticket", "spike", "handoff", "resume", "ideate")
+          "ticket", "spike", "ship", "handoff", "resume", "ideate")
 MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
 SKILL_DIRECTORIES = ("aidlc",) + tuple("aidlc-" + name for name in SKILLS)
 CODE_SUFFIXES = frozenset((
@@ -54,10 +54,18 @@ REQUIRED_ASSETS = (
     ".claude/skills/aidlc-learn/templates/learning.md",
     ".claude/skills/aidlc-ideate/templates/ideation.md",
     ".claude/skills/aidlc-spike/templates/spike.md",
+    ".claude/skills/aidlc-ship/templates/pr-body.md",
     "docs/adr/README.md", "docs/adr/template.md",
     "docs/incidents/README.md", "docs/incidents/template.md",
     "docs/security/README.md", "docs/security/threat-model-template.md",
+    "docs/references/README.md", "docs/references/libraries.md",
+    "docs/platform/README.md", "docs/platform/platform.md",
+    "templates/conventions/CONVENTIONS.md", "templates/conventions/.editorconfig",
+    "templates/conventions/.pre-commit-config.yaml", "templates/conventions/ruff.toml", "templates/conventions/biome.json",
     ".claude/agents/aidlc-verifier.md", ".claude/agents/aidlc-repo-scout.md",
+    ".claude/agents/aidlc-design-reviewer.md", ".claude/agents/aidlc-threat-modeler.md",
+    ".omp/agents/aidlc-design-reviewer.md", ".omp/agents/aidlc-threat-modeler.md",
+    "docs/vendor/aws-aidlc/NOTICE.md",
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
     "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",
     "mcp-configs/ecc.mcp-servers.example.json",
@@ -216,6 +224,46 @@ def print_mode(root):
         prefix = "/lbvs-aidlc:" if os.environ.get("CLAUDE_PLUGIN_ROOT") else "/"
         print("Brownfield: run {}aidlc-onboard before the first change unless conventions are already recorded.".format(prefix))
     print("Override with .aidlc/mode containing greenfield or brownfield.")
+
+
+CONVENTION_FILES = (".editorconfig", ".pre-commit-config.yaml", "ruff.toml", "biome.json", "CONVENTIONS.md")
+# Files that mean the repository already owns that concern; the default is then not offered.
+CONVENTION_EQUIVALENTS = {
+    ".pre-commit-config.yaml": (".pre-commit-config.yaml", ".pre-commit-config.yml", "lefthook.yml", ".husky"),
+    "ruff.toml": ("ruff.toml", ".ruff.toml", "pyproject.toml", "setup.cfg", ".flake8", "tox.ini"),
+    "biome.json": ("biome.json", "biome.jsonc", ".eslintrc", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.json",
+                   "eslint.config.js", "eslint.config.mjs", ".prettierrc", "prettier.config.js"),
+    ".editorconfig": (".editorconfig",),
+    "CONVENTIONS.md": ("CONVENTIONS.md", "CONTRIBUTING.md"),
+}
+
+
+def conventions(root, apply=False):
+    """Report repository conventions versus the package defaults; --apply copies only missing defaults."""
+    source_dir = PACKAGE_ROOT / "templates" / "conventions"
+    mode, _ = project_mode(root)
+    print("Project mode: {}. Defaults come from templates/conventions/; existing repository files always win.".format(mode))
+    copied = []
+    for name in CONVENTION_FILES:
+        existing = [candidate for candidate in CONVENTION_EQUIVALENTS[name] if (root / candidate).exists()]
+        if existing:
+            print("  {:<26} repository owns it: {}".format(name, ", ".join(existing)))
+            continue
+        if apply:
+            target = root / name
+            with (source_dir / name).open("rb") as src, target.open("xb") as dst:
+                shutil.copyfileobj(src, dst)
+            copied.append(name)
+            print("  {:<26} copied default".format(name))
+        else:
+            print("  {:<26} missing — default available ({} to copy)".format(name, "`conventions --apply`"))
+    if apply:
+        print("Copied {} file(s); nothing was overwritten. Review the diff, pin hook revisions, then `pre-commit install`.".format(len(copied)))
+    elif mode == "greenfield":
+        print("Greenfield: run `python3 scripts/aidlc.py conventions --apply` to adopt the defaults, or record your own in CLAUDE.md.")
+    else:
+        print("Brownfield: keep the repository's conventions; aidlc-onboard records them in CLAUDE.md. Copy a default only where none exists.")
+    return 0
 
 
 def git_out(root, *args):
@@ -385,6 +433,7 @@ def package(destination):
             or relative.as_posix() in seeds
             or (parts[0] == "docs" and not any(part.startswith(".") for part in parts)
                 and (len(parts) == 1 or parts[1] not in ("solutions", "ideation")))
+            or parts[:2] == ("templates", "conventions")
             or (parts[:2] == (".claude", "skills") and
                 (len(parts) == 2 or parts[2] in skill_directories))
         )
@@ -585,6 +634,8 @@ def main():
     commands.add_parser("status", help="list changes under changes/ with the stage artifacts present")
     commands.add_parser("current", help="print the change ID in play (branch, .aidlc/current, or the only open change)")
     commands.add_parser("worktree", help="WorktreeCreate hook: read the requested name on stdin, print the worktree path")
+    conv = commands.add_parser("conventions", help="compare repository conventions with the package defaults; --apply copies only missing defaults")
+    conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
     export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
     export.add_argument("destination", type=Path)
     args = parser.parse_args()
@@ -606,6 +657,8 @@ def main():
             return print_current(args.root.resolve())
         if args.command == "worktree":
             return create_worktree()
+        if args.command == "conventions":
+            return conventions(args.root.resolve(), apply=args.apply)
         return doctor(args.root.resolve(), install=getattr(args, "install", False))
     except (OSError, ValueError) as error:
         print("ERROR: {}".format(error), file=sys.stderr)

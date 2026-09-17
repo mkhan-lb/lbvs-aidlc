@@ -7,15 +7,35 @@ Describe the requirements and design for the working intent. Follow `docs/WORKFL
 
 ## Context and inputs
 
-Link `changes/{{change_id}}/intent.md` and relevant inspected code, source records, or supplied designs. Summarise known task decisions and assumptions. Use actual sources; no external approval record is required.
+Link `changes/{{change_id}}/intent.md` and relevant inspected code, source records, or supplied designs. Summarise known task decisions and assumptions. Use actual sources; no external approval record is required. When `docs/platform/platform.md` exists, note the platform facts this change relies on.
 
-## Requirements and outcomes
+Library and API references: for each library, framework, SDK or cloud API the design depends on, cite the Context7 ID and the repository's pinned version (or the official docs URL when Context7 was unavailable). Rows added to `docs/references/libraries.md` by this change: list or `none`.
 
-Define observable behavior, including relevant boundaries and failure cases. Give requirements useful references for the plan and review, and connect them to the intent. Do not add unrelated scope.
+## Requirements (EARS)
+
+Number each requirement and write its acceptance criteria as EARS lines with stable IDs `R<n>.<m>`; plan tasks cite them as `_Requirements: R1.1, R2.3_` and verification reports coverage per ID. Never renumber an ID once a plan cites it; retire it with a note instead. Trace each requirement to the intent or a recorded decision. Do not add unrelated scope.
+
+Patterns:
+
+- `WHEN <event> THE <system> SHALL <response>` — event-driven
+- `IF <condition> THEN THE <system> SHALL <response>` — unwanted behaviour or guarded condition
+- `WHILE <state> THE <system> SHALL <response>` — state-driven
+- `THE <system> SHALL <response>` — ubiquitous
+
+### R1. <requirement title> — from intent: <section or decision>
+
+- R1.1 WHEN <event> THE <system> SHALL <response>
+- R1.2 IF <condition> THEN THE <system> SHALL <response>
+
+### R2. <requirement title>
+
+- R2.1 THE <system> SHALL <response>
+
+Cover boundaries and failure cases as their own lines. Non-functional requirements (performance, security, operability) use the same notation.
 
 ## Design
 
-Explain how the change fits the existing system: affected components, interactions, data/interfaces, and user experience. Describe meaningful alternatives and why this approach is proposed. For UI work, identify supplied designs or the behavior and appearance to compare during verification.
+Explain how the change fits the existing system: affected components, interactions, data/interfaces, and user experience. Describe meaningful alternatives and why this approach is proposed. For UI work, identify supplied designs or the behavior and appearance to compare during verification. Deployment, observability and promotion changes are values files and pipeline config for the `lb-pipelines/app-delivery-kit-vs@1` orb; a new data store, queue or external integration is named here, added to `docs/platform/platform.md`, and gets a threat-model offer.
 
 ## Constraints and exclusions
 
@@ -27,7 +47,7 @@ Record unresolved requirements, trade-offs, assumptions, and likely failure mode
 
 ## Proof expectations
 
-Describe the ordinary software tests, runtime observations, and visual comparisons that would demonstrate the requirements. These are expectations for the plan, not executed results or an AI evaluation suite.
+Describe the ordinary software tests, runtime observations, and visual comparisons that would demonstrate the requirements, referencing R-IDs so the plan can map tasks and verification can report coverage per requirement. These are expectations for the plan, not executed results or an AI evaluation suite.
 
 ## Decision notes (optional)
 

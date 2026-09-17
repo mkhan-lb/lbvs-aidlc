@@ -1,84 +1,96 @@
 # Review record: {{change_id}}
 
 Change ID: {{change_id}}
-Execution status: prepared — not run / running / returned / partial / failed
-Scope freshness: current / stale / unknown
+Latest pass: <N> · tier <standard / escalated / maximum / cloud> · execution status <prepared — not run / running / returned / partial / failed>
+Open Important findings: <count or 0> · fix cycles used: <n> of 3
 
 Report findings and actual evidence, not approval. Follow `docs/WORKFLOW.md`, `REVIEW.md`, and `.claude/skills/aidlc-review/references/review-options.md`. Use this shape in conversation; persist to `changes/{{change_id}}/review.md` only when specifically requested after review results return. Preparation alone is not an executed review. Keep the review report-only; do not run the application/checks, fix code, publish, or install anything.
-
-## Reviewer and execution
-
-- Selected provider and identity/provenance actually observed:
-- Exposure observed in this session: model-invocable Skill / supported command or agent / user-only command / unavailable / unknown:
-- Actual invocation, effort/menu choice, and checkout (or `not invoked` with reason):
-- Context delivery mechanism; evidence the reviewer received the packet, artifacts and `REVIEW.md` policy (or unconfirmed):
-- Started/returned time and actual native result/session reference, if present:
-- Errors, interrupted work, denied permissions and missing prerequisites:
-- If not run: separate copyable provider command and complete filled-in handoff packet; exact engineer action still required. Do not label this section as findings.
-
-## Scope snapshot and coverage
-
-- Scope kind and semantics: merge-base-to-head / tip-to-tip / staged + unstaged + untracked / explicitly identified subset:
-- Actual base/head/merge-base SHAs, or working-tree HEAD/unborn state:
-- Captured tracked diff and staged/unstaged path inventory; renamed/deleted paths:
-- Untracked path/content inventory supplied, and paths actually reviewed:
-- Unchanged supporting files inspected (separate from the changed/untracked inventory):
-- Provider-reported inspected paths and surrounding callers/source:
-- Excluded, filtered, unreadable, binary, unrelated or otherwise unreviewed paths; reason for each gap:
-- State comparison at preparation, invocation and return; changed paths/revisions or unavailable comparison:
-- What this result covers now; any stale scope or unreviewed later edits:
-
-An unchanged HEAD or timestamp alone does not establish working-tree freshness. No-findings text applies only to actual inspected scope; partial, failed, unavailable or stale coverage is not a clean bill.
 
 ## Same-change intent and policy
 
 - `changes/{{change_id}}/intent.md`: intended outcome and non-goals actually supplied:
-- `changes/{{change_id}}/spec.md`: relevant behavior, boundaries and acceptance criteria supplied:
+- `changes/{{change_id}}/spec.md`: acceptance criteria (`R<n>.<m>` EARS lines) and boundaries supplied:
 - `changes/{{change_id}}/plan.md` and linked design: approach, decisions and deviations supplied:
-- Prior `review.md`/native result and stable finding IDs supplied:
 - Relevant `CLAUDE.md` instructions and applicable `REVIEW.md` contents supplied, including Bugs/Security/Compliance, severity, exclusions and evidence requirements:
 - Missing/unreadable artifacts, unknown policy and unconfirmed provider context coverage:
 
 Do not claim automatic policy/artifact discovery. Separate what the wrapper read from what the reviewer actually received or inspected.
 
-## Native provider findings
+## Verification evidence
 
-Preserve the concrete returned findings, not just a count or generic summary. Repeat this block for each finding and retain stable IDs across re-reviews:
+Recorded by `aidlc-verify` (or the fix loop) before review; coverage by requirement, not just by command.
 
-### {{finding_id}} — {{native_title}}
-
-- Native finding text (trigger, impact and reasoning):
-- Native severity/priority, category and confidence, where supplied:
-- File/line range or artifact location in the reviewed snapshot:
-- Provider's evidence/reproduction and stated uncertainty; distinguish a proposed reproduction from an executed one:
-- Recommended correction/question:
-- AIDLC policy mapping: Bugs / Security / Compliance; important / nit; explanation of any disagreement with the provider:
-- Relevant requirement or intended behavior:
-- Disposition: open / fix claimed — not re-reviewed / resolved / not rechecked / dismissed with reason:
-- Disposition evidence and who made any dismissal decision:
-
-If no findings were returned, quote or faithfully retain the provider's bounded result and identify its actual coverage. Retain the native overall verdict, explanation and confidence separately; a “correct” verdict is not approval. If no provider result exists, write `no provider result`, not `no findings`.
-
-## Wrapper observations and unanswered questions
-
-Separately label artifact-alignment observations made during reconciliation; do not attribute them to the provider. Identify mismatches with intended behavior, stale artifacts, unresolved decisions, questions and unknowns. Preserve native findings even when the wrapper disagrees, explaining the difference rather than silently suppressing them.
-
-## Existing verification evidence
-
-| Check or interaction | Exercised revision/scope and environment | Actual result | Evidence reference | Executed previously / failed / proposed / not run |
+| R-ID | Check (command / interaction) | Exercised revision and environment | Observed result | Status (pass / fail / not run — reason) |
 | --- | --- | --- | --- | --- |
 
-Only record execution supported by actual evidence. Reading test source is not executing tests. This review pass runs no tests, application, builds, formatters or reproduction scripts. For fixes performed in a separately authorised implementation pass, include actual pre-fix evidence when available and the post-fix result; never manufacture a historical failure. Note where evidence is stale or does not exercise the reviewed scope.
+Only record execution supported by actual evidence; reading test source is not executing tests. A build alone is not behavioral proof. Note where evidence is stale or does not exercise the reviewed scope.
+
+## Pass 1
+
+Repeat this whole section for every pass (`## Pass 2`, …), appending below the previous one; never rewrite or delete an earlier pass. Re-reviews after a fix pass run at **escalated** unless the engineer chose a higher tier.
+
+### Reviewer and execution
+
+- Tier and exact command (`standard` = `/code-review high`, `escalated` = `/code-review xhigh`, `maximum` = `/code-review max`, `cloud` = `/code-review ultra`):
+- Selected provider and identity/provenance actually observed; exposure in this session (model-invocable Skill / supported command or agent / user-only command / unavailable / unknown):
+- Execution status: prepared — not run / running / returned / partial / failed; started/returned time and native result/session reference:
+- Context delivery mechanism; evidence the reviewer received the packet, artifacts and `REVIEW.md` policy (or unconfirmed):
+- Errors, interrupted work, denied permissions and missing prerequisites:
+- If not run: separate copyable provider command and complete filled-in handoff packet; exact engineer action still required. Do not label this as findings.
+
+### Revision reviewed and coverage
+
+- Scope kind and semantics: merge-base-to-head / tip-to-tip / staged + unstaged + untracked / explicitly identified subset:
+- Actual base/head/merge-base SHAs, or working-tree HEAD/unborn state:
+- Captured tracked diff and staged/unstaged path inventory; renamed/deleted paths; untracked content supplied:
+- Unchanged supporting files and callers inspected; provider-reported inspected paths:
+- Excluded, filtered, unreadable, binary, unrelated or otherwise unreviewed paths; reason for each gap:
+- Scope freshness (current / stale / unknown): state comparison at preparation, invocation and return; later edits not covered:
+
+An unchanged HEAD or timestamp alone does not establish working-tree freshness. No-findings text applies only to actual inspected scope; partial, failed, unavailable or stale coverage is not a clean bill.
+
+### Findings
+
+Finding IDs are stable across passes: `R1, R2 …` in first-seen order. A later pass reuses the ID for the same finding and appends new numbers; never renumber. Preserve the concrete returned findings, not a count. Repeat this block per finding:
+
+#### R<n> — <native title>
+
+- Native finding text (trigger, impact and reasoning), verbatim:
+- Native severity/priority, category and confidence, where supplied:
+- File/line range or artifact location in the reviewed snapshot:
+- Provider's evidence/reproduction and stated uncertainty; proposed versus executed reproduction:
+- Recommended correction/question:
+- AIDLC policy mapping: Bugs / Security / Compliance; **Important** / **nit**; any disagreement with the provider explained:
+- Requirement ID(s) or intended behavior affected:
+- Disposition: open / fixed / accepted — or fix claimed — not re-reviewed / not rechecked:
+- Disposition evidence (re-review assessment reference) and who made any acceptance decision:
+
+If no findings were returned, quote the provider's bounded result and its actual coverage; retain the native verdict, explanation and confidence separately — a "correct" verdict is not approval. If no provider result exists, write `no provider result`, not `no findings`. An ADR gap is a Compliance finding with its own ID, never a blocker.
+
+### Wrapper observations
+
+Separately labelled artifact-alignment observations made during reconciliation; do not attribute them to the provider. Mismatches with intended behavior, stale artifacts, unresolved decisions, questions and unknowns. Preserve native findings even when the wrapper disagrees.
+
+### Checks run since the previous pass
+
+| R-ID | Check or interaction | Exercised revision and environment | Actual result | Evidence reference | Executed / failed / proposed / not run |
+| --- | --- | --- | --- | --- | --- |
+
+The review pass itself runs nothing. For fixes performed in a separately authorised build pass, include pre-fix evidence when available and the post-fix result; never manufacture a historical failure.
 
 ## Fix and re-review history
 
-| Finding ID | Prior disposition and scope | Agreed fix / engineer dismissal | New scope and actual check evidence | Returned re-review assessment | Current disposition / unrechecked limitation |
-| --- | --- | --- | --- | --- | --- |
+| Finding ID | Pass first seen | Prior disposition | Agreed fix / engineer acceptance reason | Fix pass scope and check evidence | Re-review pass and returned assessment | Current disposition |
+| --- | --- | --- | --- | --- | --- | --- |
 
-Identify the separate authorisation for any fix pass; this report does not authorise fixes. Record the new invocation/result and old/new snapshots. Recheck affected prior IDs and new regressions in the changed scope. A claimed fix is not resolved until the returned re-review assessment and evidence support it. Keep findings outside that scope explicitly not rechecked; a no-findings response must not silently resolve them.
+Identify the separate authorisation for each fix pass; this report authorises none. A claimed fix is `fixed` only when a returned re-review assessment and evidence support it. Findings outside a re-review's scope stay `not rechecked`; a no-findings response must not silently resolve them. After **3 fix cycles**, or when a pass returns zero Important findings, the loop stops and the engineer decides.
 
 ## Remaining risk and engineer handoff
 
-State blockers, unreviewed behavior, missing evidence/context and concrete next actions. Retain human review and repository safeguards; this report grants no merge, release or posting authority.
+Blockers, unreviewed behavior, missing evidence/context and concrete next actions. Human review and repository safeguards remain; this report grants no merge, release or posting authority.
 
-If saving was requested: record the destination and report actual post-write Read confirmation in the conversation. A Write acknowledgement alone does not verify persistence. A failed read-back is an unverified save, not success; saving the report does not expand reviewed scope.
+## References
+
+Only links supplied by the user or read back from a tool (`gh`, git log, Atlassian MCP): PR URL recorded by `aidlc-ship`, ticket, ADR/incident/threat-model paths. Never guess a URL.
+
+If saving was requested: record the destination and report actual post-write Read confirmation in the conversation. A Write acknowledgement alone does not verify persistence; a failed read-back is an unverified save. Saving does not expand reviewed scope.

@@ -392,3 +392,19 @@ omp does not run Claude's shell hooks and skips `.claude/agents/` for task agent
 ### Limits
 
 `/aidlc-ticket`, `/aidlc-spike` and the ADR, threat-model and incident offers in design, review and fix were not driven natively. GitHub and Atlassian connections were not completed — the failure and needs-auth states are the evidence, not a working integration. `doctor --install` exercised only its no-installer branch. The imported skills exceed the 7 KB AIDLC budget because upstream text is kept verbatim.
+
+## Review loop, ship, traceability, platform, conventions and reviewer agents
+
+### Exercised behavior
+
+- `check` → **138 required assets; 358 local links resolve**; export **153 files** including `docs/references/`, `docs/platform/`, `templates/conventions/`, the `aidlc-ship` skill and PR-body template, and the `aidlc-design-reviewer` / `aidlc-threat-modeler` agents with omp counterparts and the AWS MIT-0 notice.
+- **`conventions`:** on an empty fixture all five defaults were reported missing; `--apply` copied five files and a second `--apply` copied none; on a brownfield fixture with `.pre-commit-config.yaml` and `pyproject.toml`, those concerns were reported as repository-owned and no default was offered for them.
+- **Native Claude Code 2.1.274 (export):** the init catalog listed all **16** `aidlc*` commands including `aidlc-ship`.
+- **Native omp 18.1.21 (export):** the session listed the four task agents from `.omp/agents/`.
+- Skill sizes stayed within budget: orchestrator 7,693 bytes; the largest stage skills 7,164 bytes.
+
+[Evidence](evidence/review-loop-traceability-smoke.json).
+
+### Limits
+
+None of the new flows was driven in a native session: the review → fix → re-review loop with tier escalation, `/aidlc-ship`, EARS requirement IDs and task tracing, Context7 lookups recorded in `docs/references/libraries.md`, platform reads, the onboarding conventions offer, and delegation to the design-reviewer and threat-modeler remain prose contracts verified only by packaging and catalog discovery. The omp run reported 14 model-invocable `aidlc` skills where 13 are expected; the truncated answer left that unresolved.

@@ -28,21 +28,23 @@ Do not build or require this gate now. It depends on a useful evaluation process
 
 **Later steps:** identify actual approval authorities; bind decisions to the relevant changes; integrate the existing review/release systems; implement scoped hooks or managed controls where needed; test missing, rejected, stale and bypassed decisions.
 
-No approval service, external-signoff validation, signed receipt system, custom guardrail framework or managed-settings rollout is being built now. The three bundled hooks (`check-package.sh`, `project-mode.sh`, `protect-tests.sh`) are loop guardrails for package integrity, mode context and failing-test protection—not approval controls. Ordinary engineer confirmation at the stage gates, existing repository rules and tool permissions still apply. Deferral does not authorise auto-approval or auto-merge.
+No approval service, external-signoff validation, signed receipt system, custom guardrail framework or managed-settings rollout is being built now. The four bundled hooks (`check-package.sh`, `project-mode.sh`, `protect-tests.sh`, `worktree-create.sh`) are loop guardrails for package integrity, mode context, failing-test protection and worktree naming—not approval controls. Ordinary engineer confirmation at the stage gates, the review loop's three-cycle stop, `/aidlc-ship`'s always-asked commit/push/PR question, existing repository rules and tool permissions still apply. Deferral does not authorise auto-approval or auto-merge; `/aidlc-ship` never merges, approves, enables auto-merge or edits branch protection.
 
 ## F4 — Delivery integration through CircleCI
 
-**Goal:** connect reviewed work to the company's CI/CD using **CircleCI**, not a new GitHub Actions delivery assumption.
+**Goal:** connect reviewed work to the company's CI/CD using **CircleCI** through the `lb-pipelines/app-delivery-kit-vs@1` orb, not a new GitHub Actions delivery assumption.
+
+**Now:** `/aidlc-ship` takes a change whose review pass is clean to an open PR — commit with the Jira-key title, push `aidlc/<id>`, `gh pr create` from the bundled body template — and stops there. [`docs/platform/README.md`](docs/platform/README.md) points at the two internal repositories (`Logicbroker/app-template`, `Logicbroker/app-delivery-kit`; both need an authenticated `gh api`, raw links 404) and each adopting service records its own facts in `docs/platform/platform.md`, which design and plan read so that deployment, observability and promotion changes are expressed as orb values/pipeline config rather than hand-rolled infrastructure.
 
 **Later steps:** inspect the existing CircleCI configuration; identify build/test/artifact and delivery jobs; define permitted AI assistance such as failure diagnosis or release-note preparation; connect credentials and environment access through the existing platform; exercise delivery/status/rollback in the appropriate environment.
 
-Do not create delivery workflows or request CircleCI credentials now. GitHub PR review, if selected, is a code-review surface and does not imply GitHub Actions as the delivery platform.
+Do not run pipelines, promote images, approve environment holds or request CircleCI credentials from the skills now; the PR is where the agent's part ends and a human's begins. GitHub PR review, if selected, is a code-review surface and does not imply GitHub Actions as the delivery platform.
 
 ## F5 — Maintenance and operational feedback
 
 **Goal:** connect operational findings back to the workflow after delivery and operational scope are agreed.
 
-**Now:** the durable records exist as plain Markdown that an engineer confirms — `docs/incidents/` (offered by `/aidlc-fix` when a defect arrived through an alert or incident link), `docs/security/threat-models/` and `docs/security/findings/` (offered by `aidlc-design` and `/aidlc-fix`, or saved from a `/security-review` on request), `docs/adr/` and `docs/solutions/`. Nothing writes into them automatically.
+**Now:** the durable records exist as plain Markdown that an engineer confirms — `docs/incidents/` (offered by `/aidlc-fix` when a defect arrived through an alert or incident link), `docs/security/threat-models/` and `docs/security/findings/` (offered by `aidlc-design` and `/aidlc-fix`, or saved from a `/security-review` on request; the STRIDE draft comes from the read-only `aidlc-threat-modeler` agent), `docs/adr/`, `docs/references/` (Context7 lookups that settled real questions) and `docs/solutions/` (lessons with confidence and observation counts). Nothing writes into them automatically.
 
 **Later steps:** choose real signals and owners; establish deterministic triggers and response scope; investigate findings; create new intent or reviewed fixes; consider hosted scans and incident-channel tooling that would populate those stores; verify outcomes and preserve lessons.
 
@@ -62,11 +64,15 @@ For now, `/aidlc` runs the stages but a user answers every gate; "Proceed" is ne
 
 **Goal:** adapt the working generic flow to company conventions and evaluate useful additions from [Kiro specs](https://kiro.dev/docs/specs/).
 
-**Later steps:** add actual architecture and engineering context; clarify existing ownership and sources of truth; trial the workflow on ordinary work; provide examples/training; compare Kiro requirements/design/tasks with the existing intent/spec/plan chain; adopt additions only where they reduce ambiguity or rework without duplicating records.
+**Adopted — Kiro-derived traceability (ideas, not tooling):** the comparison of Kiro's requirements/design/tasks with the intent/spec/plan chain is done and five additions are in the skills and templates, credited to [kiro.dev/docs/specs](https://kiro.dev/docs/specs/): EARS acceptance criteria with stable IDs `R<n>.<m>` in `spec.md` (`WHEN … THE <system> SHALL …`, `IF … THEN …`, `WHILE …`, ubiquitous, and `SHALL CONTINUE TO` for bug fixes); `_Requirements: R…_` trace lines and `depends on:` on numbered `plan.md` tasks, with a coverage check that every R-ID has a task; one task at a time in build, ticked only after its check passes; a per-requirement verification table (`R-ID | check | observed result | not run`); and the Current / Expected / Unchanged triad in `evidence.md`. Not adopted: Kiro's run-all task waves, property-based test generation and spec hooks — tooling-bound, or new enforcement outside the current scope. See [traceability](docs/WORKFLOW.md#traceability-from-requirement-to-check).
+
+**Adopted — conventions defaults:** `templates/conventions/` and `python3 scripts/aidlc.py conventions [--apply]` give a greenfield repository a starting point and leave a brownfield repository's own tooling untouched.
+
+**Later steps:** add actual architecture and engineering context beyond the `docs/platform/` pointers; clarify existing ownership and sources of truth; trial the workflow on ordinary work; provide examples/training.
 
 **Marketplace distribution** of this package (a `.claude-plugin/marketplace.json` repository pinned through `extraKnownMarketplaces`/`enabledPlugins` or managed settings) is tracked on a **separate branch**; the supported distribution today is the repo-template export. `docs/PLUGINS.md` recommends bundled skills and official plugins per stage but installs nothing.
 
-Using Oh My Pi's existing review capability is being researched now; adopting it as a company-wide coding platform or porting the whole workflow to it is not implied.
+Using Oh My Pi's existing review capability is being researched now; adopting it as a company-wide coding platform or porting the whole workflow to it is not implied. Likewise, ECC's `continuous-learning-v2` contributed only its lesson schema (confidence ladder, observation count, scope, promotion threshold); its Pre/PostToolUse observation hooks, background Haiku observer daemon and observation log were deliberately not imported and are not queued here — the observer is off by default upstream, the model calls run in the background on the engineer's account, and the log is a telemetry-like record of tool inputs and outputs outside the repository.
 
 ## F8 — Non-technical intent route at scale
 

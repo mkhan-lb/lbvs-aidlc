@@ -2,8 +2,13 @@
 
 - Status: Verified | Needs re-check | Superseded by <path>
 - Last verified: YYYY-MM-DD against <revision or environment>
+- Confidence: 0.3 (1–2 observations) | 0.5 (3–5) | 0.7 (6–10) | 0.85 (11+)
+- Observations: <count>; change IDs: {{change_id}}
+- Scope: project | team
 
 Capture one solved, verified lesson whose reasoning is not readily recoverable from code, tests or existing docs. This is supporting knowledge, not a second spec, plan, rule or approval record. Readers weight every lesson equally, so keep one topic per file and mark a lesson **Needs re-check** rather than leaving a stale one to mislead. Replace the descriptive title, fill only supported content and remove these drafting instructions. If the lesson does not qualify, save nothing.
+
+Confidence follows the observation count above and is only raised when the same lesson is re-observed in another change (`aidlc-learn` offers the bump instead of writing a duplicate). Promotion rule: a lesson observed in at least 2 changes with Confidence ≥ 0.8 is a candidate rule for `AGENTS.md` or `.claude/rules/`; the skill proposes it to the engineer and never writes those files itself.
 
 ## Problem and durable insight
 

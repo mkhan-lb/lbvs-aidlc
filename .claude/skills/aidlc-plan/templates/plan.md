@@ -7,11 +7,21 @@ Prepare this proposal read-only before implementation. An engineer without the c
 
 ## Context and inputs
 
-Link `changes/{{change_id}}/intent.md` and `changes/{{change_id}}/spec.md`, relevant source files, and the inspected code revision or working-tree scope. Summarise the task and known decisions. If an upstream artifact is absent, identify the supplied context and gap rather than inventing it.
+Link `changes/{{change_id}}/intent.md` and `changes/{{change_id}}/spec.md`, relevant source files, and the inspected code revision or working-tree scope. Summarise the task and known decisions. If an upstream artifact is absent, identify the supplied context and gap rather than inventing it. When `docs/platform/platform.md` exists, name the platform facts (environments, orb pin, values files, observability tags) the plan relies on.
+
+Library and API references: Context7 ID and the repository's pinned version for each library, framework, SDK or cloud API the tasks touch (or the official docs URL when Context7 was unavailable); `docs/references/libraries.md` rows to add or update, or `none`.
 
 ## Files and tasks
 
-Name real paths and the change to each, including implementation, relevant tests, and documentation. Connect concrete tasks to spec requirements. Note generated or protected paths and existing repository constraints.
+Name real paths and the change to each, including implementation, relevant tests, and documentation. Note generated or protected paths and existing repository constraints. Deployment, observability and promotion work is values files and pipeline config for the `lb-pipelines/app-delivery-kit-vs@1` orb; a new data store, queue or integration adds a `docs/platform/platform.md` entry.
+
+Write tasks as numbered checkboxes. Each task ends with the spec requirement IDs it satisfies and, where relevant, its dependency; every `R<n>.<m>` in `spec.md` appears in at least one task or its exclusion is stated below the list. Build ticks `[x]` only after the task's own check passed; never tick ahead.
+
+- [ ] T1.1 <task: file(s) and change> — check: <command or observation> _Requirements: R1.1_
+- [ ] T1.2 <task> — check: <…> _Requirements: R1.1, R1.2_ depends on: T1.1
+- [ ] T2.1 <task> — check: <…> _Requirements: R2.1_
+
+Uncovered R-IDs and why: `none` or list.
 
 ## Order of work
 
@@ -27,9 +37,13 @@ Identify what could break, the riskiest step, compatibility concerns, and unreso
 
 ## Proof
 
-For each changed behavior, name the command or scenario, required environment/data, and expected observable result:
+For each requirement ID, name the command or scenario, required environment/data, and expected observable result. Verify reports this table with observed results:
 
-- Bug fixes: a reproducing check, available pre-fix evidence, and the post-fix behavior the regression check should establish.
+| R-ID | Check (command / scenario) | Expected result | Environment / data |
+| --- | --- | --- | --- |
+| R1.1 | <command or interaction> | <observable outcome> | <local, fixture, browser> |
+
+- Bug fixes: a reproducing check, available pre-fix evidence, and the post-fix behavior the regression check should establish; the `SHALL CONTINUE TO` lines name the regression checks.
 - UI work: the actual surface and visual comparison with supplied designs or agreed requirements.
 - Other behavior: relevant software tests and runtime checks, including neighboring flows where regression is plausible.
 
