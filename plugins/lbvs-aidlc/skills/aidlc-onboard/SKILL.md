@@ -14,9 +14,9 @@ Everything before step 5 is read-only, except the greenfield `conventions --appl
 
 Read the `AIDLC project mode:` line from session context, or run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`. If `.aidlc/mode` and `docs/onboarding.md` already exist, summarise the recorded decision and ask whether to refresh it before doing any scouting.
 
-**Greenfield:** say so and, unless the user explicitly wants a full onboarding pass anyway, do only this: run `python3 scripts/aidlc.py conventions` (report only) and use AskUserQuestion with exactly "Adopt default conventions (`python3 scripts/aidlc.py conventions --apply`)", "Keep my own tooling", "Decide later". Run `--apply` only on the first choice; it copies missing defaults from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` via authenticated `gh api` (never a raw link), and `docs/platform/platform.md` is filled once per service. Then stop.
+**Greenfield:** say so and, unless the user explicitly wants a full onboarding pass anyway, do only this: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions` (report only) and use AskUserQuestion with exactly "Adopt default conventions (`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions --apply`)", "Keep my own tooling", "Decide later". Run `--apply` only on the first choice; it copies missing defaults from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` via authenticated `gh api` (never a raw link), and `docs/platform/platform.md` is filled once per service. Then stop.
 
-**Brownfield:** run `python3 scripts/aidlc.py conventions` (report only) so the digest and step 4 can record which conventions files the repository already owns; never apply defaults over an existing repository.
+**Brownfield:** run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions` (report only) so the digest and step 4 can record which conventions files the repository already owns; never apply defaults over an existing repository.
 
 ## 2. Scout (delegate)
 

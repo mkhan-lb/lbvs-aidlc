@@ -23,7 +23,7 @@ Read-only means: no comments, transitions, worklogs, labels, links or edits in J
 
 ## 2. Derive and confirm the change ID
 
-Build `<key-lowercase>-<slug>`: the ticket key lowercased (`VS-1234` → `vs-1234`; GitHub `owner/repo#42` → `gh-42` unless the user prefers another prefix), then a slug of the summary's leading meaningful words. Lowercase ASCII, hyphen-separated, ≤ 40 characters, matching `^[a-z0-9]+(-[a-z0-9]+)*$` (e.g. `vs-1234-order-export`). Show the proposal and the summary it came from and confirm with AskUserQuestion: "Use `<id>`", "Let me choose", "Stop here". Run `python3 scripts/aidlc.py status` and warn when the ID or ticket already appears in `changes/`; never overwrite another change's directory.
+Build `<key-lowercase>-<slug>`: the ticket key lowercased (`VS-1234` → `vs-1234`; GitHub `owner/repo#42` → `gh-42` unless the user prefers another prefix), then a slug of the summary's leading meaningful words. Lowercase ASCII, hyphen-separated, ≤ 40 characters, matching `^[a-z0-9]+(-[a-z0-9]+)*$` (e.g. `vs-1234-order-export`). Show the proposal and the summary it came from and confirm with AskUserQuestion: "Use `<id>`", "Let me choose", "Stop here". Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" status` and warn when the ID or ticket already appears in `changes/`; never overwrite another change's directory.
 
 On confirmation write the bare ID to `.aidlc/current` (machine-local, gitignored) and Read it back.
 
