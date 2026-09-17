@@ -1,239 +1,172 @@
 # lbvs-aidlc
 
-The company AIDLC package: an AI-native development lifecycle for Claude Code based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook) and the [Claude Code best practices](https://code.claude.com/docs/en/best-practices).
+An AI-native development lifecycle for engineers using Claude Code. It turns "ask Claude to write some code" into a repeatable path — **intent → design → plan → build → verify → review → ship** — where every stage leaves a file you can read, every gate is a question you answer, and nothing is committed, pushed or deployed unless you choose it.
 
-**Intent → design → plan → build → verify → review → fixes and re-review → ship**, with a bug-fix evidence loop, requirement-to-check traceability and durable lessons.
+Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook), with requirement traceability borrowed from [Kiro specs](https://kiro.dev/docs/specs/). Works in Claude Code; also loads in Oh My Pi, and its shared instructions are read by Codex and Copilot Chat.
 
-One orchestrator, `/aidlc <change-id>`, starts a change, runs each stage skill and stops at a **stage gate**: it summarises outputs and asks you to proceed, revise or stop before the next stage. The stage skills are also invocable on their own and Claude may load them when your request matches. Two entry helpers sit in front of intent: `/aidlc-ticket <KEY>` turns a Jira key or GitHub issue into a change ID and a sourced `intent.md`, and `/aidlc-spike [change-id]` runs a time-boxed, read-only investigation into `changes/<id>/spike.md` when a question needs depth before intent or design. After the review loop closes, `/aidlc-ship [change-id]` commits, pushes `aidlc/<id>` and opens the PR — only when you choose it, never merging. Three utilities stay manual (`/aidlc-handoff`, `/aidlc-resume`, `/aidlc-ideate`). Evaluation runners, configuration-regression gates, approval enforcement, delivery execution (**CircleCI** pipelines and promotion) and maintenance automation are [deferred](FUTURE_WORK.md).
+## What you get
 
-An additional **37 ECC skills** provide optional engineering patterns and explicitly selected operational guidance; they supplement the lifecycle and are unchanged by this package's AIDLC work. Two more imported skills are wired into it: `architecture-decision-records` (ECC, same pin) writes ADRs into `docs/adr/`, and `doc-coauthoring` ([anthropics/skills](https://github.com/anthropics/skills)) helps draft intent, spec and knowledge documents. Bundled Claude Code skills and marketplace plugins worth pairing with each stage are listed in [docs/PLUGINS.md](docs/PLUGINS.md); nothing is installed automatically.
+- **17 slash commands** (`/aidlc*`): one orchestrator, the stage skills, a bug-fix loop, ticket intake, a time-boxed spike, a setup wizard, shipping, onboarding and lessons.
+- **5 subagents** that work in a fresh context and report back: a Bash-capable verifier and four read-only critics (repository scout, design reviewer, threat modeler, test critic).
+- **4 small hooks**: package check and project-mode line at session start, protection of a failing test while you fix the bug, and descriptive worktree names (`aidlc/vs-1234-order-export`).
+- **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons — all Markdown, all written only after you confirm.
+- **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `conventions`, `package` and friends.
+- Optional extras: 37 vendored [ECC](https://github.com/affaan-m/ECC) pattern skills, ADR and doc-coauthoring skills, Compound Engineering brainstorming for non-engineers, MCP declarations for Context7, GitHub and Jira.
 
-**Start with the [practical usage recipes](docs/USAGE.md).** See the [workflow contract](docs/WORKFLOW.md), [artifact conventions](docs/ARTIFACTS.md), [review options](.claude/skills/aidlc-review/references/review-options.md), the [platform pointer layer](docs/platform/README.md), the [library reference log](docs/references/README.md) and the [default conventions](templates/conventions/CONVENTIONS.md) for detail.
+Everything Claude does here is advisory instruction plus your confirmation. The skills are not security controls; your repository's permissions, branch protection and CI still apply.
 
-## Distribution
+## Install
 
-| Branch | Form | Use |
-| --- | --- | --- |
-| `main` | Repo template — `python3 scripts/aidlc.py package <new-dir>` exports a standalone tree | Primary. New services start from the export; existing repositories merge the relevant files explicitly. |
-| `plugin-marketplace` | Claude Code plugin marketplace — `.claude-plugin/marketplace.json` + generated `plugins/lbvs-aidlc/` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:aidlc <id>`) installed per repository via `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json`, or fleet-wide via managed settings. |
+**New service** — export a standalone tree and start there:
 
 ```sh
-# plugin route
-claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
-claude plugin install lbvs-aidlc@lbvs-aidlc
+git clone https://github.com/mkhan-lb/lbvs-aidlc && cd lbvs-aidlc
+python3 scripts/aidlc.py package /path/to/new-service
+cd /path/to/new-service && claude
 ```
 
-The plugin carries the AIDLC skills, all four agents, the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md` or the package-integrity hook. Regenerate it on that branch with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc.
+**Existing repository** — install the plugin (namespaced commands, nothing overwritten):
 
-## Design decisions
+```sh
+claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
+claude plugin install lbvs-aidlc@lbvs-aidlc
+# then, inside the repository:  /lbvs-aidlc:aidlc-init
+```
 
-- **Instructions.** `AGENTS.md` is the one shared instruction file (under 60 lines, ends with *Things Claude gets wrong here*). `CLAUDE.md` is `@AGENTS.md` plus a Claude-only section and `.omp/AGENTS.md` is `@../AGENTS.md` for Oh My Pi; `check` rejects duplicated text or symlinks. Codex reads `AGENTS.md` directly.
-- **Stages are model-invocable.** `/aidlc` orchestrates; each stage ends at an explicit confirmation gate. Only `aidlc-handoff`, `aidlc-resume` and `aidlc-ideate` are manual.
-- **Hooks stay narrow and deterministic.** Two `SessionStart` context hooks (package check, project mode) and one `PreToolUse` guardrail that exists only while a bug fix is in progress. No approval gates or formatters — those belong to the adopting repository.
-- **Bugs leave evidence.** `/aidlc-fix` commits the failing test before the fix, blocks edits to it while fixing, records `changes/<id>/evidence.md` with Jira/PR/incident references, and offers `/aidlc-learn`.
-- **Brownfield is detected, not assumed.** `mode` classifies the repository at session start (≥10 code files or ≥20 commits; `.aidlc/mode` overrides); `/aidlc-onboard` scouts read-only and asks modernize vs stay-legacy before drafting a repository `CLAUDE.md`.
-- **Every change runs in a worktree** on branch `aidlc/<change-id>`; `.worktreeinclude` carries `.env` and local settings into it.
-- **Non-technical entry** is optional Compound Engineering brainstorming; **caveman** is per-engineer opt-in; **ECC skills** are vendored and untouched by AIDLC work.
-- **Requirements are traceable.** Acceptance criteria in `spec.md` are EARS lines with stable IDs (`R1.1`: *WHEN … THE <system> SHALL …*); every `plan.md` task ends `_Requirements: R1.1, R2.3_`; build works one task at a time and ticks it only after its check passes; verify reports coverage per R-ID. Ideas from [Kiro specs](https://kiro.dev/docs/specs/), adopted without Kiro's tooling.
-- **Review is a bounded loop.** `/code-review` effort maps to tiers (standard `high`, escalated `xhigh`, maximum `max`, cloud `ultra`); findings are **Important** or **nit** with stable IDs; review → fix → verify → re-review runs at most three fix cycles before it always stops and asks.
-- **Shipping is a skill that always asks.** `/aidlc-ship` reads the review and evidence from disk, offers exactly *Commit, push and open PR* / *Commit only* / *Stop here*, titles commits with the Jira key (`VS-1234: …`) and never merges, approves or touches branch protection.
-- **Current docs, not training data.** Design, plan, build and fix resolve library APIs through the `context7` MCP first and log what settled a real question in `docs/references/libraries.md`.
-- **Platform is pointed at, not duplicated.** `docs/platform/` names `Logicbroker/app-template` and the `lb-pipelines/app-delivery-kit-vs@1` orb; each adopting service records its own facts in `platform.md`. Delivery execution stays deferred.
-- **Conventions default, never overwrite.** `templates/conventions/` plus `python3 scripts/aidlc.py conventions [--apply]`: greenfield adopts the defaults on request, brownfield keeps its own.
-- **Lessons carry confidence.** Each lesson records `Confidence`, `Observations` and `Scope`; a lesson observed in ≥2 changes at confidence ≥0.8 is *proposed* as a rule, never auto-written. Only the schema was borrowed from ECC `continuous-learning-v2`; its hooks and daemon were deliberately left out.
+The plugin carries the skills, agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library or the worktree hook. To merge the full template into an existing repository instead, follow the [adoption recipe](docs/USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
 
-## Working without ceremony
+Before the first session, `python3 scripts/aidlc.py doctor` tells you which optional tools and MCP credentials are present and how to get the missing ones.
 
-- **No IDs to remember.** `/aidlc` with no argument resolves the change from the branch (`aidlc/<id>`), then `.aidlc/current`, then the only change without `review.md`, and asks only if none of those answer. `python3 scripts/aidlc.py status` lists every change with the stage artifacts present, the stage reached and the next one; `current` prints just the ID and its source.
-- **Descriptive branches with your ticket key.** Change IDs are `^[a-z0-9]+(-[a-z0-9]+)*$`, so prefix the ticket: `vs-1234-order-export`. The `WorktreeCreate` hook then produces `.claude/worktrees/aidlc+vs-1234-order-export` on branch **`aidlc/vs-1234-order-export`** (branched from local `HEAD`) instead of Claude Code's default `worktree-…` name, and copies `.worktreeinclude` files itself. Non-AIDLC worktree names keep the default shape. Because the hook replaces the host's creation logic, Claude Code's worktree sweep leaves these alone: remove one with `git worktree remove`.
-- **Gates or auto-advance, your choice.** `/aidlc` asks the flow policy once per run: *confirm each stage*, *auto-advance when clear, stop before build*, or *auto-advance when clear, including build*. Auto-advance requires the stage to have saved **and read back** its artifact with no open questions, no failed or missing required check and no pending CE review; it announces each hop. The review pass always presents its findings and asks the post-review gate; only under *including build* may the fix → verify → re-review cycles continue by themselves, up to the three-cycle cap. Every commit, push, PR or deployment asks.
+## Set up a repository: `/aidlc-init`
+
+Run once per repository. It reports first and writes only what you confirm, so it is safe to run again later.
+
+| Step | What Claude does | What it asks you |
+| --- | --- | --- |
+| 0 | Runs `doctor`; shows tools and MCP auth state | *Run `doctor --install`* or *Skip* |
+| 1 | Detects greenfield or brownfield. Brownfield hands over to `/aidlc-onboard` (scout report, conventions report, modernize vs stay-legacy, a `CLAUDE.md` draft) | Greenfield: *Adopt default conventions?* |
+| 2 | Reads `.circleci/config.yml`, `deploy/`, `catalog-info.yaml`, `Taskfile.yml` to fill `docs/platform/platform.md` | Confirm each filled item; unknowns stay bracketed |
+| 3 | Explains what still needs auth: Jira via `/mcp`, GitHub via `GITHUB_PERSONAL_ACCESS_TOKEN`, Context7 optional; whether Compound Engineering is installed | Nothing — it never installs or stores secrets |
+| 4 | Offers a local code graph (`/graphify .`) when graphify is installed | *Build it* or *Skip* |
+| 5 | **Proposes up to three repository-specific agents or skills** (below) | Confirm each; drafts from a bundled template |
+| 6 | Checks `.gitignore` for worktree, fix-marker and code-graph paths | Append missing lines? |
+| 7 | Summary: written / recommended / skipped | *Start a change*, *Start from a ticket*, *Done* |
+
+**Do you need more agents?** Usually not — the bundled five plus Claude Code's own Explore and Plan agents cover most repositories, and every agent description costs context at startup. Step 5 proposes one only when the repository shows a reason for it:
+
+- a large or vocabulary-heavy subsystem (≥ 40 files, or its own glossary/docs) → a read-only `<repo>-<area>-scout`;
+- a documented multi-step test/build/verify procedure → a Bash-capable `<repo>-checker` that runs exactly those commands and reports;
+- generated code with its generator present → a read-only `<repo>-generated-guardian` that flags hand edits under generated paths;
+- a recurring written procedure (release, migration, data fix) → a repository **skill**, not an agent.
+
+Each proposal says why the existing agents do not already cover it. Alternatives it mentions: Claude Code's `/init` with `CLAUDE_CODE_NEW_INIT=1`, and the official `skill-creator` and `plugin-dev` plugins.
+
+## Your first change
+
+A typical exchange (wording illustrative; the choices are the real ones):
+
+```text
+you:     /aidlc vs-1234-order-export
+claude:  Flow policy for this run?
+         [Confirm each stage] [Auto-advance when clear, stop before build] [Auto-advance when clear, including build]
+claude:  No worktree exists for vs-1234-order-export. Create one on branch aidlc/vs-1234-order-export?
+         [Create worktree] [Continue in place]
+claude:  What kind of work is this change?
+         [Feature/change] [Bug fix] [Spike/investigation]
+```
+
+Then each stage runs, saves its file under `changes/vs-1234-order-export/`, reads it back and stops at a **gate**:
+
+```text
+claude:  Intent saved: changes/vs-1234-order-export/intent.md
+         Decisions: export is CSV only; nightly, not on demand.  Open questions: retention period?
+         [Proceed to design] [Revise this stage] [Stop here]
+```
+
+| Stage | Produces | Worth knowing |
+| --- | --- | --- |
+| intent | `intent.md` — problem, outcome, scope, open questions | Start from a Jira key instead: `/aidlc-ticket VS-1234` reads the issue and writes a sourced intent. |
+| design | `spec.md` — acceptance criteria as EARS lines with IDs (`R1.1: WHEN … THE system SHALL …`) | Library APIs are looked up through Context7 first. The `aidlc-design-reviewer` agent returns READY / NOT READY before the gate. Offers an ADR or threat model when the design warrants one. |
+| plan | `plan.md` — checkbox tasks `T1.2 … _Requirements: R1.1_` | Every requirement must appear in a task; the skill checks. |
+| build | code, one task at a time; ticks `[x]` after that task's own check passes | Runs the repository's pre-commit/lint before calling a task done. |
+| verify | a table `R-ID | check | observed result | not run (reason)` | Offers `aidlc-test-critic` to critique the tests. Never fixes code. |
+| review | `review.md` — findings with stable IDs, **Important** or **nit** | Uses the bundled `/code-review`. Then asks: *Fix findings*, *Re-review at higher effort*, *Open PR*, *Capture lesson*, *Done*. |
+| ship | commit `VS-1234: …`, push `aidlc/<id>`, PR from a template | `/aidlc-ship` asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Never merges. |
+
+**The review loop.** Important findings go back to build with their IDs, then verify, then a re-review one effort tier up (`high` → `xhigh`). After three fix cycles it always stops and asks, whatever the flow policy.
+
+**Under auto-advance** a stage moves on by itself only when its file was saved and read back with no open questions, no failed or missing check and no pending review; it announces every hop. Review always shows its findings; commits, pushes and PRs always ask.
+
+**No IDs to remember.** `/aidlc` alone works out the change from the branch, then `.aidlc/current`, then the only open change. `python3 scripts/aidlc.py status` lists every change and the stage it has reached.
+
+## Fixing a bug
+
+```text
+you:     /aidlc-fix vs-1301-duplicate-invoice
+claude:  Symptom: two invoices for order 8812 (Sentry link). Reproducing…
+         Failing test committed: tests/test_invoice.py::test_single_invoice_per_order  (protected until the fix lands)
+         Cause: retry path re-runs the issue step. Fix proposed in services/invoice.py — apply?
+```
+
+The failing test is committed **before** the fix and the `protect-tests` hook denies edits to it while the fix is in progress. The result is `changes/<id>/evidence.md` — Current / Expected / *SHALL CONTINUE TO* behaviour, the reproduction, the fix, Jira/PR/incident links — followed by an offer to record an incident (if it came from an alert) and a lesson (`/aidlc-learn`).
+
+## The commands
+
+| Command | Use it when |
+| --- | --- |
+| `/aidlc [change-id]` | Starting or continuing any change. Routes bug fixes and spikes. |
+| `/aidlc-init` | First time in a repository; setting up tools, platform facts and repository-specific agents. |
+| `/aidlc-ticket <KEY or URL>` | The work starts from a Jira issue or GitHub issue. |
+| `/aidlc-spike [change-id]` | A question needs a time-boxed, read-only investigation before intent or design. |
+| `/aidlc-intent`, `-design`, `-plan`, `-build`, `-verify`, `-review <change-id>` | Running one stage on its own. |
+| `/aidlc-fix <change-id>` | A defect: reproduce, protect the failing test, fix, record evidence. |
+| `/aidlc-ship [change-id]` | The review pass is clean and you want a commit, push and PR. |
+| `/aidlc-onboard` | An existing codebase needs conventions recorded before the first change. |
+| `/aidlc-learn <change-id>` | You learned something non-obvious worth keeping (with a confidence score). |
+| `/aidlc-handoff`, `/aidlc-resume <change-id>` | Pausing work and picking it up later (manual only). |
+| `/aidlc-ideate <topic-id>` | Comparing directions before a change exists (manual only). |
+
+Change IDs match `^[a-z0-9]+(-[a-z0-9]+)*$`; prefix your ticket key so branches and commits carry it. Claude may also load a stage skill on its own when your request matches — the gates still apply.
+
+## The agents
+
+| Agent | Tools | Called by |
+| --- | --- | --- |
+| `aidlc-verifier` | Read, Glob, Grep, Bash | verify — fresh-context behavioural check against spec and plan |
+| `aidlc-repo-scout` | read-only | onboard, spike — structured conventions report |
+| `aidlc-design-reviewer` | read-only | design — READY / NOT READY on `spec.md`/`plan.md` against intent, ADRs, platform, EARS coverage |
+| `aidlc-threat-modeler` | read-only | design — STRIDE table when a threat-model offer is accepted |
+| `aidlc-test-critic` | read-only | verify, review — tests vs requirement IDs, coupling, missing failure cases, flaky patterns |
+
+All verdicts are advisory input to the stage summary, never approvals. `/aidlc-init` can add repository-specific ones.
+
+## What accumulates
+
+| Store | Holds | Filled by |
+| --- | --- | --- |
+| `changes/<id>/` | intent, spec, plan, evidence, review, handoffs — the record of one change | every stage |
+| `docs/adr/` | architecture decisions | design, spike (offer) |
+| `docs/incidents/`, `docs/security/` | incident records, threat models, security findings | fix, design (offer) |
+| `docs/references/libraries.md` | which library pages answered real questions, with gotchas | design, plan, build, fix |
+| `docs/solutions/` | one verified lesson per file with Confidence / Observations / Scope | `/aidlc-learn` |
+| `docs/platform/platform.md` | this repository's environments, orb pin, deployment authority | you, via `/aidlc-init` |
+
+A lesson seen in two or more changes at confidence ≥ 0.8 is *proposed* as a rule for `AGENTS.md` — never written automatically.
 
 ## Status
 
-Verified in native Claude Code and Oh My Pi sessions — see [verification](docs/VERIFICATION.md): the then 13 `aidlc*` commands load from the export and, namespaced, from the plugin (the package now supplies 16, adding `aidlc-ticket`, `aidlc-spike` and `aidlc-ship`); all four hooks fire; the test-protection hook denies edits to a protected reproduction test and allows others; `/aidlc` with no argument resolves the change, asks the flow policy and creates `aidlc/<change-id>`; a driven trial ran `EnterWorktree`, the stage gates and real `compound-engineering:ce-brainstorm`, saving and reading back an intent. Five defects that trial surfaced are fixed and recorded there.
+Verified natively: the commands load in Claude Code (also namespaced from the plugin) and Oh My Pi; all hooks fire; `/aidlc` resolves the change, asks the flow policy and creates the worktree; a driven trial ran the intent stage with Compound Engineering brainstorming. Details and limits in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
-Still not driven end to end: design → review, the review loop's escalation and three-cycle stop, `/aidlc-ship` against a real remote, `/aidlc-fix` on a real defect, `/aidlc-learn` with a confidence bump, `/aidlc-ticket` against a live Jira key, `/aidlc-spike`, the ADR/threat-model/incident offers in design, review and fix, the `aidlc-design-reviewer` and `aidlc-threat-modeler` delegations, a Context7 lookup recorded in `docs/references/libraries.md`, `conventions --apply` on a greenfield repository, an observed `Auto-advancing to …` hop, and CE's non-fast path.
+**Not yet driven end to end — the next thing to do:** one real change through `/aidlc-ticket <VS key>` → design → plan → build → verify → review → `/aidlc-ship` in a repository where Jira is authenticated. That single run exercises the review loop, the reviewer and test-critic agents, Context7 lookups, EARS tracing and shipping, none of which has been observed live yet. `/aidlc-init` and `/aidlc-fix` on a real defect are also untested in a native session.
 
-## Start locally
+## Learn more
 
-Python 3 is sufficient for the helper; no third-party Python packages are required. Claude Code and authorised model access are required for the skills.
-
-```sh
-python3 scripts/aidlc.py doctor
-python3 scripts/aidlc.py doctor --install
-python3 scripts/aidlc.py check
-python3 scripts/aidlc.py mode
-python3 scripts/aidlc.py conventions
-python3 scripts/aidlc.py new example-change
-```
-
-Replace `example-change` with the real change ID (`^[a-z0-9]+(-[a-z0-9]+)*$`). `new` creates only `changes/example-change/intent.md` as a draft and refuses to overwrite. `mode` prints one line, `AIDLC project mode: greenfield` or `brownfield`, with its reasons; `.aidlc/mode` containing either word overrides detection. `doctor` reports `python3`, `git` and `claude`, the optional tools the skills use when present (`graphify`, `codegraph`, `gh`, `omp`) and, for every server declared in `.mcp.json`, what authentication it needs and whether the environment variable is set; `doctor --install` additionally runs the listed installer (`uv tool install` or `pipx`, `npm install -g`, `brew install`) for each missing optional tool and nothing else — it never installs plugins, edits settings or connects a server. None of the commands approve, commit, push or deploy.
-
-`conventions` compares the repository with the defaults in `templates/conventions/` (`.editorconfig`, `.pre-commit-config.yaml`, `ruff.toml`, `biome.json`, `CONVENTIONS.md`) and reports, per file, whether the repository already owns that concern (an existing `pyproject.toml`, ESLint or Prettier config, `CONTRIBUTING.md` counts) or a default is available; `conventions --apply` copies only the missing defaults and never overwrites. Greenfield repositories are told to adopt; brownfield repositories are told to keep their own, which `aidlc-onboard` records in the repository `CLAUDE.md`.
-
-For a separate target directory, put the root option before the subcommand: `python3 scripts/aidlc.py --root /path/to/project new example-change`. This creates an intent there; it does **not** install the package into that repository.
-
-### Project configuration
-
-| Asset | Role |
-| --- | --- |
-| `AGENTS.md` | Canonical shared instructions for every agent host. |
-| [`CLAUDE.md`](CLAUDE.md) | `@AGENTS.md` import plus a Claude-specific section; no symlink. |
-| `.omp/` | Oh My Pi: `AGENTS.md` imports `@../AGENTS.md`; `RULES.md` holds the sticky rules; `agents/` defines `aidlc-verifier`, `aidlc-repo-scout`, `aidlc-design-reviewer` and `aidlc-threat-modeler` as omp task agents (deferring to `.claude/agents/`, tools lowercase); `hooks/pre/aidlc-guards.ts` injects the project-mode line and blocks edits to protected tests, because omp does not run Claude's shell hooks. |
-| `.vscode/` | Recommends the Claude Code extension; points Copilot Chat's code-generation instructions at `AGENTS.md`; maps the settings JSON schema. Optional, editor-only. |
-| [`.claude/settings.json`](.claude/settings.json) | Registers the four hooks below and declares the Compound Engineering marketplace/plugin at project scope; no permissions, model selection or telemetry. |
-| [`.claude/hooks/check-package.sh`](.claude/hooks/check-package.sh) | `SessionStart`: read-only package check (`aidlc.py check`). |
-| `.claude/hooks/project-mode.sh` | `SessionStart`: injects the `AIDLC project mode:` line as context. |
-| `.claude/hooks/protect-tests.sh` | `PreToolUse` on `Edit\|Write\|MultiEdit\|NotebookEdit`: denies edits to test paths listed in `.aidlc/fix/*.json` while a fix is in progress. |
-| `.claude/hooks/worktree-create.sh` | `WorktreeCreate`: runs `python3 scripts/aidlc.py worktree` so `aidlc/<change-id>` becomes `.claude/worktrees/aidlc+<change-id>` on branch `aidlc/<change-id>`, copying `.worktreeinclude` files itself. |
-| [`.claude/rules/`](.claude/rules/package-maintenance.md) | Path-scoped rules; loaded when matching files are touched. |
-| `.worktreeinclude` | Copies `.env` and `.claude/settings.local.json` into new worktrees. |
-| [`docs/platform/`](docs/platform/README.md) | Pointer layer, not a copy: names `Logicbroker/app-template` (greenfield route; fetch `AGENT-SETUP.md` with an authenticated `gh api`, raw links 404) and the `lb-pipelines/app-delivery-kit-vs@1` CircleCI orb; `platform.md` is the per-repository facts template design and plan read before proposing infrastructure. |
-| [`docs/references/`](docs/references/README.md) | Context7 lookup log: `libraries.md` rows of Library, Context7 ID, version in use, pages that answered real questions, dated gotchas with the change ID. |
-| [`templates/conventions/`](templates/conventions/CONVENTIONS.md) | Default `.editorconfig`, `.pre-commit-config.yaml`, `ruff.toml`, `biome.json` and `CONVENTIONS.md`, copied only by `conventions --apply` where the repository has nothing equivalent. |
-
-[.mcp.json](.mcp.json) declares three remote (HTTP) servers and no credentials: **context7** (`https://mcp.context7.com/mcp`, current library docs; works anonymously with lower rate limits — set `CONTEXT7_API_KEY` to the literal value `Bearer <key>` for more), **github** (`https://api.githubcopilot.com/mcp/`; requires `GITHUB_PERSONAL_ACCESS_TOKEN`, which `gh auth token` prints for the logged-in account) and **atlassian** (`https://mcp.atlassian.com/v2/mcp`; OAuth 2.1 in the browser the first time you run `/mcp`). Claude Code asks once per project before connecting project-declared servers, and `python3 scripts/aidlc.py doctor` reports which variables are set. The ECC catalog under `mcp-configs/` is a verbatim upstream snapshot for reference only — its GitHub entry is outdated — so the live configuration is `.mcp.json`. `.claude/settings.local.json` is ignored and never exported; `.aidlc/fix/` and `.codegraph/` are ignored. Inherited user/managed settings, hooks and MCP connections still apply. The hooks are integrity and guardrail aids, not approval or security boundaries. See [runtime-file usage](docs/USAGE.md#project-runtime-files-and-shared-instructions).
-
-### Export a complete standalone tree
-
-```sh
-python3 scripts/aidlc.py package /path/to/new-aidlc-copy
-python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
-```
-
-The destination must not exist and its parent must exist. Export includes the declared skills, agents, templates, shared guidance, the helper, settings, hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/references/` and `docs/platform/` indexes and templates (plus any record they link), `templates/conventions/`, the vendor manifests and locally linked reference/evidence files. It does not copy Git history, `changes/` artifacts, solution/ideation stores, `.aidlc/`, local settings, credentials or plugin installations. Content is copied verbatim, **not secret-scanned**; inspect it before sharing.
-
-Launch Claude in the exported tree to use it. For an **existing codebase**, adoption is an explicit reviewed merge: compare and merge the package files with the repository's existing `AGENTS.md`/`CLAUDE.md`, `REVIEW.md`, settings, hooks and safeguards; the exporter never overlays a repository or mutates global settings. `--add-dir` alone is not a supported installation. See the [adoption recipe](docs/USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
-
-## Orchestrator, stages and utilities
-
-Every command accepts exactly one ID matching `^[a-z0-9]+(-[a-z0-9]+)*$`: a change ID, except `aidlc-ideate`, which takes a topic ID, and `aidlc-ticket`, which takes a ticket key or issue URL. Put context, paths, CE selection and requested actions in conversation, not extra arguments.
-
-| Command | Purpose |
-| --- | --- |
-| `/aidlc <change-id>` | Start or continue a change: propose a worktree, read the project mode (brownfield without a conventions record runs `aidlc-onboard` first), ask the kind of work — *Feature/change*, *Bug fix* (→ `aidlc-fix`) or *Spike/investigation* (→ `aidlc-spike`) — then run intent → design → plan → build → verify → review with a stage gate after each, drive the review loop (fix → verify → re-review, at most three fix cycles) and hand a clean pass to `aidlc-ship` when you choose. Given a ticket key instead of a change ID, it points you at `/aidlc-ticket`. |
-| `/aidlc-ticket <KEY or issue URL>` | Ticket intake: read the Jira issue (Atlassian MCP) or GitHub issue (`gh issue view` or the github MCP) read-only, derive and confirm `<key>-<slug>`, write `.aidlc/current`, create `intent.md` from the ticket's summary, description, acceptance criteria and link, then offer to continue with `/aidlc`. Never writes back to Jira or GitHub; asks you to paste the ticket when no connector is available. |
-| `/aidlc-spike [change-id]` | Time-boxed read-only investigation: agree the question, the time box and what "answered" means, investigate (Explore, `aidlc-repo-scout`, graphify when present, docs), save `changes/<change-id>/spike.md` with sourced findings, options, a recommendation and open questions, then offer to create/refresh the intent or record an ADR. Never implements. |
-| `/aidlc-intent <change-id>` | Clarify problem, outcome, scope and questions into `intent.md`. |
-| `/aidlc-design <change-id>` | Turn intent and repository context into `spec.md`: acceptance criteria as EARS lines with stable IDs (`R1.1`), library APIs resolved through Context7 first, `docs/platform/platform.md` read when present (a new store, queue or integration needs a platform entry and a threat-model offer). Before the design gate, the read-only `aidlc-design-reviewer` agent returns READY / NOT READY with numbered findings as a summary input — never an approval. |
-| `/aidlc-plan <change-id>` | Propose an implementation plan read-only; numbered checkbox tasks `- [ ] T1.2 …` each ending `_Requirements: R1.1, R2.3_` (plus `depends on:` where relevant), and the skill checks every R-ID appears in at least one task. Deployment or observability changes are expressed as values/pipeline config for the delivery orb. Standalone planning supported. |
-| `/aidlc-build <change-id>` | Save the confirmed plan (save-only on request), then implement one task at a time in order (or the task you name): run that task's own check, tick `[x]` in `plan.md` only after it passes, never tick ahead; run the repository's pre-commit/lint before declaring a task done (greenfield without any: mention `conventions --apply`). |
-| `/aidlc-verify <change-id>` | Exercise changed behaviour; report a table `R-ID \| check \| observed result \| not run (reason)` — coverage by requirement, not just by command — without fixing code. |
-| `/aidlc-review <change-id>` | Hand artifacts and evidence to an existing reviewer at a tier (standard `/code-review high` by default; escalated `xhigh` after a fix pass; `max` and cloud `ultra` on request); findings are **Important** or **nit** with stable IDs (`R1`, `R2` …) that persist across passes; each pass is recorded in `review.md`. |
-| `/aidlc-fix <change-id>` | Bug-fix loop: reproduce, commit a failing test, protect it, fix, verify, write `changes/<change-id>/evidence.md` — with the EARS triad Current / Expected / Unchanged (*SHALL CONTINUE TO*) that the reproduction and regression tests map to — and Jira/PR references, offer a lesson. |
-| `/aidlc-ship [change-id]` | Ship a reviewed change: reads `review.md` (latest pass must have zero open Important findings) and the verify evidence from disk, shows `git status`/diff, requires branch `aidlc/<id>` (refuses the default branch), then asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Commit title `VS-1234: <imperative>` when the ID starts with a Jira key, else a Conventional Commit type; body: why + `Change: <id>`; `changes/<id>/` artifacts committed with the code. Push to `origin` only after the explicit choice, never force, never to the default branch; PR via `gh pr create --base <default branch>` (github MCP when `gh` is absent) with the bundled `templates/pr-body.md`; the PR URL is read back into `evidence.md`/`review.md`. Never merges, approves, enables auto-merge or edits branch protection. |
-| `/aidlc-onboard` | Brownfield onboarding: `aidlc-repo-scout` conventions report, `python3 scripts/aidlc.py conventions` (report only, existing tooling recorded in the `CLAUDE.md` draft, never overwritten), modernize/legacy decision, proposed repository `CLAUDE.md` and `.claude/rules/` drafts written only on confirmation. Greenfield: offers *Adopt default conventions (`conventions --apply`)* and, when the project needs cloud delivery, points at `docs/platform/README.md` (app-template route). |
-| `/aidlc-learn <change-id>` | Capture one verified, non-obvious lesson with `Confidence`, `Observations` and `Scope`, or honestly skip; when a same-topic lesson is re-observed, offer to bump its Observations/Confidence instead of writing a duplicate. |
-
-| Manual utility | Purpose |
-| --- | --- |
-| `/aidlc-handoff <change-id>` | Immutable snapshot under `changes/<change-id>/handoffs/`. |
-| `/aidlc-resume <change-id>` | Read-only orientation from a selected snapshot or current artifacts, then stop. |
-| `/aidlc-ideate <topic-id>` | Compare and save candidate directions before a change is chosen. |
-
-**Stage gates.** At the end of each stage the skill summarises the artifact path, decisions, open questions and checks run, then asks: *Proceed to \<next stage\>*, *Revise this stage*, or *Stop here*. Only *Proceed* (or an announced auto-advance under a stated policy) invokes the next skill. After review the options are exactly *Fix findings (build)*, *Re-review at higher effort*, *Open PR (aidlc-ship)*, *Capture lesson (aidlc-learn)*, or *Done*.
-
-**Review loop.** Tiers map to the bundled `/code-review` effort argument: **standard** = `high` (default first pass), **escalated** = `xhigh` (every re-review after a fix pass), **maximum** = `max`, **cloud** = `ultra` (multi-agent cloud review; costs more and needs the cloud feature) — the last two only when you pick *Re-review at higher effort* or say so. Severity follows [REVIEW.md](REVIEW.md): **Important** versus **nit**. The loop is review → Important findings → fix (`aidlc-build` with the agreed finding IDs) → verify → re-review at escalated … until a pass returns zero Important findings or **three fix cycles** have run, after which it always stops and asks. Under `Flow policy: auto-advance when clear, including build` those fix → verify → re-review cycles may continue by themselves up to the cap, announcing each hop; the review pass itself always presents its findings and the post-review gate is always asked. Finding IDs (`R1`, `R2` …) are stable across passes, and `review.md` records each pass with its tier, findings and disposition.
-
-**Knowledge offers.** `aidlc-design` offers an ADR when the spec introduces or changes an architectural boundary, technology choice or contract, and a threat model when it introduces a new external interface, data store, credential or trust boundary; `aidlc-review` reports an architectural change without an ADR as a finding (not a blocker); `aidlc-fix` offers an incident record when the symptom arrived through an alert or incident link, and a security finding record for security defects. Every offer is an AskUserQuestion; nothing is written automatically.
-
-**Worktrees.** `/aidlc` and `/aidlc-fix` start by proposing a dedicated branch/worktree named `aidlc/<change-id>` (EnterWorktree when available, otherwise `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`) and ask before creating it.
-
-Planning does not save `plan.md`; `aidlc-build` saves the exact confirmed proposal after the normal writable transition. The skills are advisory instructions, not security controls; existing repository rules and tool permissions apply. Four subagents live under `.claude/agents/`: `aidlc-verifier` (Bash-capable fresh check), and three read-only ones (Read, Glob, Grep) — `aidlc-repo-scout` (conventions report for onboarding and spikes), `aidlc-design-reviewer` (adversarial pass over `spec.md`/`plan.md` against intent, ADRs, `platform.md` and conventions — requirements coverage and EARS quality, consistency with ADRs, platform fit, NFR gaps, missing threat model — verdict READY / NOT READY with numbered findings, invoked by `aidlc-design` before its gate; adapted from awslabs/aidlc-workflows, MIT-0) and `aidlc-threat-modeler` (a STRIDE table for a named boundary from `docs/security/threat-model-template.md` with a false-positive list — test fixtures, accepted risks documented in `docs/security/`, framework-handled CSRF/escaping when verified — invoked when a threat-model offer is accepted; adapted from the AWS devsecops agent, MIT-0, and ECC's security-reviewer false-positive list, MIT). Each has an `.omp/agents/` counterpart. No commit, push, PR, merge or deployment happens without your explicit authorisation.
-
-### Imported skills wired into the lifecycle
-
-| Skill | Source | What it writes |
-| --- | --- | --- |
-| `architecture-decision-records` | [ECC](https://github.com/affaan-m/ECC) at `8321021c54d670126ce3b2969d5deb880b4b0c2a`, `skills/architecture-decision-records/SKILL.md` | `docs/adr/NNNN-short-title.md` from `docs/adr/template.md` and a row in `docs/adr/README.md`, after you confirm. Upstream references to ECC's `planner`/`code-reviewer` agents are read as `aidlc-plan`/`aidlc-review` here. |
-| `doc-coauthoring` | [anthropics/skills](https://github.com/anthropics/skills) at `34040c9c568585f6929bedeaad110ad08f079624`, `skills/doc-coauthoring/SKILL.md` | Nothing on its own: a structured drafting conversation whose result you save through the owning AIDLC skill or knowledge store. |
-
-Both are model-invocable, keep their upstream text and carry one added *AIDLC integration* paragraph. Provenance and hashes live in [docs/vendor/ecc/manifest.json](docs/vendor/ecc/manifest.json) and [docs/vendor/anthropic-skills/manifest.json](docs/vendor/anthropic-skills/manifest.json); the anthropics/skills repository has no root license file and this skill no per-skill license, which [NOTICE.md](docs/vendor/anthropic-skills/NOTICE.md) records verbatim from its README ("Many skills in this repo are open source (Apache 2.0)").
-
-## Knowledge stores
-
-Five folders hold what the workflow learns, all plain Markdown, all written only after an explicit confirmation and a Read-back, none of them a control; `docs/platform/` sits beside them as a pointer layer:
-
-| Store | Record | Written by |
-| --- | --- | --- |
-| [`docs/adr/`](docs/adr/README.md) | `NNNN-short-title.md` from [`template.md`](docs/adr/template.md); indexed in the README; superseded, never renumbered or deleted | `architecture-decision-records`, offered by `aidlc-design` and `aidlc-spike`; missing ADRs surface in `aidlc-review` |
-| [`docs/incidents/`](docs/incidents/README.md) | `YYYY-MM-DD-short-title.md` from [`template.md`](docs/incidents/template.md): evidence, human triage, authorised actions, verified outcome | `aidlc-fix`, when the defect arrived through an alert or incident link; linked from `evidence.md` |
-| [`docs/security/`](docs/security/README.md) | `threat-models/<name>.md` from [`threat-model-template.md`](docs/security/threat-model-template.md); `findings/YYYY-MM-DD-<source>.md` for review, advisory or scan results with their triage | `aidlc-design` (threat model), `aidlc-fix` (security finding), `/security-review` output |
-| [`docs/references/`](docs/references/README.md) | One row per library in [`libraries.md`](docs/references/libraries.md): Library, Context7 ID as resolved, version in use, pages that answered real questions, gotchas dated with the change ID | `aidlc-design`, `aidlc-plan`, `aidlc-build`, `aidlc-fix` — within the same change, whenever a Context7 lookup settled a real question |
-| `docs/solutions/` (or the CE `docs_root`) | One verified, non-obvious lesson from the [learning template](.claude/skills/aidlc-learn/templates/learning.md), carrying the freshness fields `Status` (Verified, Needs re-check or Superseded by a path) and `Last verified: <date> against <revision or environment>`, plus `Confidence: 0.3 (1–2 observations) \| 0.5 (3–5) \| 0.7 (6–10) \| 0.85 (11+)`, `Observations: <count, change IDs>` and `Scope: project \| team` | `/aidlc-learn`; a re-observed same-topic lesson gets its Observations/Confidence bumped rather than a duplicate |
-| [`docs/platform/`](docs/platform/README.md) (pointer layer, not a store) | `platform.md`: this repository's environments and promotion path, orb pin and jobs, observability identity, secrets/identity stores, catalog metadata and deployment authority — facts about `Logicbroker/app-template` and `lb-pipelines/app-delivery-kit-vs@1`, never a copy of them | The adopting team; `aidlc-design` and `aidlc-plan` read it, and a new data store, queue or integration requires an entry |
-
-The test for where something belongs: **a recurring correction becomes a rule** in `AGENTS.md` or `.claude/rules/`, not a record; a record holds a decision, an event or a lesson with its evidence and freshness. A lesson observed in **≥2 changes with confidence ≥0.8** is a *candidate* rule for `AGENTS.md`/`.claude/rules/` — proposed to the engineer, never auto-written. The confidence ladder and promotion rule borrow only the record schema from ECC's `continuous-learning-v2`; its Pre/PostToolUse observation hooks, background `claude --model haiku` observer daemon and telemetry-like `observations.jsonl` log were deliberately **not** imported (the observer is off by default upstream, spawns background model calls billed to the user, and records tool inputs/outputs outside the repository). Skills read these files at equal weight, so mark a lesson *Needs re-check* or supersede an ADR rather than letting stale text mislead. The model is adapted from the team-knowledge chapter of AWS's [aidlc-workflows](https://github.com/awslabs/aidlc-workflows/blob/main/docs/harness-engineering/07-team-knowledge.md) and the ADR template shape used by the sibling Logicbroker `shared-services-aidlc` repository; the text here is our own. Hosted scans, incident channels and monitoring that would feed these stores automatically remain [deferred](FUTURE_WORK.md#f5--maintenance-and-operational-feedback).
-
-## Hosts
-
-| Host | What loads | Gaps |
-| --- | --- | --- |
-| Claude Code | Everything: skills, four agents, four hooks, `CLAUDE.md` → `AGENTS.md`, plugin declaration. | — |
-| Oh My Pi | `.claude/skills/` (via the `claude` provider), `.omp/AGENTS.md` + `RULES.md`, `.omp/agents/` (four counterparts), `.omp/hooks/pre/aidlc-guards.ts` (mode line + test protection, verified natively). | No `WorktreeCreate` equivalent — create worktrees with `git worktree add`; the package-integrity check is not run at start (run `aidlc.py check` yourself). |
-| Codex | `AGENTS.md` (verified once). | Skills/agents/hooks are Claude-format; no `.agents/skills` mirror is supplied. |
-| VS Code + Copilot Chat | `AGENTS.md` via `.vscode/settings.json` code-generation instructions. | Copilot has no skills, gates or hooks; it only sees the shared instructions. |
-
-Optional tooling the skills use when present, never install by themselves: **graphify** (`uv tool install graphifyy`; `/graphify .` builds a local, key-free code graph that is committed as `graphify-out/` — `aidlc-repo-scout` cites `GRAPH_REPORT.md`, `/aidlc-fix` traces callers with `graphify query`/`path`, `/aidlc-onboard` offers to build one first, `/aidlc-spike` reads it), **codegraph** ([colbymchenry/codegraph](https://github.com/colbymchenry/codegraph), MIT: a live-synced local index served over stdio MCP as the single `codegraph_explore` tool; `.codegraph/` is gitignored), the **GitHub CLI** for PR references in evidence and the github MCP token, and the **Atlassian MCP** for Jira keys. `python3 scripts/aidlc.py doctor` reports which are installed and what each MCP server needs; `doctor --install` runs the package-manager installers for missing tools. Positioning and caveats are in [PLUGINS.md](docs/PLUGINS.md#optional-code-graph-tooling).
-
-## Non-technical originators
-
-Product owners and other non-engineers enter through optional Compound Engineering brainstorming (`ce-brainstorm`) with an engineer's help; the returned brief becomes the intent source. See [PLUGINS.md](docs/PLUGINS.md#compound-engineering-non-technical-entry) for setup and a comparison with the playbook's claude.ai/Cowork route.
-
-## Optional ECC skill library
-
-The selected library comes from [ECC](https://github.com/affaan-m/ECC/tree/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills), pinned at `8321021c54d670126ce3b2969d5deb880b4b0c2a`; 37 skills imported into `.claude/skills/`. 26 reference/pattern skills load when relevant; 11 operational skills (`canary-watch`, `codebase-onboarding`, `eval-harness`, `gan-style-harness`, `git-workflow`, `github-ops`, `growth-log`, `jira-integration`, `parallel-execution-optimizer`, `production-audit`, `terminal-ops`) require explicit invocation. `architecture-decision-records` is imported from the same pin but, unlike these 37, is adapted to write into this package's `docs/adr/` (see [imported skills](#imported-skills-wired-into-the-lifecycle)). The [import manifest](docs/vendor/ecc/manifest.json) records provenance and adaptations; retain the [ECC MIT license](docs/vendor/ecc/LICENSE). [MCP examples](mcp-configs/ecc.mcp-servers.example.json) are reference-only. See [selection guidance](docs/USAGE.md#12-use-the-optional-ecc-skill-library).
-
-## Optional Compound Engineering
-
-Ordinary AIDLC works without CE. Select each integration explicitly in conversation: brainstorming (`aidlc-intent`), document review (`aidlc-design`, `aidlc-plan`), continuity (`aidlc-handoff`, `aidlc-resume`), ideation (`aidlc-ideate`) and lightweight learning capture (`aidlc-learn`). CE **3.26.3** (`EveryInc/compound-engineering-plugin`, MIT) is *declared* at project scope in [`.claude/settings.json`](.claude/settings.json) via `extraKnownMarketplaces` and `enabledPlugins`, which pins the marketplace and plugin for everyone; **each engineer still runs the install once per clone** — a trial in a fresh clone showed the declaration alone does not materialise it locally (verified: 0 CE skills before `claude plugin install compound-engineering@compound-engineering-plugin --scope project`, 35 after). Declaring the plugin is not selecting it either: skills ask before any CE handoff, and report **prepared — not run** when it is absent. Contracts reference commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`; see the [workflow guide](docs/WORKFLOW.md#optional-compound-engineering-discovery). Caveman is opt-in at user scope for engineers only ([details](docs/PLUGINS.md#caveman-opt-in-engineers-only)).
-
-## Review and delivery boundaries
-
-Prefer an existing reviewer over a custom engine. [Review options](.claude/skills/aidlc-review/references/review-options.md) supplies scope capture, a complete context packet and provider handoffs; the review loop above bounds escalation and fix cycles. If invocation is unavailable the result is **prepared — not run**, never fabricated findings. Fixes, remote comments, commits, merges and deployment require separate authority: `/aidlc-ship` is the one skill that commits, pushes and opens a PR, and it does so only after you pick that option — it never merges, approves, enables auto-merge or edits branch protection. Running pipelines and promoting images stay with CircleCI and a human ([deferred](FUTURE_WORK.md#f4--delivery-integration-through-circleci)); `docs/platform/` only tells the stages what exists.
-
-## Repository layout
-
-```text
-.
-├── AGENTS.md                    # canonical shared instructions
-├── CLAUDE.md                    # @AGENTS.md + Claude-specific section
-├── REVIEW.md                    # review policy
-├── .omp/AGENTS.md               # @../AGENTS.md for Oh My Pi
-├── .mcp.json                    # project MCP servers: context7, github, atlassian (no credentials)
-├── .worktreeinclude             # files copied into new worktrees
-├── README.md, GOALS.md, IMPLEMENTATION_PLAN.md, FUTURE_WORK.md
-├── .claude/
-│   ├── settings.json            # SessionStart + PreToolUse + WorktreeCreate hooks; CE plugin declaration
-│   ├── settings.local.json      # ignored local {}; never exported
-│   ├── hooks/                   # check-package.sh, project-mode.sh, protect-tests.sh, worktree-create.sh
-│   ├── rules/                   # path-scoped rules
-│   ├── skills/
-│   │   ├── aidlc/               # orchestrator
-│   │   ├── aidlc-ticket/, aidlc-spike/    # ticket intake; time-boxed spike (templates/spike.md)
-│   │   ├── aidlc-intent/ … aidlc-review/   # stage skills with templates (EARS spec, traced plan, review passes)
-│   │   ├── aidlc-ship/          # commit / push / PR after a clean review pass (templates/pr-body.md)
-│   │   ├── aidlc-fix/           # evidence template (EARS triad)
-│   │   ├── aidlc-onboard/
-│   │   ├── aidlc-learn/, aidlc-ideate/, aidlc-handoff/, aidlc-resume/
-│   │   ├── architecture-decision-records/, doc-coauthoring/   # imported, AIDLC-integrated
-│   │   └── <ECC skill>/         # 37 selected bundles
-│   └── agents/                  # aidlc-verifier, aidlc-repo-scout, aidlc-design-reviewer, aidlc-threat-modeler
-├── scripts/aidlc.py             # check, doctor [--install], mode, status, current, conventions [--apply], worktree, package, new
-├── templates/conventions/       # default .editorconfig, .pre-commit-config.yaml, ruff.toml, biome.json, CONVENTIONS.md
-├── mcp-configs/                 # inactive upstream example catalog (reference only)
-├── docs/                        # USAGE, WORKFLOW, ARTIFACTS, PLUGINS, VERIFICATION, sources/, evidence/
-│   ├── adr/, incidents/, security/, references/   # knowledge stores: README index + template/log each
-│   ├── platform/                # pointer layer: app-template, app-delivery-kit orb; per-repo platform.md
-│   └── vendor/ecc/, vendor/anthropic-skills/   # import manifests, LICENSE, NOTICE
-├── .aidlc/                      # mode override; current pointer and fix/ markers (ignored)
-└── changes/<change-id>/         # intent.md, spike.md, spec.md, plan.md, review.md, evidence.md, handoffs/
-```
-
-- [Goals](GOALS.md), [implementation plan](IMPLEMENTATION_PLAN.md), [future work](FUTURE_WORK.md): current scope and deferred work.
-- [Plugins](docs/PLUGINS.md), [coverage](docs/COVERAGE.md), [dependencies](docs/DEPENDENCIES.md), [measures](docs/MEASURES.md), [compatibility](docs/COMPATIBILITY.md), [prerequisites](docs/PREREQUISITES.md): reference.
-- [Verification](docs/VERIFICATION.md): executed scenarios and limits; [source snapshot](docs/sources/anthropic-playbook.md): unchanged reference.
+- [docs/USAGE.md](docs/USAGE.md) — step-by-step recipes for each situation.
+- [docs/REFERENCE.md](docs/REFERENCE.md) — every command, agent, hook, store, host and design decision in full; the helper CLI; export and plugin distribution.
+- [docs/WORKFLOW.md](docs/WORKFLOW.md) and [docs/ARTIFACTS.md](docs/ARTIFACTS.md) — the contract the skills follow and the files they write.
+- [docs/PLUGINS.md](docs/PLUGINS.md) — optional plugins, MCP servers and Compound Engineering.
+- [GOALS.md](GOALS.md), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), [FUTURE_WORK.md](FUTURE_WORK.md) — scope and what is deferred.
 
 ## License
 
-[MIT](LICENSE). Skills imported from ECC keep their upstream [MIT license](docs/vendor/ecc/LICENSE) and in-file attributions; `doc-coauthoring` from anthropics/skills carries the licensing statement recorded in [NOTICE.md](docs/vendor/anthropic-skills/NOTICE.md); the [playbook snapshot](docs/sources/anthropic-playbook.md) is reference material, not relicensed.
+[MIT](LICENSE). Skills imported from ECC keep their upstream [MIT license](docs/vendor/ecc/LICENSE) and in-file attributions; `doc-coauthoring` from anthropics/skills carries the licensing statement recorded in [NOTICE.md](docs/vendor/anthropic-skills/NOTICE.md); the agents adapted from AWS aidlc-workflows are attributed in [docs/vendor/aws-aidlc/NOTICE.md](docs/vendor/aws-aidlc/NOTICE.md); the [playbook snapshot](docs/sources/anthropic-playbook.md) is reference material, not relicensed.

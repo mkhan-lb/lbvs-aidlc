@@ -408,3 +408,17 @@ omp does not run Claude's shell hooks and skips `.claude/agents/` for task agent
 ### Limits
 
 None of the new flows was driven in a native session: the review → fix → re-review loop with tier escalation, `/aidlc-ship`, EARS requirement IDs and task tracing, Context7 lookups recorded in `docs/references/libraries.md`, platform reads, the onboarding conventions offer, and delegation to the design-reviewer and threat-modeler remain prose contracts verified only by packaging and catalog discovery. The omp run reported 14 model-invocable `aidlc` skills where 13 are expected; the truncated answer left that unresolved.
+
+## Setup wizard, test critic and the README rewrite
+
+### Exercised behavior
+
+- `check` → **143 required assets; 376 local links resolve** after adding `docs/REFERENCE.md`, `aidlc-init` with `templates/agent.md`, and `aidlc-test-critic` with its omp counterpart; export **159 files** and the exported tree passes its own `check`.
+- **Native Claude Code 2.1.274 (export, no tools):** the init event listed all **17** `aidlc*` commands including `aidlc-init`, and all **five** `aidlc*` agents including `aidlc-test-critic`.
+- Every relative link in the rewritten `README.md` and the new `docs/REFERENCE.md` (moved verbatim from the old README, links rewritten for the `docs/` location) resolves.
+
+[Evidence](evidence/init-test-critic-smoke.json).
+
+### Limits
+
+`/aidlc-init` (steps 0–7, including the repository-specific agent proposals) and the `aidlc-test-critic` delegation from verify or review were not driven in a native session; catalog discovery and packaging are the only evidence. The README's dialogue examples are illustrative wording around the real gate options, not transcripts.

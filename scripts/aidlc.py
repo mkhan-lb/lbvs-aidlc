@@ -17,7 +17,7 @@ STAGE_FILES = (("intent", "intent.md"), ("spec", "spec.md"), ("plan", "plan.md")
                ("evidence", "evidence.md"), ("review", "review.md"))
 NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
               "evidence": "review", "review": "done"}
-SKILLS = ("intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
+SKILLS = ("init", "intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
           "ticket", "spike", "ship", "handoff", "resume", "ideate")
 MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
 SKILL_DIRECTORIES = ("aidlc",) + tuple("aidlc-" + name for name in SKILLS)
@@ -36,7 +36,7 @@ REQUIRED_ASSETS = (
     "AGENTS.md", "CLAUDE.md", "REVIEW.md", "docs/COVERAGE.md", "docs/DEPENDENCIES.md",
     "docs/PREREQUISITES.md", "docs/ARTIFACTS.md", "docs/VERIFICATION.md",
     "docs/COMPATIBILITY.md", "docs/MEASURES.md", "docs/PLUGINS.md",
-    "docs/WORKFLOW.md", "docs/USAGE.md",
+    "docs/WORKFLOW.md", "docs/USAGE.md", "docs/REFERENCE.md",
     ".omp/AGENTS.md", ".omp/RULES.md", ".omp/config.yml", ".worktreeinclude",
     ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/aidlc-verifier.md", ".omp/agents/aidlc-repo-scout.md",
     ".vscode/settings.json", ".vscode/extensions.json",
@@ -55,6 +55,7 @@ REQUIRED_ASSETS = (
     ".claude/skills/aidlc-ideate/templates/ideation.md",
     ".claude/skills/aidlc-spike/templates/spike.md",
     ".claude/skills/aidlc-ship/templates/pr-body.md",
+    ".claude/skills/aidlc-init/templates/agent.md",
     "docs/adr/README.md", "docs/adr/template.md",
     "docs/incidents/README.md", "docs/incidents/template.md",
     "docs/security/README.md", "docs/security/threat-model-template.md",
@@ -64,7 +65,9 @@ REQUIRED_ASSETS = (
     "templates/conventions/.pre-commit-config.yaml", "templates/conventions/ruff.toml", "templates/conventions/biome.json",
     ".claude/agents/aidlc-verifier.md", ".claude/agents/aidlc-repo-scout.md",
     ".claude/agents/aidlc-design-reviewer.md", ".claude/agents/aidlc-threat-modeler.md",
+    ".claude/agents/aidlc-test-critic.md",
     ".omp/agents/aidlc-design-reviewer.md", ".omp/agents/aidlc-threat-modeler.md",
+    ".omp/agents/aidlc-test-critic.md",
     "docs/vendor/aws-aidlc/NOTICE.md",
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
     "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",

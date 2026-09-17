@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "scope": "README rewrite + docs/REFERENCE.md, /aidlc-init setup wizard with repository-specific agent proposals, aidlc-test-critic agent wired into verify and review",
+  "host": {
+    "claude": "2.1.274",
+    "model": "claude-sonnet-5",
+    "setting_sources": "project,local",
+    "tools": "none"
+  },
+  "helper": {
+    "check": "PASS: 143 required assets; 376 local links resolve.",
+    "export_files": 159
+  },
+  "native_catalog": {
+    "aidlc_commands": [
+      "aidlc",
+      "aidlc-build",
+      "aidlc-design",
+      "aidlc-fix",
+      "aidlc-handoff",
+      "aidlc-ideate",
+      "aidlc-init",
+      "aidlc-intent",
+      "aidlc-learn",
+      "aidlc-onboard",
+      "aidlc-plan",
+      "aidlc-resume",
+      "aidlc-review",
+      "aidlc-ship",
+      "aidlc-spike",
+      "aidlc-ticket",
+      "aidlc-verify"
+    ],
+    "aidlc_agents": [
+      "aidlc-design-reviewer",
+      "aidlc-repo-scout",
+      "aidlc-test-critic",
+      "aidlc-threat-modeler",
+      "aidlc-verifier"
+    ]
+  },
+  "not_exercised": [
+    "/aidlc-init steps 0-7 in a native session",
+    "aidlc-test-critic delegation from verify or review",
+    "repository-specific agent drafting from templates/agent.md"
+  ],
+  "cleanup": {
+    "export_removed": true
+  }
+}
