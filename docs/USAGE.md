@@ -36,18 +36,13 @@ An empty project MCP map and local settings object do not clear inherited user/m
 
 These are native Claude project files plus shared instruction text in `AGENTS.md`, which other hosts read directly. One native Codex instruction-discovery smoke passed against the earlier symlinked layout; that is not native Codex skill/hook parity or a complete workflow compatibility claim. No `.agents/skills` mirror is supplied. See the [executed checks and limits](VERIFICATION.md#minimal-project-configuration-and-shared-instructions).
 
-### Optional CE setup
+### CE availability
 
-Only engineers choosing CE need the external plugin. For an opt-in persistent marketplace installation:
+Compound Engineering **3.26.3** is declared at project scope in `.claude/settings.json` (`extraKnownMarketplaces` → `EveryInc/compound-engineering-plugin`, `enabledPlugins` → `compound-engineering@compound-engineering-plugin`). After you trust the workspace, Claude Code installs it; run `/reload-plugins` or start a new session, then confirm `compound-engineering:ce-brainstorm` appears in the skill catalog. Cloud sessions install repo-declared plugins at start. The same declaration travels with an exported tree; delete both keys there to opt out.
 
-```sh
-claude plugin marketplace add EveryInc/compound-engineering-plugin
-claude plugin install compound-engineering@compound-engineering-plugin --scope project
-```
+Declaring the plugin is not selecting it: every CE handoff still happens only when you ask for it in conversation, and skills say **prepared — not run** when it is unavailable. Run `/ce-setup` once per repository if you want a non-default `docs_root`; AIDLC reads `.compound-engineering/config.yaml` before touching solution or ideation stores.
 
-These are commands for you to run, not actions performed by AIDLC. Marketplace registration changes local Claude configuration; project installation records project defaults but does not install CE on every teammate's machine. Start a new session or use `/reload-plugins`, then check that the required namespaced skill is available.
-
-The integration contracts were reviewed at CE **3.26.3**, commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`. The marketplace commands follow its current release, not that exact pin; re-check compatibility after upgrades. Trials recorded in [verification](VERIFICATION.md) used disposable session-only plugin loading, not a persistent installation. Non-technical originators use the same plugin through `ce-brainstorm` with an engineer's help; other recommended bundled skills and plugins are listed per stage in [PLUGINS.md](PLUGINS.md).
+The integration contracts were reviewed at CE **3.26.3**, commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`; re-check them after upstream upgrades. Non-technical originators use the same plugin through `ce-brainstorm` with an engineer's help; other recommended bundled skills and plugins are listed per stage in [PLUGINS.md](PLUGINS.md).
 
 ## Run a whole change with `/aidlc`
 

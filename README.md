@@ -61,7 +61,7 @@ For a separate target directory, put the root option before the subcommand: `pyt
 | `AGENTS.md` | Canonical shared instructions for every agent host. |
 | [`CLAUDE.md`](CLAUDE.md) | `@AGENTS.md` import plus a Claude-specific section; no symlink. |
 | `.omp/AGENTS.md` | Imports `@../AGENTS.md` for Oh My Pi. |
-| [`.claude/settings.json`](.claude/settings.json) | Registers the three hooks below; no permissions, model selection or telemetry. |
+| [`.claude/settings.json`](.claude/settings.json) | Registers the three hooks below and declares the Compound Engineering marketplace/plugin at project scope; no permissions, model selection or telemetry. |
 | [`.claude/hooks/check-package.sh`](.claude/hooks/check-package.sh) | `SessionStart`: read-only package check (`aidlc.py check`). |
 | `.claude/hooks/project-mode.sh` | `SessionStart`: injects the `AIDLC project mode:` line as context. |
 | `.claude/hooks/protect-tests.sh` | `PreToolUse` on `Edit\|Write\|MultiEdit\|NotebookEdit`: denies edits to test paths listed in `.aidlc/fix/*.json` while a fix is in progress. |
@@ -120,7 +120,7 @@ The selected library comes from [ECC](https://github.com/affaan-m/ECC/tree/83210
 
 ## Optional Compound Engineering
 
-Ordinary AIDLC works without CE. Select each integration explicitly in conversation: brainstorming (`aidlc-intent`), document review (`aidlc-design`, `aidlc-plan`), continuity (`aidlc-handoff`, `aidlc-resume`), ideation (`aidlc-ideate`) and lightweight learning capture (`aidlc-learn`). Contracts reference CE **3.26.3**, commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`; see the [workflow guide](docs/WORKFLOW.md#optional-compound-engineering-discovery). AIDLC never auto-installs or silently substitutes. Caveman is opt-in at user scope for engineers only ([details](docs/PLUGINS.md#caveman-opt-in-engineers-only)).
+Ordinary AIDLC works without CE. Select each integration explicitly in conversation: brainstorming (`aidlc-intent`), document review (`aidlc-design`, `aidlc-plan`), continuity (`aidlc-handoff`, `aidlc-resume`), ideation (`aidlc-ideate`) and lightweight learning capture (`aidlc-learn`). CE **3.26.3** (`EveryInc/compound-engineering-plugin`, MIT) is declared at **project scope** in [`.claude/settings.json`](.claude/settings.json) via `extraKnownMarketplaces` and `enabledPlugins`, so it installs for anyone who trusts this workspace (also in exported trees; remove the two keys to opt out). Contracts reference commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`; see the [workflow guide](docs/WORKFLOW.md#optional-compound-engineering-discovery). Declaring the plugin is not selecting it: skills still ask before any CE handoff and never silently substitute. Caveman is opt-in at user scope for engineers only ([details](docs/PLUGINS.md#caveman-opt-in-engineers-only)).
 
 ## Review and delivery boundaries
 

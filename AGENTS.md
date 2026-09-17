@@ -27,7 +27,7 @@ Company AIDLC package: an engineer-led workflow from Anthropic's AI-native SDLC 
 - Plan mode returns proposals; `aidlc-build` saves the confirmed plan to `changes/<change-id>/plan.md` before touching code. Native plan scratch is not the canonical plan.
 - Bug fixes: reproduce, commit the failing test (asked in-flow), keep it protected while fixing, record `changes/<change-id>/evidence.md` with real Jira/PR references, then offer `/aidlc-learn`.
 - No commits, pushes, new remotes, global settings changes, bypass-permissions flags or deployments without explicit authorisation in the conversation.
-- Compound Engineering is an optional, explicitly selected plugin (non-technical entry via `ce-brainstorm`); caveman is per-engineer opt-in. This package installs neither.
+- Compound Engineering 3.26.3 is declared at project scope in `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`); it installs after workspace trust and is still used only when explicitly selected (non-technical entry via `ce-brainstorm`). Caveman is per-engineer opt-in and not declared.
 - Read `.compound-engineering/config.yaml` for `docs_root` before touching `solutions/` or `ideation/` stores; never probe the defaults speculatively.
 - Report actual commands, results and limits. Keep this file short; add a rule only when a verified mistake recurs.
 
