@@ -7,7 +7,7 @@ metadata:
 disable-model-invocation: true
 ---
 
-**AIDLC integration.** See [the optional ECC skill library](../../../docs/USAGE.md#12-use-the-optional-ecc-skill-library). Existing project conventions and canonical AIDLC artifacts prevail. Skill use is not authority for installs, commits, remote writes, deployment, or global/session changes. Invoke manually for one selected, solved and verified non-obvious lesson. Existing /aidlc-learn lifecycle and artifact conventions govern saving, reuse and updates; do not create a parallel learning store, global memory, session mutation or remote note automatically.
+**AIDLC integration.** See [the optional ECC skill library](../../../docs/USAGE.md#12-use-the-optional-ecc-skill-library). Existing project conventions and canonical AIDLC artifacts prevail. Skill use is not authority for installs, commits, remote writes, deployment, or global/session changes. Invoke manually for one selected, solved and verified non-obvious lesson. Existing /lbvs-aidlc-learn lifecycle and artifact conventions govern saving, reuse and updates; do not create a parallel learning store, global memory, session mutation or remote note automatically.
 
 # Growth Log Skill
 
@@ -21,7 +21,7 @@ disable-model-invocation: true
 - After a failure, mistake, or "that was harder than expected" moment
 - When you want to review what you've learned over a period
 
-**When NOT to activate:** Trivial changes (typo fixes, single-line tweaks, config value changes with no debugging). The threshold: *did this task involve debugging, redoing, rollback, or a non-obvious decision?* If yes → consider a user-selected /aidlc-learn capture after the lesson is solved and verified. If no → skip. No automatic post-task write is implied.
+**When NOT to activate:** Trivial changes (typo fixes, single-line tweaks, config value changes with no debugging). The threshold: *did this task involve debugging, redoing, rollback, or a non-obvious decision?* If yes → consider a user-selected /lbvs-aidlc-learn capture after the lesson is solved and verified. If no → skip. No automatic post-task write is implied.
 
 ## The Three Rules
 
@@ -111,7 +111,7 @@ Before finalizing a growth log entry:
 
 ## Storage
 
-For AIDLC, use the existing /aidlc-learn workflow and its configured solution-artifact root; do not create a parallel growth store or write global memory. The following upstream storage patterns are optional alternatives only when explicitly selected outside that lifecycle:
+For AIDLC, use the existing /lbvs-aidlc-learn workflow and its configured solution-artifact root; do not create a parallel growth store or write global memory. The following upstream storage patterns are optional alternatives only when explicitly selected outside that lifecycle:
 - Markdown files in a `growth-log/` directory (one file per day: `YYYY-MM-DD.md`)
 - A dedicated section in Notion, Obsidian, or your note-taking app
 - Plain text files with a consistent naming convention

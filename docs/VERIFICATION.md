@@ -2,6 +2,9 @@
 
 Date: 16 September 2026. This record preserves earlier source-map/helper checks and records the later workflow-only scope update separately. The full operational Anthropic lifecycle is not verified or complete, and its deferred integrations are not current workflow blockers. See [current goals](../GOALS.md) and the [workflow](WORKFLOW.md).
 
+
+> **Naming.** On 2026-09-17 the commands and agents were renamed from `/aidlc*` / `aidlc-*` to `/lbvs-aidlc*` / `lbvs-aidlc-*` to stay distinct from other AIDLC packages in the same catalog. Entries below quote the names in force when each run happened; only file links were updated. The branch prefix `aidlc/<id>`, `.aidlc/` and `scripts/aidlc.py` are unchanged.
+
 ## Initial local environment (before the Claude upgrade)
 
 - Installed Claude Code: `2.1.270` (`claude --version`).
@@ -79,7 +82,7 @@ This demonstrates this drafting handoff, **not the complete six-skill lifecycle 
 
 ### Reviewer research, not installation
 
-[Review options](../.claude/skills/aidlc-review/references/review-options.md) records current primary documentation and pinned upstream source for Claude Code's bundled review, the different first-party plugins, and OMP's built-in versus maintainer commands. The recommendation is built-in local review, with artifact context supplied explicitly. No reviewer command/plugin, remote PR review, publication or managed service was executed or installed in this update.
+[Review options](../.claude/skills/lbvs-aidlc-review/references/review-options.md) records current primary documentation and pinned upstream source for Claude Code's bundled review, the different first-party plugins, and OMP's built-in versus maintainer commands. The recommendation is built-in local review, with artifact context supplied explicitly. No reviewer command/plugin, remote PR review, publication or managed service was executed or installed in this update.
 
 Disposable scenario files were removed after capture. No permanent smoke script, evaluation runner, custom review engine or application test suite was added.
 
@@ -440,3 +443,18 @@ None of the new flows was driven in a native session: the review → fix → re-
 ### Limits
 
 Not driven natively: a repository profile written by `/aidlc-onboard`, the checker delegation and the reshaped question in `/aidlc-ship`, *Save as playbook* from a spike, the plan's playbook citation and build's Runs bump, and the new-term glossary offer in intent/design. The glossaries are unreviewed drafts; every entry is `Pending`.
+
+## Rename to `lbvs-aidlc-*`
+
+### Exercised behavior
+
+- `check` → **151 required assets; 436 local links resolve** after moving 17 skill directories and 12 agent files and rewriting 71 text files (1,048 identifier occurrences; vendor names such as `aidlc-workflows`, the AWS `aidlc-*-agent.md` files, `aws-aidlc`, the `aidlc/<id>` branch prefix, `.aidlc/` and `scripts/aidlc.py` untouched). Export **171 files**; the exported helper's `new` still finds the intent template.
+- **Native Claude Code 2.1.274 (export, no tools):** the init event listed all **17** `lbvs-aidlc*` commands and all **six** `lbvs-aidlc-*` agents; no `aidlc*` command remained.
+- Seven stage skills grew past the 7 KiB budget by 7–42 bytes from the longer prefix and were brought back under it by wording-only trims; the orchestrator is 7,788 bytes (its 7.7 KiB budget).
+
+[Evidence](evidence/rename-smoke.json).
+
+### Limits
+
+Catalog discovery only; no stage was driven under the new names. Skill-to-skill invocations (`Skill(lbvs-aidlc-fix)` and the like) and Agent-tool delegations by the new agent names are prose contracts until the end-to-end trial runs.
+

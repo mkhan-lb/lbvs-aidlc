@@ -10,7 +10,7 @@ One glossary per company, in Markdown, read by engineers and by the stages. The 
 
 ## Which one applies
 
-The repository profile's Identity section (`docs/repo-profile.md`, written by `/aidlc-onboard` or `/aidlc-init`) names the company and the glossary file. Without a profile: Virtualstock repositories are `the-edge`, `the-edge-product-induct` and their siblings; Logicbroker repositories are `api`, `connectors`, `core`, `data-layer`, `queuing` and the services around them. A repository that spans both names both files. When the two glossaries define the same word differently (Order, Order line, SKU, Supplier, Workflow), say which company's meaning you are using.
+The repository profile's Identity section (`docs/repo-profile.md`, written by `/lbvs-aidlc-onboard` or `/lbvs-aidlc-init`) names the company and the glossary file. Without a profile: Virtualstock repositories are `the-edge`, `the-edge-product-induct` and their siblings; Logicbroker repositories are `api`, `connectors`, `core`, `data-layer`, `queuing` and the services around them. A repository that spans both names both files. When the two glossaries define the same word differently (Order, Order line, SKU, Supplier, Workflow), say which company's meaning you are using.
 
 ## Source of truth
 
@@ -20,9 +20,9 @@ The repository profile's Identity section (`docs/repo-profile.md`, written by `/
 
 ## How the stages use them
 
-- `aidlc-intent` and `aidlc-design` use glossary terms verbatim in `intent.md` and `spec.md` (EARS lines name the system and its documents the way the glossary does). A word the glossary lacks is flagged as a **new term** in the artifact's open questions and offered as a draft entry from [`template.md`](template.md), written only on confirmation; it is never coined silently.
-- `aidlc-review` and the pre-PR `aidlc-conventions-checker` report terminology that drifts from the glossary as a **nit**, never a blocker.
-- `aidlc-repo-scout` and `aidlc-spike` cite the glossary instead of redefining domain words in their reports.
+- `lbvs-aidlc-intent` and `lbvs-aidlc-design` use glossary terms verbatim in `intent.md` and `spec.md` (EARS lines name the system and its documents the way the glossary does). A word the glossary lacks is flagged as a **new term** in the artifact's open questions and offered as a draft entry from [`template.md`](template.md), written only on confirmation; it is never coined silently.
+- `lbvs-aidlc-review` and the pre-PR `lbvs-aidlc-conventions-checker` report terminology that drifts from the glossary as a **nit**, never a blocker.
+- `lbvs-aidlc-repo-scout` and `lbvs-aidlc-spike` cite the glossary instead of redefining domain words in their reports.
 - Entries marked **Interpretation** carry a review question; a design that depends on one names it as an open question rather than resolving it in the spec.
 
 ## Entry format

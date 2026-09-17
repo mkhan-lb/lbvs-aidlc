@@ -1342,11 +1342,11 @@
       ],
       "changes": [
         "Added when_to_use frontmatter and one AIDLC integration paragraph after the frontmatter; retained name, description, origin metadata and auto-discovery behavior. Upstream body retained byte-for-byte.",
-        "Integration paragraph points the skill at the existing docs/adr/ store (template.md, README.md index; supersede, never renumber), requires confirmation-before-write (AskUserQuestion) and a Read-back, forbids invented context/alternatives/deciders/dates, and maps the upstream 'Planner agent' and 'Code reviewer agent' references to aidlc-design/aidlc-plan (offer an ADR) and aidlc-review (finding, not blocker)."
+        "Integration paragraph points the skill at the existing docs/adr/ store (template.md, README.md index; supersede, never renumber), requires confirmation-before-write (AskUserQuestion) and a Read-back, forbids invented context/alternatives/deciders/dates, and maps the upstream 'Planner agent' and 'Code reviewer agent' references to lbvs-aidlc-design/lbvs-aidlc-plan (offer an ADR) and lbvs-aidlc-review (finding, not blocker)."
       ],
       "dependencies": [
         "Local knowledge store: docs/adr/README.md and docs/adr/template.md (present; the skill's first-time initialisation step does not apply).",
-        "Selected local stage skills that invoke it: aidlc-design, aidlc-review (offer/flag only; no ECC planner or code-reviewer agents are installed)."
+        "Selected local stage skills that invoke it: lbvs-aidlc-design, lbvs-aidlc-review (offer/flag only; no ECC planner or code-reviewer agents are installed)."
       ],
       "limits": [
         "Imported as reference content; ADR detection and writing were not executed or runtime-verified.",

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "scope": "Rename commands /aidlc* -> /lbvs-aidlc* and agents aidlc-* -> lbvs-aidlc-*; branch prefix, .aidlc/, changes/ and scripts/aidlc.py unchanged",
+  "host": {
+    "claude": "2.1.274",
+    "setting_sources": "project,local",
+    "tools": "none"
+  },
+  "helper": {
+    "check": "PASS: 151 required assets; 436 local links resolve.",
+    "export_files": 171,
+    "new_in_export": "created changes/smoke-rename/intent.md from skills/lbvs-aidlc-intent/templates/intent.md"
+  },
+  "native_catalog": {
+    "commands": 17,
+    "agents": 6,
+    "sample": [
+      "lbvs-aidlc",
+      "lbvs-aidlc-design",
+      "lbvs-aidlc-conventions-checker"
+    ]
+  },
+  "skill_sizes": {
+    "orchestrator": 7788,
+    "largest_stage_skill": 7166,
+    "cap_stage_skill": 7168
+  },
+  "cleanup": {
+    "export_removed": true
+  }
+}

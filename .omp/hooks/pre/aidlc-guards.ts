@@ -112,7 +112,7 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
         if (regex.test(rel) || regex.test(absolute) || rel === pattern) {
           return {
             block: true,
-            reason: `aidlc-fix protects ${rel} while change '${change}' is in progress (marker .aidlc/fix/${change}.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.`,
+            reason: `lbvs-aidlc-fix protects ${rel} while change '${change}' is in progress (marker .aidlc/fix/${change}.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.`,
           };
         }
       }

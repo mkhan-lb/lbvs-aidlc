@@ -10,7 +10,7 @@ The active scope is in [GOALS.md](GOALS.md) and [IMPLEMENTATION_PLAN.md](IMPLEME
 
 **Later steps:** select genuine tasks and accepted outcomes; define isolated execution and checks; run cases against agent/model/skill versions; retain results and costs; connect incident-derived cases when maintenance exists.
 
-Do not build a runner or collect a 20–50-task corpus now. Normal tests for the software change remain in the active workflow. Each `/aidlc-fix` evidence file carries an **eval seed suggestion** under Regression protection, and a confirmed `docs/incidents/` record links back to it, so that incidents already point at future eval cases.
+Do not build a runner or collect a 20–50-task corpus now. Normal tests for the software change remain in the active workflow. Each `/lbvs-aidlc-fix` evidence file carries an **eval seed suggestion** under Regression protection, and a confirmed `docs/incidents/` record links back to it, so that incidents already point at future eval cases.
 
 The optional imported `eval-harness` and `gan-style-harness` skills provide guidance only. Their presence does not install a runner, create a corpus, establish gates or resume this workstream.
 
@@ -28,13 +28,13 @@ Do not build or require this gate now. It depends on a useful evaluation process
 
 **Later steps:** identify actual approval authorities; bind decisions to the relevant changes; integrate the existing review/release systems; implement scoped hooks or managed controls where needed; test missing, rejected, stale and bypassed decisions.
 
-No approval service, external-signoff validation, signed receipt system, custom guardrail framework or managed-settings rollout is being built now. The four bundled hooks (`check-package.sh`, `project-mode.sh`, `protect-tests.sh`, `worktree-create.sh`) are loop guardrails for package integrity, mode context, failing-test protection and worktree naming—not approval controls. Ordinary engineer confirmation at the stage gates, the review loop's three-cycle stop, `/aidlc-ship`'s always-asked commit/push/PR question, existing repository rules and tool permissions still apply. Deferral does not authorise auto-approval or auto-merge; `/aidlc-ship` never merges, approves, enables auto-merge or edits branch protection.
+No approval service, external-signoff validation, signed receipt system, custom guardrail framework or managed-settings rollout is being built now. The four bundled hooks (`check-package.sh`, `project-mode.sh`, `protect-tests.sh`, `worktree-create.sh`) are loop guardrails for package integrity, mode context, failing-test protection and worktree naming—not approval controls. Ordinary engineer confirmation at the stage gates, the review loop's three-cycle stop, `/lbvs-aidlc-ship`'s always-asked commit/push/PR question, existing repository rules and tool permissions still apply. Deferral does not authorise auto-approval or auto-merge; `/lbvs-aidlc-ship` never merges, approves, enables auto-merge or edits branch protection.
 
 ## F4 — Delivery integration through CircleCI
 
 **Goal:** connect reviewed work to the company's CI/CD using **CircleCI** through the `lb-pipelines/app-delivery-kit-vs@1` orb, not a new GitHub Actions delivery assumption.
 
-**Now:** `/aidlc-ship` takes a change whose review pass is clean to an open PR — commit with the Jira-key title, push `aidlc/<id>`, `gh pr create` from the bundled body template — and stops there. [`docs/platform/README.md`](docs/platform/README.md) points at the two internal repositories (`Logicbroker/app-template`, `Logicbroker/app-delivery-kit`; both need an authenticated `gh api`, raw links 404) and each adopting service records its own facts in `docs/platform/platform.md`, which design and plan read so that deployment, observability and promotion changes are expressed as orb values/pipeline config rather than hand-rolled infrastructure.
+**Now:** `/lbvs-aidlc-ship` takes a change whose review pass is clean to an open PR — commit with the Jira-key title, push `aidlc/<id>`, `gh pr create` from the bundled body template — and stops there. [`docs/platform/README.md`](docs/platform/README.md) points at the two internal repositories (`Logicbroker/app-template`, `Logicbroker/app-delivery-kit`; both need an authenticated `gh api`, raw links 404) and each adopting service records its own facts in `docs/platform/platform.md`, which design and plan read so that deployment, observability and promotion changes are expressed as orb values/pipeline config rather than hand-rolled infrastructure.
 
 **Later steps:** inspect the existing CircleCI configuration; identify build/test/artifact and delivery jobs; define permitted AI assistance such as failure diagnosis or release-note preparation; connect credentials and environment access through the existing platform; exercise delivery/status/rollback in the appropriate environment.
 
@@ -44,7 +44,7 @@ Do not run pipelines, promote images, approve environment holds or request Circl
 
 **Goal:** connect operational findings back to the workflow after delivery and operational scope are agreed.
 
-**Now:** the durable records exist as plain Markdown that an engineer confirms — `docs/incidents/` (offered by `/aidlc-fix` when a defect arrived through an alert or incident link), `docs/security/threat-models/` and `docs/security/findings/` (offered by `aidlc-design` and `/aidlc-fix`, or saved from a `/security-review` on request; the STRIDE draft comes from the read-only `aidlc-threat-modeler` agent), `docs/adr/`, `docs/references/` (Context7 lookups that settled real questions) and `docs/solutions/` (lessons with confidence and observation counts). Nothing writes into them automatically.
+**Now:** the durable records exist as plain Markdown that an engineer confirms — `docs/incidents/` (offered by `/lbvs-aidlc-fix` when a defect arrived through an alert or incident link), `docs/security/threat-models/` and `docs/security/findings/` (offered by `lbvs-aidlc-design` and `/lbvs-aidlc-fix`, or saved from a `/security-review` on request; the STRIDE draft comes from the read-only `lbvs-aidlc-threat-modeler` agent), `docs/adr/`, `docs/references/` (Context7 lookups that settled real questions) and `docs/solutions/` (lessons with confidence and observation counts). Nothing writes into them automatically.
 
 **Later steps:** choose real signals and owners; establish deterministic triggers and response scope; investigate findings; create new intent or reviewed fixes; consider hosted scans and incident-channel tooling that would populate those stores; verify outcomes and preserve lessons.
 
@@ -58,7 +58,7 @@ Likewise, imported `canary-watch` and `production-audit` guidance does not enabl
 
 **Later steps:** choose explicit trigger conditions; define which revisions and instructions travel between stages; integrate existing execution and review mechanisms; handle failed, superseded and ambiguous inputs; prove the real integration.
 
-For now, `/aidlc` runs the stages but a user answers every gate; "Proceed" is never inferred. No event bus, polling service or custom orchestration platform is needed.
+For now, `/lbvs-aidlc` runs the stages but a user answers every gate; "Proceed" is never inferred. No event bus, polling service or custom orchestration platform is needed.
 
 ## F7 — Company adoption and spec-driven additions
 

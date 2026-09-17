@@ -1,6 +1,6 @@
 # Engineering conventions (defaults)
 
-These are the defaults a **greenfield** repository starts from. A **brownfield** repository keeps its own conventions; `aidlc-onboard` records them in the repository `CLAUDE.md` and `python3 scripts/aidlc.py conventions` reports which files exist instead of overwriting them. Change a default here only through an ADR.
+These are the defaults a **greenfield** repository starts from. A **brownfield** repository keeps its own conventions; `lbvs-aidlc-onboard` records them in the repository `CLAUDE.md` and `python3 scripts/aidlc.py conventions` reports which files exist instead of overwriting them. Change a default here only through an ADR.
 
 ## Formatting and linting
 
@@ -23,5 +23,5 @@ These are the defaults a **greenfield** repository starts from. A **brownfield**
 
 ## Tests
 
-- Behaviour changes ship with a focused test that asserts an observable outcome; bug fixes ship with the failing reproduction test first (`/aidlc-fix`).
+- Behaviour changes ship with a focused test that asserts an observable outcome; bug fixes ship with the failing reproduction test first (`/lbvs-aidlc-fix`).
 - Prefer the repository's existing runner and layout; generated code is proven by the generator's own tests, not by hand-written assertions on its output.
