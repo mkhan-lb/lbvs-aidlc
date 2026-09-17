@@ -17,7 +17,7 @@ If the current checkout is not already a dedicated branch/worktree for this chan
 
 ## 1. Reproduce first
 
-Collect the symptom: user report, stack trace, failing command, alert or incident link. Find the defining code with Grep/Read before forming a theory. Run the smallest command or interaction that shows the defect and keep its verbatim output — this is the pre-fix evidence. If you cannot reproduce, say so and ask for more input; do not guess a fix.
+Collect the symptom: user report, stack trace, failing command, alert or incident link. Find the defining code with Grep/Read before forming a theory; when `graphify-out/graph.json` exists, or the `graphify` CLI is installed, use `graphify query "<symptom or symbol>"` / `graphify path "<A>" "<B>"` to trace callers and dependencies before reading files, and cite the `source_location`s it returns. Run the smallest command or interaction that shows the defect and keep its verbatim output — this is the pre-fix evidence. If you cannot reproduce, say so and ask for more input; do not guess a fix.
 
 ## 2. Failing test
 

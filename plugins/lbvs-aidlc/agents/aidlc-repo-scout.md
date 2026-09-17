@@ -16,6 +16,7 @@ Map how this repository is actually built and tested, then report. You only have
 4. Sample 2-3 representative source files and 2-3 tests per major area. Note naming, module layout, error handling, logging, dependency injection, async style, test framework and fixture patterns.
 5. Read every existing agent instruction file: `CLAUDE.md`, `AGENTS.md`, `.claude/rules/**`, `.cursorrules`, `.github/copilot-instructions.md`, `.ai-style-rules.md`, `CONTRIBUTING.md`.
 6. Flag hotspots: generated code, frozen/legacy packages, vendored copies, large files, TODO/FIXME clusters, missing tests, secrets-looking files, mixed conventions.
+7. If `graphify-out/graph.json` exists, Read `graphify-out/GRAPH_REPORT.md` for the god nodes, communities and surprising connections and cite it under Layout and Hotspots; it is a map of relationships, not a substitute for the samples above. Do not build or install graphify yourself — you cannot run commands; note in Recommendations when a graph would help and is absent.
 
 Use Glob and Grep first; Read selectively. Do not read every file.
 

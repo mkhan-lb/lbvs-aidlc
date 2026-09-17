@@ -18,6 +18,8 @@ Read the `AIDLC project mode:` line from session context, or run `python3 "${CLA
 
 Use the Agent tool to run `aidlc-repo-scout` with this brief: "Report on this repository per your report format. Prioritise the commands, conventions and existing agent instructions." The scout is read-only and returns headings Stack, Layout, Commands, Conventions, Testing, Hotspots/Risks, Existing agent instructions, Recommendations.
 
+Before delegating, if the `graphify` CLI is installed and `graphify-out/graph.json` is absent, offer (AskUserQuestion: "Build a code graph first", "Skip") to run `/graphify .` — code-only extraction is local and needs no API key — so the scout can cite `graphify-out/GRAPH_REPORT.md`. Never install graphify yourself; if it is missing, mention `uv tool install graphifyy` in the digest and continue without it.
+
 Read the report. Spot-check two or three cited paths with Read before relying on it; drop claims that do not hold. Present a short digest (stack, commands, notable conventions, hotspots, existing instructions found) to the user.
 
 ## 3. Decide direction

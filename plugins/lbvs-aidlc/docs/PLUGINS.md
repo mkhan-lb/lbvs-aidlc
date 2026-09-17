@@ -63,6 +63,12 @@ Code-intelligence (LSP) plugins give Claude diagnostics after every edit. Instal
 
 Connector plugins (`github`, `atlassian`, `slack`, `sentry`) add MCP servers that need their own authentication. Reuse an already-approved company connection where one exists; AIDLC skills read remote records and never write them back without explicit authority.
 
+## Optional code-graph tooling
+
+**graphify** ([Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify), Apache-2.0; PyPI name `graphifyy`) turns a repository into a queryable knowledge graph by deterministic AST parsing — code-only runs are local and need no API key; docs/PDFs are summarised through your assistant. Install once per machine (`uv tool install graphifyy`), then run `/graphify .` in the repository to produce `graphify-out/` (`graph.html`, `GRAPH_REPORT.md`, `graph.json`), which is designed to be committed. The AIDLC skills use it when present and continue without it: `aidlc-repo-scout` cites `GRAPH_REPORT.md` under Layout and Hotspots, `/aidlc-fix` traces callers with `graphify query "<symbol>"` and `graphify path "<A>" "<B>"`, and `/aidlc-onboard` offers to build the graph before scouting. `graphify install --project` also writes the `/graphify` skill into `.claude/skills/`; keep that repository-local and out of this package.
+
+"codegraph" names at least ten unrelated projects; the most credible Claude Code MCP server is [sdsrss/code-graph-mcp](https://github.com/sdsrss/code-graph-mcp) (MIT, Rust, tree-sitter, `/plugin marketplace add sdsrss/code-graph-mcp`). It overlaps graphify's call-graph and impact analysis with a much smaller community; prefer graphify unless a team needs an always-on MCP query surface.
+
 ## Optional third-party plugins
 
 ### Compound Engineering (non-technical entry)
