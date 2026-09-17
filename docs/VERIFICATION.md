@@ -422,3 +422,7 @@ None of the new flows was driven in a native session: the review → fix → re-
 ### Limits
 
 `/aidlc-init` (steps 0–7, including the repository-specific agent proposals) and the `aidlc-test-critic` delegation from verify or review were not driven in a native session; catalog discovery and packaging are the only evidence. The README's dialogue examples are illustrative wording around the real gate options, not transcripts.
+
+### Plugin defect found and fixed
+
+`scripts/build_plugin.py` on `plugin-marketplace` hard-coded two agents, so the published plugin never carried `aidlc-design-reviewer` or `aidlc-threat-modeler` although the README said "all four agents"; it also rewrote only `python3 scripts/aidlc.py mode` to the plugin root, leaving `status`, `current`, `conventions` and `doctor` pointing at a path that does not exist in an adopting repository, and did not bundle `templates/conventions/`. Fixed: agents are discovered from `.claude/agents/`, every helper mention is rewritten, the conventions defaults are bundled, and `aidlc.py new` resolves the intent template in the plugin layout. Loaded with `--plugin-dir` in an empty repository on Claude Code 2.1.274: **17** namespaced `lbvs-aidlc:aidlc*` commands and **5** namespaced agents.
