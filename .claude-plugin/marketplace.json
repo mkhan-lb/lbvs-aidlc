@@ -1,0 +1,17 @@
+{
+  "name": "lbvs-aidlc",
+  "description": "Company AIDLC plugins: the Anthropic AI-native SDLC workflow for Claude Code.",
+  "owner": {
+    "name": "Logicbroker / Virtualstock engineering",
+    "url": "https://github.com/mkhan-lb/lbvs-aidlc"
+  },
+  "plugins": [
+    {
+      "name": "lbvs-aidlc",
+      "source": "./plugins/lbvs-aidlc",
+      "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding and project-mode detection.",
+      "category": "productivity",
+      "tags": ["aidlc", "sdlc", "workflow", "review"]
+    }
+  ]
+}

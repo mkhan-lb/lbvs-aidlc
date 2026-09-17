@@ -1,0 +1,25 @@
+# Learning: {{change_id}} — descriptive lesson title
+
+Capture one solved, verified lesson whose reasoning is not readily recoverable from code, tests or existing docs. This is supporting knowledge, not a second spec, plan, rule or approval record. Replace the descriptive title, fill only supported content and remove these drafting instructions. If the lesson does not qualify, save nothing.
+
+## Problem and durable insight
+
+What actually happened, in which area and conditions? Explain the non-obvious insight and why losing it would plausibly cause recurrence, material risk or substantial rediscovery. A routine change summary is not a lesson.
+
+## Root cause and proven solution
+
+Explain the demonstrated cause or, for a knowledge lesson, the explanatory constraint behind the solution. Describe what worked and why; include only essential examples. Distinguish observed facts, user reports and inferences. Include a failed approach only if actually attempted and useful to the reasoning; do not invent a debugging history.
+
+## Verification and evidence
+
+Name the existing check or observation, exact scope and known outcome, with its source. Distinguish historical passed/failed results, user-reported results and checks not run. State what proves the solution and what the evidence does not establish. Do not represent this capture or document readback as a new test run, deployment or merge confirmation.
+
+## Recurrence and applicability
+
+Explain when to apply this lesson, the practical prevention step and remaining recurrence risk. Preserve caveats, environment/version limits and counterexamples where known; avoid a universal rule from one incident. Unresolved limitations stay visible rather than becoming claimed successes.
+
+## Sources and related knowledge
+
+Link relevant existing `changes/{{change_id}}/` artifacts, current defining source and actual verification evidence, with useful sections or line locations where known. Name missing/unavailable evidence explicitly. Include a related learning only when actually read, explaining the distinction; do not duplicate an existing same-topic lesson. Necessary conversation-only observations must be attributed with enough context to understand their limits. Redact secrets and unrelated personal information.
+
+For an explicitly authorised update, preserve the existing path, useful structure and unrelated content; record the actual update date and what new evidence changed. Optional corpus metadata may be retained, but never claim CE authorship unless CE actually ran.
