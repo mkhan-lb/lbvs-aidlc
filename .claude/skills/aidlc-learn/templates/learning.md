@@ -1,6 +1,9 @@
 # Learning: {{change_id}} — descriptive lesson title
 
-Capture one solved, verified lesson whose reasoning is not readily recoverable from code, tests or existing docs. This is supporting knowledge, not a second spec, plan, rule or approval record. Replace the descriptive title, fill only supported content and remove these drafting instructions. If the lesson does not qualify, save nothing.
+- Status: Verified | Needs re-check | Superseded by <path>
+- Last verified: YYYY-MM-DD against <revision or environment>
+
+Capture one solved, verified lesson whose reasoning is not readily recoverable from code, tests or existing docs. This is supporting knowledge, not a second spec, plan, rule or approval record. Readers weight every lesson equally, so keep one topic per file and mark a lesson **Needs re-check** rather than leaving a stale one to mislead. Replace the descriptive title, fill only supported content and remove these drafting instructions. If the lesson does not qualify, save nothing.
 
 ## Problem and durable insight
 

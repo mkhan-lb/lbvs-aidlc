@@ -10,7 +10,7 @@
   "notes": [
     "The requested upstream .agents/skills is a smaller mirror; all selected canonical names are present under upstream skills/. Local imports live in .claude/skills/; no .agents/skills mirror is supplied here.",
     "Operational guidance is manual-only; the ECC import installs or enables no ECC agents, runners, hooks, settings, plugins or MCP servers.",
-    "AIDLC separately supplies minimal native Claude settings, a read-only startup/resume package-check hook, scoped package-maintenance guidance and an empty project MCP server map. Root AGENTS.md is the exact relative symlink to CLAUDE.md, sharing instructions without claiming native Codex skill/hook parity.",
+    "AIDLC separately supplies minimal native Claude settings, a read-only startup/resume package-check hook, scoped package-maintenance guidance and a project MCP server map. Root AGENTS.md is the canonical shared instruction file; CLAUDE.md imports it, sharing instructions without claiming native Codex skill/hook parity.",
     "Shared project configuration is exported explicitly, but ignored local settings are not. Existing repository/global settings are not mutated; inherited user/managed settings, hooks and MCP connections can still apply.",
     "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating.",
     "Third-party in-file attributions are retained; Vercel source declares MIT but no standalone Vercel notice was found."
@@ -1326,6 +1326,31 @@
       ],
       "limits": [
         "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed."
+      ]
+    },
+    {
+      "name": "architecture-decision-records",
+      "source": "skills/architecture-decision-records/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/architecture-decision-records/SKILL.md",
+          "source": "skills/architecture-decision-records/SKILL.md",
+          "upstream_sha256": "525e51b4ed98222cd49ea7d2e42b51a010ecab391b25022a86164258c14b8bb0",
+          "imported_sha256": "7bf6a8903d906aa161137ed8fcd0b8b9ea21183754b226aa3db8827dc0881aa1"
+        }
+      ],
+      "changes": [
+        "Added when_to_use frontmatter and one AIDLC integration paragraph after the frontmatter; retained name, description, origin metadata and auto-discovery behavior. Upstream body retained byte-for-byte.",
+        "Integration paragraph points the skill at the existing docs/adr/ store (template.md, README.md index; supersede, never renumber), requires confirmation-before-write (AskUserQuestion) and a Read-back, forbids invented context/alternatives/deciders/dates, and maps the upstream 'Planner agent' and 'Code reviewer agent' references to aidlc-design/aidlc-plan (offer an ADR) and aidlc-review (finding, not blocker)."
+      ],
+      "dependencies": [
+        "Local knowledge store: docs/adr/README.md and docs/adr/template.md (present; the skill's first-time initialisation step does not apply).",
+        "Selected local stage skills that invoke it: aidlc-design, aidlc-review (offer/flag only; no ECC planner or code-reviewer agents are installed)."
+      ],
+      "limits": [
+        "Imported as reference content; ADR detection and writing were not executed or runtime-verified.",
+        "Upstream 'auto-detects decision moments' is advisory only: no ADR is written without explicit confirmation."
       ]
     }
   ],

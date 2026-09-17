@@ -10,7 +10,7 @@ The active scope is in [GOALS.md](GOALS.md) and [IMPLEMENTATION_PLAN.md](IMPLEME
 
 **Later steps:** select genuine tasks and accepted outcomes; define isolated execution and checks; run cases against agent/model/skill versions; retain results and costs; connect incident-derived cases when maintenance exists.
 
-Do not build a runner or collect a 20–50-task corpus now. Normal tests for the software change remain in the active workflow. Each `/aidlc-fix` evidence file carries an **eval seed suggestion** under Regression protection so that incidents already point at future eval cases.
+Do not build a runner or collect a 20–50-task corpus now. Normal tests for the software change remain in the active workflow. Each `/aidlc-fix` evidence file carries an **eval seed suggestion** under Regression protection, and a confirmed `docs/incidents/` record links back to it, so that incidents already point at future eval cases.
 
 The optional imported `eval-harness` and `gan-style-harness` skills provide guidance only. Their presence does not install a runner, create a corpus, establish gates or resume this workstream.
 
@@ -42,9 +42,11 @@ Do not create delivery workflows or request CircleCI credentials now. GitHub PR 
 
 **Goal:** connect operational findings back to the workflow after delivery and operational scope are agreed.
 
-**Later steps:** choose real signals and owners; establish deterministic triggers and response scope; investigate findings; create new intent or reviewed fixes; consider hosted scans and incident-channel tooling; verify outcomes and preserve lessons.
+**Now:** the durable records exist as plain Markdown that an engineer confirms — `docs/incidents/` (offered by `/aidlc-fix` when a defect arrived through an alert or incident link), `docs/security/threat-models/` and `docs/security/findings/` (offered by `aidlc-design` and `/aidlc-fix`, or saved from a `/security-review` on request), `docs/adr/` and `docs/solutions/`. Nothing writes into them automatically.
 
-Monitoring, scheduled security scans, Claude Tag and other incident integrations remain deferred. The existing incident template and source research are retained for later use, not active prerequisites.
+**Later steps:** choose real signals and owners; establish deterministic triggers and response scope; investigate findings; create new intent or reviewed fixes; consider hosted scans and incident-channel tooling that would populate those stores; verify outcomes and preserve lessons.
+
+Monitoring, scheduled hosted security scans, Claude Tag and other incident integrations remain deferred. The incident template now lives at `docs/incidents/template.md` as an active knowledge-store template, not a deferred artifact; the source research is retained for later use, not as an active prerequisite.
 
 Likewise, imported `canary-watch` and `production-audit` guidance does not enable monitoring, schedule jobs, grant production access or perform incident/notification integration.
 

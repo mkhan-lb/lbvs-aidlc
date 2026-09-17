@@ -377,3 +377,18 @@ omp does not run Claude's shell hooks and skips `.claude/agents/` for task agent
 ### Limits
 
 `edit`-tool protection relies on parsing `[PATH#TAG]` headers from the hashline payload and was not exercised natively (only `write` was). omp has no `WorktreeCreate` hook, so omp sessions fall back to `git worktree add`; the package-integrity check does not run at omp session start. graphify wiring in the scout, fix and onboarding skills is prose that activates only when `graphify-out/` or the CLI exists; it was not exercised. The VS Code settings were not opened in VS Code.
+
+## Knowledge stores, MCP declarations, ticket and spike
+
+### Exercised behavior
+
+- `check` → **122 required assets; 314 local links resolve**; export **136 files** containing `docs/adr/`, `docs/incidents/` (template moved from the removed `docs/deferred/`), `docs/security/`, the `aidlc-ticket` and `aidlc-spike` skills, the imported `doc-coauthoring` and `architecture-decision-records` skills and the anthropic-skills manifest/NOTICE.
+- **doctor:** reports optional tools (graphify, codegraph, gh, omp) with install commands and the auth need of every server in `.mcp.json`; with `PATH` stripped, `doctor --install` printed *no supported installer found* for each missing tool and ran nothing; a project without `.mcp.json` reports that plainly.
+- **Native Claude Code 2.1.274 in the export:** 15 `aidlc*` commands plus `architecture-decision-records` and `doc-coauthoring` loaded. With project servers pre-approved for the smoke, `context7` **connected** anonymously, `github` **failed** (no `GITHUB_PERSONAL_ACCESS_TOKEN`) and `atlassian` reported **needs-auth** (OAuth 2.1) — exactly the prerequisites `doctor` had listed.
+- **Imports:** upstream and imported SHA-256 recorded in [`docs/vendor/anthropic-skills/manifest.json`](vendor/anthropic-skills/manifest.json) and the ECC manifest; the anthropics/skills licensing position (README statement, no LICENSE file) is quoted in [`NOTICE.md`](vendor/anthropic-skills/NOTICE.md).
+
+[Evidence](evidence/knowledge-mcp-smoke.json).
+
+### Limits
+
+`/aidlc-ticket`, `/aidlc-spike` and the ADR, threat-model and incident offers in design, review and fix were not driven natively. GitHub and Atlassian connections were not completed — the failure and needs-auth states are the evidence, not a working integration. `doctor --install` exercised only its no-installer branch. The imported skills exceed the 7 KB AIDLC budget because upstream text is kept verbatim.

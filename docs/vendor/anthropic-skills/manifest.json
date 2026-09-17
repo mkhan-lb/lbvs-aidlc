@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/anthropics/skills",
+    "commit": "34040c9c568585f6929bedeaad110ad08f079624",
+    "source_tree": "skills",
+    "license": "Apache-2.0 per repository README; no LICENSE file at root or in the skill directory",
+    "license_file": "docs/vendor/anthropic-skills/NOTICE.md"
+  },
+  "notes": [
+    "Licensing is recorded as stated, not as verified: at the pinned commit the repository has no root LICENSE file and skills/doc-coauthoring has no LICENSE.txt; the README says only \"Many skills in this repo are open source (Apache 2.0).\" See NOTICE.md for the full quotation and the date consulted.",
+    "Documentation imported only; the skill's create_file/str_replace and claude.ai connector instructions are mapped to Write/Edit and Task subagents by the AIDLC integration paragraph. No agents, hooks, settings, plugins or MCP servers are installed by this import.",
+    "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating."
+  ],
+  "skills": [
+    {
+      "name": "doc-coauthoring",
+      "source": "skills/doc-coauthoring/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/doc-coauthoring/SKILL.md",
+          "source": "skills/doc-coauthoring/SKILL.md",
+          "upstream_sha256": "2e47d78846faeea4a56e9809c52700087a15a2155a3f293a3efbaded81398ef4",
+          "imported_sha256": "22de9b728f57ccdd33ee747b34f54df1bfaedae82311a37582de05a572a23912"
+        }
+      ],
+      "changes": [
+        "Added when_to_use frontmatter (upstream had name and description only; description retained verbatim) and one AIDLC integration paragraph after the frontmatter; upstream body retained byte-for-byte.",
+        "Integration paragraph scopes the skill to prose (standalone documents or the text inside canonical changes/<id>/ artifacts, which stay owned by their stage skills), routes ADRs, incidents and threat models to docs/adr/, docs/incidents/ and docs/security/threat-models/ with confirmation-before-write and Read-back, forbids invented facts, and maps create_file/str_replace to Write/Edit and 'fresh Claude' reader testing to a Task subagent."
+      ],
+      "dependencies": [
+        "Optional local companion: architecture-decision-records (.claude/skills/architecture-decision-records/SKILL.md) for decision docs that become ADRs."
+      ],
+      "limits": [
+        "Imported as reference content; the workflow was not executed or runtime-verified.",
+        "The upstream file is 15815 bytes and the import 17022 bytes; the AIDLC 7 KB budget applies to AIDLC-authored skills, imported text is kept whole for provenance."
+      ]
+    }
+  ]
+}

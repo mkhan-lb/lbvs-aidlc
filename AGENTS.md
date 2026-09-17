@@ -1,6 +1,6 @@
 # lbvs-aidlc
 
-Company AIDLC package: an engineer-led workflow from Anthropic's AI-native SDLC playbook, exported as a repository template. Artifacts live in `changes/<change-id>/` (`intent.md`, `spec.md`, `plan.md`, `evidence.md`, `review.md`). Contract: docs/WORKFLOW.md. Recipes: docs/USAGE.md. Scope: GOALS.md. Deferred work: FUTURE_WORK.md.
+Company AIDLC package: an engineer-led workflow from Anthropic's AI-native SDLC playbook, exported as a repository template. Artifacts live in `changes/<change-id>/` (`intent.md`, `spike.md`, `spec.md`, `plan.md`, `evidence.md`, `review.md`); knowledge records in `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/solutions/`. Contract: docs/WORKFLOW.md. Recipes: docs/USAGE.md. Scope: GOALS.md. Deferred work: FUTURE_WORK.md.
 
 ## Commands
 
@@ -9,13 +9,16 @@ Company AIDLC package: an engineer-led workflow from Anthropic's AI-native SDLC 
 - `python3 scripts/aidlc.py current` — the change ID in play, resolved from the branch, `.aidlc/current` or the only change without `review.md`; exit 1 when nothing resolves.
 - `python3 scripts/aidlc.py mode` — prints `AIDLC project mode: greenfield|brownfield`; `.aidlc/mode` overrides the heuristic.
 - `python3 scripts/aidlc.py new <change-id>` — creates only `changes/<change-id>/intent.md`; never overwrites.
-- `python3 scripts/aidlc.py doctor` — local prerequisites; external services are not checked.
+- `python3 scripts/aidlc.py doctor` — local prerequisites, optional tools (`graphify`, `codegraph`, `gh`, `omp`) and the auth each `.mcp.json` server needs; `--install` runs the `uv`/`pipx`, `npm` or `brew` installer for missing optional tools only. Connectivity and external services are not checked.
 - `python3 scripts/aidlc.py package <new-dir>` — exports the standalone template; never overlays an existing repository or installs plugins.
 - `python3 scripts/aidlc.py worktree` — the `WorktreeCreate` hook entrypoint; reads the requested name on stdin and prints the worktree path. Not for direct use.
 
-- `.claude/skills/aidlc/` — the `/aidlc` orchestrator; it resolves the change, proposes the worktree, reads the project mode and runs the stages.
-- `.claude/skills/aidlc-*/` — stage skills plus `aidlc-fix` (bug evidence loop), `aidlc-onboard` (brownfield conventions), `aidlc-learn` (one durable lesson). Manual-only utilities: `aidlc-handoff`, `aidlc-resume`, `aidlc-ideate`.
-- `.claude/skills/<other>/` — optional ECC pattern library, pinned in docs/vendor/ecc/manifest.json. Reference material; it does not own artifacts or grant permissions.
+- `.claude/skills/aidlc/` — the `/aidlc` orchestrator; it resolves the change, proposes the worktree, reads the project mode, asks Feature/change · Bug fix · Spike/investigation and runs the stages.
+- `.claude/skills/aidlc-*/` — stage skills plus `aidlc-ticket` (Jira/GitHub intake → confirmed ID + seeded intent, read-only), `aidlc-spike` (time-boxed investigation → `spike.md`, never implements), `aidlc-fix` (bug evidence loop), `aidlc-onboard` (brownfield conventions), `aidlc-learn` (one durable lesson). Manual-only utilities: `aidlc-handoff`, `aidlc-resume`, `aidlc-ideate`.
+- `.claude/skills/architecture-decision-records/`, `.claude/skills/doc-coauthoring/` — imported (ECC pin; anthropics/skills `34040c9c`), upstream text plus one AIDLC integration paragraph; the first writes `docs/adr/` after confirmation, the second drafts and saves nothing itself.
+- `.claude/skills/<other>/` — optional ECC pattern library, pinned in docs/vendor/ecc/manifest.json (anthropics import in docs/vendor/anthropic-skills/). Reference material; it does not own artifacts or grant permissions.
+- `docs/adr/`, `docs/incidents/`, `docs/security/` — knowledge stores: `README.md` index + template each (`template.md`, `template.md`, `threat-model-template.md`). Written only after AskUserQuestion confirmation and a Read-back; offered by design (ADR, threat model), spike (ADR), fix (incident, security finding); review flags an architectural change without an ADR as a finding.
+- `.mcp.json` — `context7` (anonymous or `CONTEXT7_API_KEY` = `Bearer <key>`), `github` (`GITHUB_PERSONAL_ACCESS_TOKEN`), `atlassian` (OAuth via `/mcp`); no credentials in the file. `mcp-configs/` is an inactive upstream snapshot.
 - `.claude/agents/` — `aidlc-verifier` (fresh-context checks, no fixes), `aidlc-repo-scout` (read-only conventions report).
 - `.claude/settings.json` + `.claude/hooks/` — SessionStart: `check-package.sh`, `project-mode.sh`; PreToolUse: `protect-tests.sh` denies edits to paths listed in `.aidlc/fix/*.json`; WorktreeCreate: `worktree-create.sh` names worktrees `aidlc/<change-id>` instead of Claude Code's default.
 

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scope": "Knowledge stores, official MCP declarations, doctor --install, ticket/spike skills, two imported skills",
+  "helper": {
+    "check": "PASS: 122 required assets; 314 local links resolve.",
+    "export_files": 136,
+    "doctor_install_no_installers": "with PATH stripped to /usr/bin:/bin, --install printed \"no supported installer found (…)\" for graphify, codegraph and gh and ran nothing",
+    "doctor_mcp_report": [
+      "atlassian: auth oauth …",
+      "context7: auth optional — CONTEXT7_API_KEY is NOT set …",
+      "github: auth required — GITHUB_PERSONAL_ACCESS_TOKEN is NOT set …"
+    ],
+    "mcp_missing_project": "MCP: no .mcp.json in the target project"
+  },
+  "native_claude": {
+    "version": "2.1.274 (export, project+local settings, enableAllProjectMcpServers for the smoke, no tools)",
+    "aidlc_commands": 15,
+    "imported_commands": [
+      "architecture-decision-records",
+      "doc-coauthoring"
+    ],
+    "mcp": {
+      "context7": "connected (anonymous; CONTEXT7_API_KEY unset)",
+      "github": "failed (GITHUB_PERSONAL_ACCESS_TOKEN unset — matches doctor)",
+      "atlassian": "needs-auth (OAuth 2.1 on first /mcp — matches doctor)"
+    }
+  },
+  "imports": {
+    "doc-coauthoring": {
+      "upstream": "anthropics/skills@34040c9c568585f6929bedeaad110ad08f079624 skills/doc-coauthoring/SKILL.md",
+      "upstream_sha256": "2e47d78846faeea4a56e9809c52700087a15a2155a3f293a3efbaded81398ef4",
+      "imported_sha256": "22de9b728f57ccdd33ee747b34f54df1bfaedae82311a37582de05a572a23912",
+      "license": "Apache-2.0 per repository README only; no LICENSE file at root or in the skill directory at the pinned commit"
+    },
+    "architecture-decision-records": {
+      "upstream": "affaan-m/ECC@8321021c54d670126ce3b2969d5deb880b4b0c2a skills/architecture-decision-records/SKILL.md",
+      "upstream_sha256": "525e51b4ed98222cd49ea7d2e42b51a010ecab391b25022a86164258c14b8bb0",
+      "imported_sha256": "7bf6a8903d906aa161137ed8fcd0b8b9ea21183754b226aa3db8827dc0881aa1",
+      "license": "MIT (ECC root LICENSE)"
+    }
+  },
+  "limits": [
+    "/aidlc-ticket and /aidlc-spike were not driven in a native session; the ADR, threat-model and incident offers in design/review/fix are prose and were not exercised.",
+    "MCP smoke used enableAllProjectMcpServers to skip the interactive approval; an engineer sees the approval prompt once per project.",
+    "github and atlassian connectivity were not completed (no PAT, no OAuth) — the failure/needs-auth states are the evidence that doctor reports the right prerequisites.",
+    "doctor --install was exercised only on its no-installer branch; the real install path was not run."
+  ],
+  "cleanup": {
+    "export_removed": true
+  }
+}
