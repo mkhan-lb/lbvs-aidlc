@@ -38,6 +38,8 @@ REQUIRED_ASSETS = (
     "docs/COMPATIBILITY.md", "docs/MEASURES.md", "docs/PLUGINS.md",
     "docs/WORKFLOW.md", "docs/USAGE.md",
     ".omp/AGENTS.md", ".omp/RULES.md", ".omp/config.yml", ".worktreeinclude",
+    ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/aidlc-verifier.md", ".omp/agents/aidlc-repo-scout.md",
+    ".vscode/settings.json", ".vscode/extensions.json",
     ".mcp.json", ".claude/settings.json",
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh",
@@ -473,6 +475,10 @@ def doctor(root):
         print("{}: {}".format(executable, path or "MISSING"))
         if path is None:
             missing.append(executable)
+    for optional, hint in (("graphify", "optional: `uv tool install graphifyy` gives /graphify and graphify query for code relationships"),
+                           ("gh", "optional: GitHub CLI for PR references in evidence.md"),
+                           ("omp", "optional: Oh My Pi host")):
+        print("{}: {}".format(optional, shutil.which(optional) or "not installed ({})".format(hint)))
     if shutil.which("git"):
         try:
             result = subprocess.run(

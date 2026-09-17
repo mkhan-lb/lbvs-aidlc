@@ -68,7 +68,8 @@ For a separate target directory, put the root option before the subcommand: `pyt
 | --- | --- |
 | `AGENTS.md` | Canonical shared instructions for every agent host. |
 | [`CLAUDE.md`](CLAUDE.md) | `@AGENTS.md` import plus a Claude-specific section; no symlink. |
-| `.omp/AGENTS.md` | Imports `@../AGENTS.md` for Oh My Pi. |
+| `.omp/` | Oh My Pi: `AGENTS.md` imports `@../AGENTS.md`; `RULES.md` holds the sticky rules; `agents/` defines `aidlc-verifier` and `aidlc-repo-scout` as omp task agents (deferring to `.claude/agents/`); `hooks/pre/aidlc-guards.ts` injects the project-mode line and blocks edits to protected tests, because omp does not run Claude's shell hooks. |
+| `.vscode/` | Recommends the Claude Code extension; points Copilot Chat's code-generation instructions at `AGENTS.md`; maps the settings JSON schema. Optional, editor-only. |
 | [`.claude/settings.json`](.claude/settings.json) | Registers the three hooks below and declares the Compound Engineering marketplace/plugin at project scope; no permissions, model selection or telemetry. |
 | [`.claude/hooks/check-package.sh`](.claude/hooks/check-package.sh) | `SessionStart`: read-only package check (`aidlc.py check`). |
 | `.claude/hooks/project-mode.sh` | `SessionStart`: injects the `AIDLC project mode:` line as context. |
@@ -117,6 +118,17 @@ Every command accepts exactly one ID matching `^[a-z0-9]+(-[a-z0-9]+)*$`: a chan
 **Worktrees.** `/aidlc` and `/aidlc-fix` start by proposing a dedicated branch/worktree named `aidlc/<change-id>` (EnterWorktree when available, otherwise `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`) and ask before creating it.
 
 Planning does not save `plan.md`; `aidlc-build` saves the exact confirmed proposal after the normal writable transition. The skills are advisory instructions, not security controls; existing repository rules and tool permissions apply. `aidlc-verifier` (Bash-capable) and `aidlc-repo-scout` (Read/Glob/Grep only) are the two subagents. No commit, push, PR, merge or deployment happens without your explicit authorisation.
+
+## Hosts
+
+| Host | What loads | Gaps |
+| --- | --- | --- |
+| Claude Code | Everything: skills, agents, four hooks, `CLAUDE.md` → `AGENTS.md`, plugin declaration. | — |
+| Oh My Pi | `.claude/skills/` (via the `claude` provider), `.omp/AGENTS.md` + `RULES.md`, `.omp/agents/`, `.omp/hooks/pre/aidlc-guards.ts` (mode line + test protection, verified natively). | No `WorktreeCreate` equivalent — create worktrees with `git worktree add`; the package-integrity check is not run at start (run `aidlc.py check` yourself). |
+| Codex | `AGENTS.md` (verified once). | Skills/agents/hooks are Claude-format; no `.agents/skills` mirror is supplied. |
+| VS Code + Copilot Chat | `AGENTS.md` via `.vscode/settings.json` code-generation instructions. | Copilot has no skills, gates or hooks; it only sees the shared instructions. |
+
+Optional tooling the skills use when present, never install: **graphify** (`uv tool install graphifyy`; `/graphify .` builds a local, key-free code graph — `aidlc-repo-scout` cites `graphify-out/GRAPH_REPORT.md`, `/aidlc-fix` traces callers with `graphify query`/`path`, `/aidlc-onboard` offers to build one first), the **GitHub CLI** for PR references in evidence, and the **Atlassian MCP** for Jira keys. `python3 scripts/aidlc.py doctor` reports which are installed.
 
 ## Non-technical originators
 

@@ -362,3 +362,18 @@ Relying on the caller to pass `aidlc/<change-id>` was fragile. `worktree_path()`
 ### Limits
 
 The run selected an auto-advance policy but stopped before any stage completed, so an actual `Auto-advancing to …` announcement was **not** observed — only the gate and its echo. Bash prompts were answered by hand in a fixture without an allowlist; the first worktree attempt ran the pre-fix helper copy, and the corrected naming rests on the prefixed retry plus the unit tests. No commits, pushes or CE involvement in this run.
+
+## Oh My Pi parity: extension, agents and graph tooling
+
+omp does not run Claude's shell hooks and skips `.claude/agents/` for task agents (its frontmatter schema differs), so the package now ships `.omp/hooks/pre/aidlc-guards.ts` and `.omp/agents/{aidlc-verifier,aidlc-repo-scout}.md`, the latter deferring to the Claude definitions.
+
+### Exercised behavior
+
+- `check` → **108 required assets** (adds the omp extension, two omp agents and two VS Code files); export **122 files**.
+- **omp 18.1.21, brownfield fixture (11 `.py` files, seeded `.aidlc/fix/demo-omp.json`):** `write` to the protected `tests/test_repro.py` was **blocked** with the same reason text as the Claude hook, `write` to `tests/other.txt` was allowed, the protected file stayed byte-identical, and the session listed `aidlc-repo-scout` and `aidlc-verifier` as available task agents.
+- **Mode line:** the first design returned a `before_agent_start` custom message; the transcript recorded it but the model reported "no mode line" in three separate runs. Attaching the line to the first user turn through the `context` event fixed it: a `--no-tools` run quoted `AIDLC project mode: brownfield — 12+ code files (threshold 10); 1 commits (threshold 20)`. The custom message is kept for the transcript.
+- `bun build --no-bundle` parsed the extension; the project rules against `any` and trivial wrappers were applied.
+
+### Limits
+
+`edit`-tool protection relies on parsing `[PATH#TAG]` headers from the hashline payload and was not exercised natively (only `write` was). omp has no `WorktreeCreate` hook, so omp sessions fall back to `git worktree add`; the package-integrity check does not run at omp session start. graphify wiring in the scout, fix and onboarding skills is prose that activates only when `graphify-out/` or the CLI exists; it was not exercised. The VS Code settings were not opened in VS Code.

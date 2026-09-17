@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "scope": "Oh My Pi parity extension and task agents",
+  "host": {
+    "omp": "18.1.21"
+  },
+  "fixture": "exported package, git-initialised, 11 python files, marker .aidlc/fix/demo-omp.json protecting tests/test_repro.py",
+  "results": {
+    "protected_write": "blocked — aidlc-fix protects tests/test_repro.py while change demo-omp is in progress (marker .aidlc/fix/demo-omp.json) …",
+    "unprotected_write": "allowed (7 bytes)",
+    "protected_unchanged": true,
+    "task_agents_listed": [
+      "aidlc-repo-scout",
+      "aidlc-verifier"
+    ],
+    "mode_line_before_agent_start_only": "recorded in transcript as role custom; model said \"no mode line\" in 3 runs",
+    "mode_line_via_context_event": "AIDLC project mode: brownfield — 12+ code files (threshold 10); 1 commits (threshold 20) — quoted by a --no-tools run",
+    "bun_parse_exit": 0
+  },
+  "limits": [
+    "edit-tool path parsing not exercised natively",
+    "no WorktreeCreate equivalent in omp",
+    "package check not run at omp start",
+    "graphify wiring not exercised",
+    "VS Code files not opened in VS Code"
+  ],
+  "cleanup": {
+    "fixture_removed": true
+  }
+}
