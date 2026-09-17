@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "scope": "Descriptive worktree branches, ID-free operation, flow policy",
+  "host": {
+    "claude": "2.1.274",
+    "model": "claude-sonnet-5 (high effort)",
+    "setting_sources": "project,local",
+    "permission_mode": "acceptEdits"
+  },
+  "fixture": "standalone export of the package, git-initialised, with changes/vs-4242-status-command/intent.md pre-created",
+  "helper": {
+    "check": "PASS: 105 required assets; 263 local links resolve.",
+    "export_files": 118,
+    "status_line": "* vs-4242-status-command       reached: intent    next: design  have: intent   missing: spec,plan,evidence,review",
+    "current": "vs-4242-status-command\tthe only change without review.md"
+  },
+  "worktree_unit_tests": [
+    {
+      "name": "vs-99-thing (change exists under changes/)",
+      "branch": "aidlc/vs-99-thing",
+      "directory": "aidlc+vs-99-thing"
+    },
+    {
+      "name": "aidlc/vs-99-thing",
+      "branch": "aidlc/vs-99-thing",
+      "directory": "aidlc+vs-99-thing",
+      "note": "same worktree reused, idempotent"
+    },
+    {
+      "name": "vs-77-unknown (no such change)",
+      "branch": "worktree-vs-77-unknown"
+    },
+    {
+      "name": "scratch",
+      "branch": "worktree-scratch"
+    },
+    {
+      "name": "{} (no name)",
+      "result": "ERROR: WorktreeCreate input has no usable name; hook fails so creation fails"
+    },
+    {
+      "name": ".worktreeinclude",
+      "result": ".env copied into the new worktree by the hook"
+    }
+  ],
+  "native_session": {
+    "invoked": "/aidlc with no argument",
+    "id_resolution": "ran python3 scripts/aidlc.py current, reported \"Resolved change ID vs-4242-status-command (source: the only change without review.md)\"",
+    "status_shown": true,
+    "flow_policy_gate": {
+      "question": "Flow policy for this run — how should stages advance?",
+      "options": [
+        "Confirm each stage",
+        "Auto-advance, stop before build",
+        "Auto-advance, including build"
+      ],
+      "answer": "Auto-advance, stop before build",
+      "echoed": "Flow policy: auto-advance when clear, stop before build."
+    },
+    "worktree_gate": {
+      "question": "No worktree exists yet for vs-4242-status-command. Create one now (branch aidlc/vs-4242-status-command)?",
+      "answer": "Create worktree"
+    },
+    "first_attempt": {
+      "enter_worktree_name": "vs-4242-status-command",
+      "hook_result_branch": "worktree-vs-4242-status-command",
+      "skill_reaction": "noticed the mismatch, asked whether to remove and recreate"
+    },
+    "second_attempt": {
+      "enter_worktree_name": "aidlc/vs-4242-status-command",
+      "directory": ".claude/worktrees/aidlc+vs-4242-status-command",
+      "branch": "aidlc/vs-4242-status-command",
+      "env_copied": true
+    }
+  },
+  "defect_found": {
+    "finding": "EnterWorktree was called with the bare change ID, so the hook applied its non-AIDLC default branch shape.",
+    "fix": "worktree_path() now also uses the descriptive aidlc/<id> naming when the requested name is a valid change ID with an existing changes/<id>/ directory; unknown names keep worktree-<name>.",
+    "retested": "unit tests above, after the fix"
+  },
+  "limits": [
+    "Auto-advance was selected but no stage completed in this run, so an actual auto-advance announcement was not observed; only the policy gate and its echo were.",
+    "Bash permission prompts were answered manually; the fixture had no allowlist.",
+    "The first attempt ran the pre-fix helper copy; the corrected naming was proven by the prefixed retry and by unit tests of the fixed logic.",
+    "No commits, pushes or CE involvement in this run."
+  ],
+  "cleanup": {
+    "fixture_removed": true
+  }
+}

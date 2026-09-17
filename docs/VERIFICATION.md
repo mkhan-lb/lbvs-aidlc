@@ -343,3 +343,22 @@ Also observed: with user settings enabled, a user-scope `task-observer` skill au
 ### Limits
 
 Only the intent stage ran; design through review, `/aidlc-fix` and `/aidlc-learn` were not exercised here. CE took its fast path, so scan/scout, Path B artifacts and `CONCEPTS.md` maintenance remain unexercised. The clone used a broad local allowlist, so this is not evidence about permission behaviour under stricter policy, and gate answers were sent through a PTY rather than by a product owner. The fixes above were applied after the run and re-checked with `aidlc.py check`, not re-driven through a second interactive trial.
+
+## Descriptive worktrees, ID-free operation and the flow policy
+
+### Exercised behavior
+
+- **Helper:** `check` → **105 required assets; 263 local links resolve**; export **118 files**, exported check identical. `status` listed `vs-4242-status-command` as `reached: intent  next: design`, marking it current; `current` printed `vs-4242-status-command  the only change without review.md` and exits 1 when nothing resolves.
+- **Worktree hook unit tests:** name `vs-99-thing` with a matching `changes/` directory → branch `aidlc/vs-99-thing`, directory `aidlc+vs-99-thing`; the prefixed name `aidlc/vs-99-thing` reused the same worktree; `vs-77-unknown` and `scratch` kept `worktree-<name>`; `.env` was copied from `.worktreeinclude`; input without a name exited non-zero, which fails worktree creation as the hook contract requires.
+- **Native Claude Code 2.1.274, `/aidlc` with no argument:** the orchestrator ran `python3 scripts/aidlc.py current`, announced `Resolved change ID vs-4242-status-command (source: the only change without review.md)`, showed `status`, then asked the flow policy with the three documented options. It echoed `Flow policy: auto-advance when clear, stop before build.` and proposed the worktree by name.
+- **Worktree creation in that session:** the first `EnterWorktree` call passed the bare change ID, so the hook applied its non-AIDLC default (`worktree-vs-4242-status-command`); the skill noticed the mismatch and asked before fixing it. The retry with `aidlc/vs-4242-status-command` produced directory `.claude/worktrees/aidlc+vs-4242-status-command` on branch **`aidlc/vs-4242-status-command`** with `.env` present.
+
+### Defect found and fixed
+
+Relying on the caller to pass `aidlc/<change-id>` was fragile. `worktree_path()` now also applies the descriptive naming when the requested name is a valid change ID with an existing `changes/<id>/` directory; unknown names keep `worktree-<name>`. Re-tested by the unit cases above.
+
+[Redacted evidence](evidence/aidlc-flow-smoke.json).
+
+### Limits
+
+The run selected an auto-advance policy but stopped before any stage completed, so an actual `Auto-advancing to …` announcement was **not** observed — only the gate and its echo. Bash prompts were answered by hand in a fixture without an allowlist; the first worktree attempt ran the pre-fix helper copy, and the corrected naming rests on the prefixed retry plus the unit tests. No commits, pushes or CE involvement in this run.

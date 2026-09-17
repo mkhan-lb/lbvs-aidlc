@@ -5,24 +5,24 @@ Company AIDLC package: an engineer-led workflow from Anthropic's AI-native SDLC 
 ## Commands
 
 - `python3 scripts/aidlc.py check` — required assets, local links and skill frontmatter. Package integrity only, not lifecycle verification.
+- `python3 scripts/aidlc.py status` — every `changes/<id>/` with the stage artifacts present, the stage reached and the next one; marks the current change.
+- `python3 scripts/aidlc.py current` — the change ID in play, resolved from the branch, `.aidlc/current` or the only change without `review.md`; exit 1 when nothing resolves.
 - `python3 scripts/aidlc.py mode` — prints `AIDLC project mode: greenfield|brownfield`; `.aidlc/mode` overrides the heuristic.
 - `python3 scripts/aidlc.py new <change-id>` — creates only `changes/<change-id>/intent.md`; never overwrites.
 - `python3 scripts/aidlc.py doctor` — local prerequisites; external services are not checked.
 - `python3 scripts/aidlc.py package <new-dir>` — exports the standalone template; never overlays an existing repository or installs plugins.
+- `python3 scripts/aidlc.py worktree` — the `WorktreeCreate` hook entrypoint; reads the requested name on stdin and prints the worktree path. Not for direct use.
 
-## Layout
-
-- `.claude/skills/aidlc/` — `/aidlc <change-id>` orchestrator. Stages: intent → design → plan → build → verify → review, each ending with an explicit confirmation gate.
+- `.claude/skills/aidlc/` — the `/aidlc` orchestrator; it resolves the change, proposes the worktree, reads the project mode and runs the stages.
 - `.claude/skills/aidlc-*/` — stage skills plus `aidlc-fix` (bug evidence loop), `aidlc-onboard` (brownfield conventions), `aidlc-learn` (one durable lesson). Manual-only utilities: `aidlc-handoff`, `aidlc-resume`, `aidlc-ideate`.
 - `.claude/skills/<other>/` — optional ECC pattern library, pinned in docs/vendor/ecc/manifest.json. Reference material; it does not own artifacts or grant permissions.
 - `.claude/agents/` — `aidlc-verifier` (fresh-context checks, no fixes), `aidlc-repo-scout` (read-only conventions report).
-- `.claude/settings.json` + `.claude/hooks/` — SessionStart: `check-package.sh`, `project-mode.sh`; PreToolUse: `protect-tests.sh` denies edits to paths listed in `.aidlc/fix/*.json`.
-- `REVIEW.md` — review policy. `docs/PLUGINS.md` — bundled Claude Code skills and official plugins to use per stage. `scripts/aidlc.py` — standard-library helper with no approval, network-write or deployment powers.
+- `.claude/settings.json` + `.claude/hooks/` — SessionStart: `check-package.sh`, `project-mode.sh`; PreToolUse: `protect-tests.sh` denies edits to paths listed in `.aidlc/fix/*.json`; WorktreeCreate: `worktree-create.sh` names worktrees `aidlc/<change-id>` instead of Claude Code's default.
 
 ## Working rules
 
-- Start every change or bug fix with `/aidlc <change-id>` on a dedicated branch/worktree `aidlc/<change-id>`. IDs match `^[a-z0-9]+(-[a-z0-9]+)*$`.
-- A stage advances only when the engineer confirms at its gate. Never invent decisions, approvals, stakeholders, metrics, test results or deployment evidence.
+- Start a change or bug fix with `/aidlc` — it resolves the ID (argument → branch → `.aidlc/current` → the only open change → asks) and proposes the worktree `aidlc/<change-id>`. IDs match `^[a-z0-9]+(-[a-z0-9]+)*$`; prefix the ticket key when there is one, e.g. `vs-1234-order-export`.
+- Stages stop at a gate by default. When the engineer selects an auto-advance flow policy, a stage may continue only after saving and reading back its artifact with no open questions, no failed or missing required check and no pending CE review; review always asks, and implementation waits for the policy that includes build.
 - After writing an artifact, Read the saved file back before reporting completion.
 - Plan mode returns proposals; `aidlc-build` saves the confirmed plan to `changes/<change-id>/plan.md` before touching code. Native plan scratch is not the canonical plan.
 - Bug fixes: reproduce, commit the failing test (asked in-flow), keep it protected while fixing, record `changes/<change-id>/evidence.md` with real Jira/PR references, then offer `/aidlc-learn`.

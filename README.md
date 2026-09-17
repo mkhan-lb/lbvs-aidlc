@@ -37,6 +37,12 @@ The plugin carries the AIDLC skills, both agents, the project-mode and test-prot
 
 ## Status
 
+
+## Working without ceremony
+
+- **No IDs to remember.** `/aidlc` with no argument resolves the change from the branch (`aidlc/<id>`), then `.aidlc/current`, then the only change without `review.md`, and asks only if none of those answer. `python3 scripts/aidlc.py status` lists every change with the stage artifacts present, the stage reached and the next one; `current` prints just the ID and its source.
+- **Descriptive branches with your ticket key.** Change IDs are `^[a-z0-9]+(-[a-z0-9]+)*$`, so prefix the ticket: `vs-1234-order-export`. The `WorktreeCreate` hook then produces `.claude/worktrees/aidlc+vs-1234-order-export` on branch **`aidlc/vs-1234-order-export`** (branched from local `HEAD`) instead of Claude Code's default `worktree-…` name, and copies `.worktreeinclude` files itself. Non-AIDLC worktree names keep the default shape. Because the hook replaces the host's creation logic, Claude Code's worktree sweep leaves these alone: remove one with `git worktree remove`.
+- **Gates or auto-advance, your choice.** `/aidlc` asks the flow policy once per run: *confirm each stage*, *auto-advance when clear, stop before build*, or *auto-advance when clear, including build*. Auto-advance requires the stage to have saved **and read back** its artifact with no open questions, no failed or missing required check and no pending CE review; it announces each hop. Review always asks, and so does every commit, push or deployment.
 Verified in native sessions (see [verification](docs/VERIFICATION.md#company-aidlc-restructure)): all 13 `aidlc*` commands load from the export and, namespaced, from the plugin; both `SessionStart` hooks fire; the test-protection hook denies edits to a protected test and allows others; Oh My Pi receives the imported instructions, sticky rules and skills. Not yet driven end to end in a native session: a full `/aidlc` stage-gate conversation, `/aidlc-fix` on a real defect, `EnterWorktree`, and CE brainstorming — the next trial.
 
 ## Start locally

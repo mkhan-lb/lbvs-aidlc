@@ -5,6 +5,7 @@ __pycache__/
 **/.claude/worktrees/
 **/.claude/agent-memory-local/
 **/.aidlc/fix/
+**/.aidlc/current
 CLAUDE.local.md
 .env
 .env.*

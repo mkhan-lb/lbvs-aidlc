@@ -10,9 +10,9 @@ The earlier requirement to implement the entire playbook before anything else ha
 
 ## Current workflow
 
-`/aidlc <change-id>` → `intent.md` → `spec.md` → `plan.md` → build and ordinary verification → review findings → fixes and re-review, with a user-confirmed gate after every stage. Bug fixes run through `/aidlc-fix` and leave `evidence.md`; brownfield repositories start with `/aidlc-onboard`.
+`/aidlc [change-id]` → `intent.md` → `spec.md` → `plan.md` → build and ordinary verification → review findings → fixes and re-review, with a gate after every stage. The change ID is optional: the workflow resolves it from the branch, the machine-local `.aidlc/current` pointer or the only open change, and `python3 scripts/aidlc.py status` shows what exists; an ID may carry a ticket key as a prefix (`vs-1234-order-export`). Bug fixes run through `/aidlc-fix` and leave `evidence.md`; brownfield repositories start with `/aidlc-onboard`.
 
-An engineer steers the work and decides at each gate whether to continue. Artifacts carry context between sessions. Non-technical originators enter through optional Compound Engineering brainstorming with an engineer's help. We are not building an approval service, autonomous pipeline or new coding-agent platform.
+An engineer steers the work and decides at each gate whether to continue. Where the engineer prefers less clicking, they state a flow policy for the run and a stage may advance itself — announced, interruptible, and only when the artifact was saved and read back, nothing is open, no check failed or was skipped and the next step is neither review, a commit-class action, nor build unless that policy includes build. The default remains confirm-each-stage. Artifacts carry context between sessions. Non-technical originators enter through optional Compound Engineering brainstorming with an engineer's help. We are not building an approval service, autonomous pipeline or new coding-agent platform.
 
 ## Goals
 
@@ -54,11 +54,11 @@ Success: a reviewer can see the failing test existed before the fix and the agen
 
 ## In scope now
 
-- The `/aidlc` orchestrator with stage gates, worktree-per-change, project-mode detection and brownfield onboarding (`aidlc-onboard`, `aidlc-repo-scout`).
+- The `/aidlc` orchestrator with stage gates, an optional supervised auto-advance policy, change-ID resolution (branch, `.aidlc/current`, only open change), descriptive per-change worktrees named by the `WorktreeCreate` hook, project-mode detection and brownfield onboarding (`aidlc-onboard`, `aidlc-repo-scout`).
 - Model- and user-invocable stage skills (`aidlc-intent` … `aidlc-review`, `aidlc-fix`, `aidlc-learn`), three manual utilities (handoff, resume, ideate) and two scoped subagents.
 - The bug-fix evidence loop: failing test, `protect-tests.sh`, `.aidlc/fix/` marker, `changes/<id>/evidence.md`.
 - Artifact continuity, explicit plan-save ownership, one-off durable lessons, candidate ideation, decision notes and practical usage recipes.
-- Canonical `AGENTS.md` shared instructions with `CLAUDE.md` and `.omp/AGENTS.md` importing it; three hooks (`check-package`, `project-mode`, `protect-tests`) as the only deterministic guardrails.
+- Canonical `AGENTS.md` shared instructions with `CLAUDE.md` and `.omp/AGENTS.md` importing it; four hooks (`check-package`, `project-mode`, `protect-tests`, `worktree-create`) as the only deterministic guardrails.
 - Stage-by-stage recommendations of bundled Claude Code skills and marketplace plugins in [docs/PLUGINS.md](docs/PLUGINS.md); nothing installed automatically. Non-technical entry through optional CE brainstorming; caveman opt-in at user scope for engineers only.
 - Concrete artifact-aware handoff to existing local reviewers, with prepared/partial/returned status and honest context coverage.
 - Review → fix → re-review, with local findings by default.
@@ -70,8 +70,8 @@ Success: a reviewer can see the failing test existed before the fix and the agen
 
 - Evaluation runner and real-task evaluation corpus.
 - Configuration-regression gates.
-- Approval-boundary enforcement, approval services and managed-control rollout. The three bundled hooks are loop guardrails, not that framework.
-- Unattended stage transitions and artifact-triggered jobs; the `/aidlc` gates are user-answered, and "proceed" is never inferred.
+- Approval-boundary enforcement, approval services and managed-control rollout. The four bundled hooks are loop guardrails, not that framework.
+- Unattended stage transitions and artifact-triggered jobs. The `/aidlc` gates stay in the engineer's session: they are either answered by the engineer or auto-advanced under a policy the engineer stated in that conversation, announced and interruptible; "proceed" is never inferred, never assumed from an unstated policy, and never applied to review or to commit, push, merge, publication or deployment.
 - Delivery integration, with **CircleCI** as the intended later CI/CD platform.
 - Maintenance, operational monitoring, scheduled security scans and incident integrations.
 - Company-specific rollout, marketplace-plugin distribution of this package (tracked on a separate branch) and Kiro/spec-driven extensions.
