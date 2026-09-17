@@ -315,3 +315,31 @@ Retained: [redacted smoke evidence](evidence/company-restructure-smoke.json).
 ### Limits
 
 Only startup hooks ran, not resume. The deny path was exercised with a seeded marker; the full `/aidlc-fix` conversation, `EnterWorktree`, CE brainstorming and the stage-gate dialogue were not driven end to end in a native session. The first omp run used `--no-tools`, which omits the skills list by design. Codex was not re-run after replacing the symlink; it reads the standalone `AGENTS.md`. No plugin was installed and the smoke made no commits. The owned temporary export was removed.
+
+## Interactive `/aidlc` trial with CE brainstorming
+
+Driven in a disposable clone of `fcd08d1` through a PTY, Claude Code **2.1.274**, `claude-sonnet-5` at high effort, `--setting-sources project,local`, `acceptEdits`.
+
+### Exercised behavior
+
+- **Five gates answered interactively:** worktree (*Create worktree*), kind of work (*Feature/change*), resume point (*Start from intent*), CE availability (*Reload/reinstall then retry*), intent stage gate (*Stop here*). *Stop here* ended the run with the final report; no later stage was invoked, so gates do not auto-advance.
+- **Worktree:** `EnterWorktree` created `.claude/worktrees/aidlc+trial-ce-brainstorm`. On the second run the orchestrator entered that existing worktree instead of creating another.
+- **Project mode in the worktree:** `AIDLC project mode: greenfield — 1 code files (threshold 10); 3 commits (threshold 20)`.
+- **CE brainstorming:** `Skill(compound-engineering:ce-brainstorm)` ran with `mode:return-to-caller`, loading from the 3.26.3 plugin cache. It classified the request as Lightweight with requirements already clear, returned a brief with settled decisions, and wrote no CE artifact file; `docs/plans` and `docs/solutions` were never created.
+- **Intent:** `changes/trial-ce-brainstorm/intent.md` (4,884 bytes) was written, then **read back** — the skill explicitly declined the Write tool's "no need to Read it back" hint, citing `CLAUDE.md`. Three open questions stayed unresolved rather than being invented. No commit was made.
+- **CE-absent path:** in the first run CE was not in the catalog; the skill reported that, said "I won't fake having run it", and offered reload/install or ordinary clarification.
+
+### Defects found and fixed
+
+1. `EnterWorktree` derives its own branch name (`worktree-aidlc+<id>`); the orchestrator renamed the branch mid-session to match the documented convention. The orchestrator now accepts the host's name and never renames; `git worktree add` is the fallback only.
+2. The orchestrator passed the change ID **plus prose** as Skill arguments, so a stage skill rendered `Change ID: trial-ce-brainstorm — feature request: …` against its own one-ID contract. It now passes the bare ID and states context in conversation.
+3. With CE absent, `aidlc-intent` ran `find / -maxdepth 4 -iname "*compound-engineering*"` — the out-of-scope filesystem hunt previously recorded under the CE brainstorming trial. Availability is now decided from the session skill catalog alone.
+4. A project-scope declaration did **not** install CE in a fresh clone: **0** `compound-engineering:*` skills with `project,local` and with `user,project,local`, before and after the interactive trust prompt; **35** after `claude plugin install compound-engineering@compound-engineering-plugin --scope project`; the source repo where the install had run reported 35. README and USAGE now say the declaration pins the marketplace/plugin while each engineer installs once per clone.
+
+Also observed: with user settings enabled, a user-scope `task-observer` skill auto-fired and probed `~/.claude/skill-observations/`, and the `aidlc*` command count rose from 13 to 20 because a user-scope plugin ships its own `aidlc` skills. The first trial session was abandoned for that reason.
+
+[Redacted trial evidence](evidence/aidlc-trial-smoke.json) retains the gate questions, answers, observations and defects.
+
+### Limits
+
+Only the intent stage ran; design through review, `/aidlc-fix` and `/aidlc-learn` were not exercised here. CE took its fast path, so scan/scout, Path B artifacts and `CONCEPTS.md` maintenance remain unexercised. The clone used a broad local allowlist, so this is not evidence about permission behaviour under stricter policy, and gate answers were sent through a PTY rather than by a product owner. The fixes above were applied after the run and re-checked with `aidlc.py check`, not re-driven through a second interactive trial.

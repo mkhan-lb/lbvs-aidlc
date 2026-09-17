@@ -13,7 +13,7 @@ Change ID: `$ARGUMENTS`. Require exactly one ID matching `^[a-z0-9]+(-[a-z0-9]+)
 
 ## Step 0 — worktree
 
-Check the current branch/worktree (`git rev-parse --abbrev-ref HEAD`, `git worktree list`). If it is not already a dedicated branch or worktree for this change, propose one named `aidlc/<change-id>`: use the EnterWorktree tool when the host exposes it, otherwise `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask before creating it; continue in place only if the user declines. Never switch branches, stash or commit on the user's behalf.
+Check the current branch/worktree (`git rev-parse --abbrev-ref HEAD`, `git worktree list`). If a worktree for this change already exists, enter it instead of creating another. If it is not already a dedicated branch or worktree, propose one for `<change-id>`: prefer the EnterWorktree tool when the host exposes it and **accept the branch name it produces** — Claude Code derives its own (e.g. `worktree-aidlc+<change-id>`); do not rename the branch afterwards. Only when EnterWorktree is unavailable use `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask before creating it; continue in place only if the user declines. Never switch branches, stash or commit on the user's behalf.
 
 ## Step 1 — project mode
 
@@ -29,7 +29,7 @@ Glob `changes/<change-id>/`. Derive the latest real stage from what exists: no d
 
 ## Step 4 — run the stages
 
-Order: `aidlc-intent` → `aidlc-design` → `aidlc-plan` → `aidlc-build` → `aidlc-verify` → `aidlc-review`. Invoke each through the Skill tool with the change ID only; carry the user's request, CE selections and decisions in conversation. Each stage ends with its own gate — a summary, then AskUserQuestion with "Proceed to <next stage>", "Revise this stage", "Stop here". Honour that answer: **Proceed** invokes the next stage; **Revise** re-runs the same stage with the user's notes; **Stop here** ends with the final report. Never auto-advance, and never answer a gate yourself.
+Order: `aidlc-intent` → `aidlc-design` → `aidlc-plan` → `aidlc-build` → `aidlc-verify` → `aidlc-review`. Invoke each through the Skill tool passing **only the bare change ID** as arguments — every stage validates `^[a-z0-9]+(-[a-z0-9]+)*$` and appended prose corrupts that argument. State the request, CE selections and decisions as ordinary conversation text in the same turn instead. Each stage ends with its own gate — a summary, then AskUserQuestion with "Proceed to <next stage>", "Revise this stage", "Stop here". Honour that answer: **Proceed** invokes the next stage; **Revise** re-runs the same stage with the user's notes; **Stop here** ends with the final report. Never auto-advance, and never answer a gate yourself.
 
 Stage-specific handling:
 

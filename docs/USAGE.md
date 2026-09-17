@@ -38,7 +38,15 @@ These are native Claude project files plus shared instruction text in `AGENTS.md
 
 ### CE availability
 
-Compound Engineering **3.26.3** is declared at project scope in `.claude/settings.json` (`extraKnownMarketplaces` → `EveryInc/compound-engineering-plugin`, `enabledPlugins` → `compound-engineering@compound-engineering-plugin`). After you trust the workspace, Claude Code installs it; run `/reload-plugins` or start a new session, then confirm `compound-engineering:ce-brainstorm` appears in the skill catalog. Cloud sessions install repo-declared plugins at start. The same declaration travels with an exported tree; delete both keys there to opt out.
+Compound Engineering **3.26.3** is declared at project scope in `.claude/settings.json` (`extraKnownMarketplaces` → `EveryInc/compound-engineering-plugin`, `enabledPlugins` → `compound-engineering@compound-engineering-plugin`). The declaration pins which marketplace and plugin to use; it does **not** install it for you locally. In a fresh clone the skill catalog showed zero `compound-engineering:*` skills until the install ran, so each engineer runs it once per checkout:
+
+```sh
+claude plugin install compound-engineering@compound-engineering-plugin --scope project
+```
+
+Then `/reload-plugins` or a new session, and confirm `compound-engineering:ce-brainstorm` is listed. Cloud sessions install repo-declared plugins at start. If the plugin is missing, `aidlc-intent` says so and offers reload/install or ordinary clarification — it never pretends CE ran, and it decides availability from the session catalog alone rather than searching the filesystem.
+
+If you also enable user-scope plugins that ship `aidlc*` skills, their commands appear alongside these (a trial session listed 20 `aidlc*` commands instead of 13). Check `/skills` when a command behaves unexpectedly; plugin skills are namespaced, project skills are not.
 
 Declaring the plugin is not selecting it: every CE handoff still happens only when you ask for it in conversation, and skills say **prepared — not run** when it is unavailable. Run `/ce-setup` once per repository if you want a non-default `docs_root`; AIDLC reads `.compound-engineering/config.yaml` before touching solution or ideation stores.
 

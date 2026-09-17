@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "scope": "Interactive trial of /aidlc: worktree entry, project mode, gates, CE brainstorming",
+  "host": {
+    "claude": "2.1.274",
+    "model": "claude-sonnet-5 (high effort)",
+    "setting_sources": "project,local",
+    "permission_mode": "acceptEdits"
+  },
+  "fixture": "disposable clone of lbvs-aidlc at commit fcd08d1",
+  "gates_exercised": [
+    {
+      "question": "Current checkout is main, not a dedicated worktree. Create one for this change?",
+      "options": [
+        "Create worktree (Recommended)",
+        "Continue in place"
+      ],
+      "answer": "Create worktree (Recommended)"
+    },
+    {
+      "question": "What kind of work is this change?",
+      "options": [
+        "Feature/change",
+        "Bug fix"
+      ],
+      "answer": "Feature/change"
+    },
+    {
+      "question": "No artifacts exist yet for trial-ce-brainstorm. Start from intent?",
+      "options": [
+        "Start from intent",
+        "Stop here"
+      ],
+      "answer": "Start from intent"
+    },
+    {
+      "question": "compound-engineering:ce-brainstorm isn't available in this session's skill catalog. How do you want to proceed?",
+      "options": [
+        "Reload/reinstall then retry",
+        "Proceed with ordinary clarification"
+      ],
+      "answer": "Reload/reinstall then retry"
+    },
+    {
+      "question": "Intent for trial-ce-brainstorm is saved. How do you want to proceed?",
+      "options": [
+        "Proceed to design",
+        "Revise this stage",
+        "Stop here"
+      ],
+      "answer": "Stop here"
+    }
+  ],
+  "observed": {
+    "worktree": {
+      "tool": "EnterWorktree",
+      "created": "/private/tmp/aidlc-trial/.claude/worktrees/aidlc+trial-ce-brainstorm",
+      "host_branch": "worktree-aidlc+trial-ce-brainstorm",
+      "session_renamed_to": "aidlc/trial-ce-brainstorm",
+      "second_run": "entered the existing worktree instead of creating another"
+    },
+    "project_mode": "AIDLC project mode: greenfield — 1 code files (threshold 10); 3 commits (threshold 20)",
+    "ce": {
+      "skill": "compound-engineering:ce-brainstorm",
+      "args_prefix": "mode:return-to-caller",
+      "loaded_from": "~/.claude/plugins/cache/compound-engineering-plugin/compound-engineering/3.26.3/skills/ce-brainstorm",
+      "classification": "Lightweight, requirements already clear; Path A, result_kind: brief; no separate CE artifact file written",
+      "ce_stores_created": "none (docs/plans and docs/solutions absent)"
+    },
+    "intent": {
+      "path": "changes/trial-ce-brainstorm/intent.md",
+      "bytes": 4884,
+      "read_back": true,
+      "note": "the skill overrode the Write tool hint \"no need to Read it back\", citing CLAUDE.md"
+    },
+    "no_auto_advance": "Stop here ended the run with a final report; no design stage was invoked",
+    "commits_made": 0
+  },
+  "defects_found": [
+    {
+      "id": 1,
+      "finding": "EnterWorktree derives its own branch name (worktree-aidlc+<id>); the orchestrator renamed the branch mid-session to match the documented aidlc/<id> convention.",
+      "fix": "Orchestrator now accepts the host branch name and never renames; git worktree add is the fallback only."
+    },
+    {
+      "id": 2,
+      "finding": "The orchestrator passed the change ID plus prose as Skill arguments, so a stage skill rendered \"Change ID: trial-ce-brainstorm — feature request: ...\" against its own one-ID contract.",
+      "fix": "Orchestrator must pass the bare change ID and state context as conversation text."
+    },
+    {
+      "id": 3,
+      "finding": "With CE absent, aidlc-intent ran find / -maxdepth 4 -iname \"*compound-engineering*\" to hunt for the plugin — the out-of-scope filesystem discovery previously recorded as a defect.",
+      "fix": "aidlc-intent now decides availability from the session skill catalog alone; filesystem/plugin-cache hunting is forbidden."
+    },
+    {
+      "id": 4,
+      "finding": "A project-scope declaration (extraKnownMarketplaces + enabledPlugins) did not install CE in a fresh clone: 0 CE skills with project,local and with user,project,local, before and after the interactive trust prompt; 35 after claude plugin install --scope project. The source repo where install had run reported 35.",
+      "fix": "README and USAGE now state the declaration pins the marketplace/plugin but each engineer installs once per clone."
+    }
+  ],
+  "also_observed": {
+    "user_scope_interference": "With user settings enabled, a user-scope task-observer skill auto-fired and probed ~/.claude/skill-observations, and aidlc* command count rose from 13 to 20 because a user-scope plugin ships its own aidlc skills."
+  },
+  "limits": [
+    "Only intent was run; design through review, /aidlc-fix and /aidlc-learn were not exercised in this session.",
+    "CE took its fast path, so scan/scout, Path B artifacts and CONCEPTS.md maintenance were not exercised.",
+    "The trial ran in a disposable clone with a broad local allowlist; it is not evidence about permission behaviour under stricter policy.",
+    "Gate answers were driven through a PTY; no real product-owner participated."
+  ],
+  "cleanup": {
+    "clone_removed": true
+  }
+}
