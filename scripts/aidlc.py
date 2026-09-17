@@ -28,7 +28,7 @@ SKIP_DIRECTORIES = frozenset((
 BROWNFIELD_CODE_FILES = 10
 BROWNFIELD_COMMITS = 20
 REQUIRED_ASSETS = (
-    "GOALS.md", "IMPLEMENTATION_PLAN.md", "FUTURE_WORK.md", "README.md",
+    "GOALS.md", "IMPLEMENTATION_PLAN.md", "FUTURE_WORK.md", "README.md", "LICENSE",
     "AGENTS.md", "CLAUDE.md", "REVIEW.md", "docs/COVERAGE.md", "docs/DEPENDENCIES.md",
     "docs/PREREQUISITES.md", "docs/ARTIFACTS.md", "docs/VERIFICATION.md",
     "docs/COMPATIBILITY.md", "docs/MEASURES.md", "docs/PLUGINS.md",
@@ -198,7 +198,9 @@ def print_mode(root):
     mode, reasons = project_mode(root)
     print("AIDLC project mode: {} — {}".format(mode, "; ".join(reasons)))
     if mode == "brownfield":
-        print("Brownfield: run /aidlc-onboard before the first change unless conventions are already recorded.")
+        # Plugin hooks receive CLAUDE_PLUGIN_ROOT; the skill is then namespaced.
+        prefix = "/lbvs-aidlc:" if os.environ.get("CLAUDE_PLUGIN_ROOT") else "/"
+        print("Brownfield: run {}aidlc-onboard before the first change unless conventions are already recorded.".format(prefix))
     print("Override with .aidlc/mode containing greenfield or brownfield.")
 
 

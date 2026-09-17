@@ -10,6 +10,35 @@ An additional **37 ECC skills** provide optional engineering patterns and explic
 
 **Start with the [practical usage recipes](docs/USAGE.md).** See the [workflow contract](docs/WORKFLOW.md), [artifact conventions](docs/ARTIFACTS.md), and [review options](.claude/skills/aidlc-review/references/review-options.md) for detail.
 
+## Distribution
+
+| Branch | Form | Use |
+| --- | --- | --- |
+| `main` | Repo template — `python3 scripts/aidlc.py package <new-dir>` exports a standalone tree | Primary. New services start from the export; existing repositories merge the relevant files explicitly. |
+| `plugin-marketplace` | Claude Code plugin marketplace — `.claude-plugin/marketplace.json` + generated `plugins/lbvs-aidlc/` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:aidlc <id>`) installed per repository via `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json`, or fleet-wide via managed settings. |
+
+```sh
+# plugin route
+claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
+claude plugin install lbvs-aidlc@lbvs-aidlc
+```
+
+The plugin carries the AIDLC skills, both agents, the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md` or the package-integrity hook. Regenerate it on that branch with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc.
+
+## Design decisions
+
+- **Instructions.** `AGENTS.md` is the one shared instruction file (under 60 lines, ends with *Things Claude gets wrong here*). `CLAUDE.md` is `@AGENTS.md` plus a Claude-only section and `.omp/AGENTS.md` is `@../AGENTS.md` for Oh My Pi; `check` rejects duplicated text or symlinks. Codex reads `AGENTS.md` directly.
+- **Stages are model-invocable.** `/aidlc` orchestrates; each stage ends at an explicit confirmation gate. Only `aidlc-handoff`, `aidlc-resume` and `aidlc-ideate` are manual.
+- **Hooks stay narrow and deterministic.** Two `SessionStart` context hooks (package check, project mode) and one `PreToolUse` guardrail that exists only while a bug fix is in progress. No approval gates or formatters — those belong to the adopting repository.
+- **Bugs leave evidence.** `/aidlc-fix` commits the failing test before the fix, blocks edits to it while fixing, records `changes/<id>/evidence.md` with Jira/PR/incident references, and offers `/aidlc-learn`.
+- **Brownfield is detected, not assumed.** `mode` classifies the repository at session start (≥10 code files or ≥20 commits; `.aidlc/mode` overrides); `/aidlc-onboard` scouts read-only and asks modernize vs stay-legacy before drafting a repository `CLAUDE.md`.
+- **Every change runs in a worktree** named `aidlc/<change-id>`; `.worktreeinclude` carries `.env` and local settings into it.
+- **Non-technical entry** is optional Compound Engineering brainstorming; **caveman** is per-engineer opt-in; **ECC skills** are vendored and untouched by AIDLC work.
+
+## Status
+
+Verified in native sessions (see [verification](docs/VERIFICATION.md#company-aidlc-restructure)): all 13 `aidlc*` commands load from the export and, namespaced, from the plugin; both `SessionStart` hooks fire; the test-protection hook denies edits to a protected test and allows others; Oh My Pi receives the imported instructions, sticky rules and skills. Not yet driven end to end in a native session: a full `/aidlc` stage-gate conversation, `/aidlc-fix` on a real defect, `EnterWorktree`, and CE brainstorming — the next trial.
+
 ## Start locally
 
 Python 3 is sufficient for the helper; no third-party Python packages are required. Claude Code and authorised model access are required for the skills.
@@ -131,3 +160,7 @@ Prefer an existing reviewer over a custom engine. [Review options](.claude/skill
 - [Goals](GOALS.md), [implementation plan](IMPLEMENTATION_PLAN.md), [future work](FUTURE_WORK.md): current scope and deferred work.
 - [Plugins](docs/PLUGINS.md), [coverage](docs/COVERAGE.md), [dependencies](docs/DEPENDENCIES.md), [measures](docs/MEASURES.md), [compatibility](docs/COMPATIBILITY.md), [prerequisites](docs/PREREQUISITES.md): reference.
 - [Verification](docs/VERIFICATION.md): executed scenarios and limits; [source snapshot](docs/sources/anthropic-playbook.md): unchanged reference.
+
+## License
+
+[MIT](LICENSE). Skills imported from ECC keep their upstream [MIT license](docs/vendor/ecc/LICENSE) and in-file attributions; the [playbook snapshot](docs/sources/anthropic-playbook.md) is reference material, not relicensed.
