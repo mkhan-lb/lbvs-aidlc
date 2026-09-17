@@ -18,7 +18,7 @@ Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" doctor`. Show which requir
 
 Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`.
 
-**Brownfield:** invoke `aidlc-onboard` via the Skill tool and let it run to completion (scout report, `conventions` report, modernize/legacy choice, CLAUDE.md and rules drafts, `.aidlc/mode`, `docs/onboarding.md`). Keep its scout report for step 5, then return here.
+**Brownfield:** invoke `aidlc-onboard` via the Skill tool and let it run to completion (scout report, `conventions` report, modernize/legacy choice, CLAUDE.md, rules and `docs/repo-profile.md` drafts, `.aidlc/mode`, `docs/onboarding.md`). When `docs/repo-profile.md` exists and `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" profile` prints `fresh`, onboarding skips its scout and works from the profile; say so and use the profile as the scout report for step 5. Otherwise keep its scout report for step 5, then return here.
 
 **Greenfield:** run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions` (report only) and AskUserQuestion: "Adopt default conventions (`conventions --apply`)", "Keep my own tooling", "Decide later". `--apply` copies only missing files from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` with authenticated `gh api`, never a raw link.
 
@@ -44,6 +44,7 @@ Heuristics (cite the evidence for each):
 - A multi-step test, build or verify procedure documented in `CONTRIBUTING.md`, a task runner or CI — → Bash-capable `<repo>-checker` that runs only those documented commands, verbatim, and reports; verify and build delegate to it.
 - Generated code with a generator present (OpenAPI, protobuf, ORM models, codegen scripts) — → read-only `<repo>-generated-guardian` that flags hand edits under generated paths for review and fix.
 - A recurring multi-step procedure written down in docs (release, migration, data fix) — → a repository **skill** under `.claude/skills/<name>/SKILL.md`, not an agent; sketch its steps and stop there.
+- A `docs/playbooks/` entry with Status Verified and Runs ≥ 3 — → propose a repository skill `.claude/skills/<repo>-<playbook>/SKILL.md` sourced from it; never auto-write it.
 
 For each accepted agent, draft `.claude/agents/<name>.md` from [templates/agent.md](templates/agent.md), replacing every angle-bracket placeholder, keeping the body under 3 KB and the description to one sentence — plugin agents cost startup context on every session. AskUserQuestion per candidate: "Write `.claude/agents/<name>.md`", "Skip". Write only on confirmation and Read back; if the file exists, show the differences and never overwrite without a further confirmation.
 

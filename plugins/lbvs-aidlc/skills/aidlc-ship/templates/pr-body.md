@@ -30,6 +30,8 @@ Not run: <checks and reasons, or `none`>
 
 Open Important findings: 0 (required to ship). Accepted findings and the engineer's reason: <IDs, or `none`>.
 
+Accepted conventions findings (aidlc-conventions-checker, shipped anyway with the engineer's reason): <K-IDs with one-line reason each, or `none`>.
+
 ## Knowledge records
 
 - ADR: <`docs/adr/NNNN-*.md` or `none`>

@@ -13,11 +13,11 @@ Change ID: `$ARGUMENTS`. A single token matching `^[a-z0-9]+(-[a-z0-9]+)*$` is t
 
 ## What a spike is
 
-A spike produces knowledge, not code. It **never** edits, creates or deletes source, configuration, tests, dependencies or knowledge records other than `changes/<change-id>/spike.md`; it does not run migrations, installers or anything that changes state, and it does not implement a prototype "to see if it works". If answering the question needs a throwaway experiment, propose the experiment and its command, ask, and keep any output verbatim in the record; delete nothing and commit nothing. Read-only, plan-mode and worktree rules of ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md apply unchanged.
+A spike produces knowledge, not code. It **never** edits, creates or deletes source, configuration, tests, dependencies or knowledge records other than `changes/<change-id>/spike.md` (and, at the gate on confirmation, a playbook under `docs/playbooks/`); it does not run migrations, installers or anything that changes state, and it does not implement a prototype "to see if it works". If answering the question needs a throwaway experiment, propose the experiment and its command, ask, and keep any output verbatim in the record; delete nothing and commit nothing. Read-only, plan-mode and worktree rules of ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md apply unchanged.
 
 ## 1. Agree the question and the box
 
-Read `CLAUDE.md`, any existing `changes/<change-id>/intent.md`, `spec.md` and `spike.md`. Restate the question in one sentence and use AskUserQuestion to settle, before investigating: the exact question; the time box (an effort or wall-clock budget the engineer names — never assume one); and what "answered" means (e.g. "we know which module owns X and whether it can be extended", "we have two options with trade-offs"). A spike with several questions is several spikes; pick one.
+Read `CLAUDE.md`, any existing `changes/<change-id>/intent.md`, `spec.md` and `spike.md`. Repository context: read per ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#repository-context before scouting; scout only what is missing or stale. Restate the question in one sentence and use AskUserQuestion to settle, before investigating: the exact question; the time box (an effort or wall-clock budget the engineer names — never assume one); and what "answered" means (e.g. "we know which module owns X and whether it can be extended", "we have two options with trade-offs"). A spike with several questions is several spikes; pick one.
 
 ## 2. Investigate (read-only)
 
@@ -38,11 +38,11 @@ Write `changes/<change-id>/spike.md` from the bundled [spike template](templates
 
 ## Stage gate
 
-Summarise: question, time box used vs agreed, spike path (or **proposed — not saved**), recommendation, open questions, commands run (normally none that change state). Then AskUserQuestion with exactly: "Create/refresh intent from this spike (aidlc-intent)", "Record an ADR (architecture-decision-records)", "Stop here". On the first invoke `aidlc-intent` via the Skill tool with the bare change ID and say in conversation that `spike.md` is the source; on the second invoke `architecture-decision-records` and point it at `docs/adr/` with the spike as evidence — it must still confirm before writing. Otherwise end. A stated flow policy never auto-advances this gate; it is always asked and never answered on the engineer's behalf.
+Summarise: question, time box used vs agreed, spike path (or **proposed — not saved**), recommendation, open questions, commands run (normally none that change state). Then AskUserQuestion with exactly: "Create/refresh intent from this spike (aidlc-intent)", "Record an ADR (architecture-decision-records)", "Stop here" — and, only when the spike's answer is a repeatable procedure of at least three ordered steps, the additional option "Save as playbook". On the first invoke `aidlc-intent` via the Skill tool with the bare change ID and say in conversation that `spike.md` is the source; on the second invoke `architecture-decision-records` and point it at `docs/adr/` with the spike as evidence — it must still confirm before writing. On "Save as playbook" write `docs/playbooks/<kebab-title>.md` from `docs/playbooks/template.md` (every angle-bracket placeholder replaced; `Status: Draft`, `Runs: 0`, `Sources` = this spike's path; steps only as established by the findings, each with how to verify it) and add its row to the `docs/playbooks/README.md` table; Read both back, then ask the gate again without that option. Otherwise end. A stated flow policy never auto-advances this gate; it is always asked and never answered on the engineer's behalf.
 
 ## Boundaries
 
-No code, configuration or dependency changes; no commit, push, PR, ticket update or deployment; no ADR, incident or security record written from here — those go through their own skills with confirmation. A recommendation is input to intent/design, not a decision or approval.
+No code, configuration or dependency changes; no commit, push, PR, ticket update or deployment; no ADR, incident or security record written from here — those go through their own skills with confirmation. The only files a spike may write are `changes/<change-id>/spike.md` and, on the confirmed gate option, one new playbook plus its README row. A recommendation is input to intent/design, not a decision or approval.
 
 ## Sources
 

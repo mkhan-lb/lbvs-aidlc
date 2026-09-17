@@ -13,7 +13,7 @@ Change ID: `$ARGUMENTS`. A single token matching `^[a-z0-9]+(-[a-z0-9]+)*$` is t
 
 ## Work
 
-1. Read `CLAUDE.md`, the [intent template](templates/intent.md) and any existing `changes/<change-id>/intent.md`. Preserve existing work and decisions already made in conversation.
+1. Read `CLAUDE.md`, the [intent template](templates/intent.md) and any existing `changes/<change-id>/intent.md`. Preserve existing work and decisions already made in conversation. Repository context: read per ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#repository-context before scouting; scout only what is missing or stale.
 2. Read the actual request, ticket, research or other supplied source with authorised access. A conversation is sufficient input; no ticket or external review is required. Inspect relevant code and docs when the request depends on current behavior. Cite sources and file locations; separate observations from assumptions.
 3. Clarify the problem, affected users/systems, desired outcome, scope, constraints and open questions. Ask only what the context cannot answer. Do not invent metrics, stakeholders, policies or facts.
 4. Draft or carefully update `changes/<change-id>/intent.md` from the template; substitute only literal `{{change_id}}`. Fill it with real context, not placeholders. In plan/read-only mode, return the proposed text labelled **not saved** and hand saving to an ordinary writable session.
