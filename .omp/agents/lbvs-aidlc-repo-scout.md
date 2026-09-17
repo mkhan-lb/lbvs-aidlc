@@ -1,6 +1,6 @@
 ---
 name: lbvs-aidlc-repo-scout
-description: Read-only brownfield reconnaissance returning a structured conventions report (stack, layout, commands, conventions, testing, hotspots, agent instructions); verifies docs/repo-profile.md when present.
+description: Read-only brownfield reconnaissance returning a structured conventions report (stack, layout, commands, conventions, testing, hotspots, agent instructions); verifies docs/repo-profile.md when present. Delegate from lbvs-aidlc-onboard, lbvs-aidlc-init or lbvs-aidlc-spike.
 tools: read, glob, grep
 read-summarize: false
 ---

@@ -8,7 +8,7 @@ Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-na
 
 - **17 slash commands** (`/lbvs-aidlc*`): one orchestrator, the stage skills, a bug-fix loop, ticket intake, a time-boxed spike, a setup wizard, shipping, onboarding and lessons.
 - **6 subagents** that work in a fresh context and report back: a Bash-capable verifier, a pre-PR conventions checker that runs only the repository's documented commands, and four read-only critics (repository scout, design reviewer, threat modeler, test critic).
-- **4 small hooks**: package check and project-mode line at session start, protection of a failing test while you fix the bug, and descriptive worktree names (`aidlc/vs-1234-order-export`).
+- **5 small hooks**: package check (silent when it passes) and project-mode line at session start, protection of a failing test while you fix the bug, descriptive worktree names (`aidlc/vs-1234-order-export`) and safe worktree removal that keeps uncommitted work.
 - **Repository context that is read, not re-derived**: a committed repository profile (`docs/repo-profile.md`), the company glossary (`docs/glossary/` — Logicbroker and Virtualstock), playbooks for repeatable procedures, and platform facts. Stages read these first and scout only what is missing or stale.
 - **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons, playbooks — all Markdown, all written only after you confirm.
 - **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `profile`, `conventions`, `package` and friends.
@@ -34,7 +34,7 @@ claude plugin install lbvs-aidlc@lbvs-aidlc
 # then, inside the repository:  /lbvs-aidlc:lbvs-aidlc-init
 ```
 
-The plugin carries the skills, agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library or the worktree hook. To merge the full template into an existing repository instead, follow the [adoption recipe](docs/USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
+The plugin carries the skills, all six agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library, the package-integrity hook or the worktree hook. To merge the full template into an existing repository instead, follow the [adoption recipe](docs/USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
 
 Before the first session, `python3 scripts/aidlc.py doctor` tells you which optional tools and MCP credentials are present and how to get the missing ones.
 
@@ -45,15 +45,15 @@ Run once per repository. It reports first and writes only what you confirm, so i
 | Step | What Claude does | What it asks you |
 | --- | --- | --- |
 | 0 | Runs `doctor`; shows tools and MCP auth state | *Run `doctor --install`* or *Skip* |
-| 1 | Detects greenfield or brownfield. Brownfield hands over to `/lbvs-aidlc-onboard` (scout report, conventions report, modernize vs stay-legacy, a `CLAUDE.md` draft) | Greenfield: *Adopt default conventions?* |
-| 2 | Reads `.circleci/config.yml`, `deploy/`, `catalog-info.yaml`, `Taskfile.yml` to fill `docs/platform/platform.md` | Confirm each filled item; unknowns stay bracketed |
+| 1 | Detects greenfield or brownfield. Brownfield hands over to `/lbvs-aidlc-onboard` (scout report, conventions report, modernize vs stay-legacy, a `CLAUDE.md` draft) | Greenfield: *Adopt default conventions (`python3 scripts/aidlc.py conventions --apply`)*, *Keep my own tooling* or *Decide later* |
+| 2 | Reads `.circleci/config.yml`, `deploy/`, `catalog-info.yaml`, `Taskfile.yml` to fill `docs/platform/platform.md` | *Write platform.md* or *Skip*; unknowns stay bracketed |
 | 3 | Explains what still needs auth: Jira via `/mcp`, GitHub via `GITHUB_PERSONAL_ACCESS_TOKEN`, Context7 optional; whether Compound Engineering is installed | Nothing — it never installs or stores secrets |
-| 4 | Offers a local code graph (`/graphify .`) when graphify is installed | *Build it* or *Skip* |
-| 5 | **Proposes up to three repository-specific agents or skills** (below) | Confirm each; drafts from a bundled template |
-| 6 | Checks `.gitignore` for worktree, fix-marker and code-graph paths | Append missing lines? |
-| 7 | Summary: written / recommended / skipped | *Start a change*, *Start from a ticket*, *Done* |
+| 4 | Offers a local code graph when graphify is installed | *Run `/graphify .`* or *Skip* |
+| 5 | **Proposes up to three repository-specific agents or skills** (below) | Per candidate: *Write `.claude/agents/<name>.md`* or *Skip*; drafts from a bundled template |
+| 6 | Checks `.gitignore` for worktree, fix-marker and code-graph paths | *Append missing lines* or *Skip* |
+| 7 | Summary: written / recommended / skipped | *Start a change (/lbvs-aidlc)*, *Start from a ticket (/lbvs-aidlc-ticket)*, *Done* |
 
-**Do you need more agents?** Usually not — the bundled five plus Claude Code's own Explore and Plan agents cover most repositories, and every agent description costs context at startup. Step 5 proposes one only when the repository shows a reason for it:
+**Do you need more agents?** Usually not — the bundled six plus Claude Code's own Explore and Plan agents cover most repositories, and every agent description costs context at startup. Step 5 proposes one only when the repository shows a reason for it:
 
 - a large or vocabulary-heavy subsystem (≥ 40 files, or its own glossary/docs) → a read-only `<repo>-<area>-scout`;
 - a documented multi-step test/build/verify procedure → a Bash-capable `<repo>-checker` that runs exactly those commands and reports;
@@ -91,8 +91,8 @@ claude:  Intent saved: changes/vs-1234-order-export/intent.md
 | plan | `plan.md` — checkbox tasks `T1.2 … _Requirements: R1.1_` | Every requirement must appear in a task; the skill checks. |
 | build | code, one task at a time; ticks `[x]` after that task's own check passes | Runs the repository's pre-commit/lint before calling a task done. |
 | verify | a table `R-ID | check | observed result | not run (reason)` | Offers `lbvs-aidlc-test-critic` to critique the tests. Never fixes code. |
-| review | `review.md` — findings with stable IDs, **Important** or **nit** | Uses the bundled `/code-review`. Then asks: *Fix findings*, *Re-review at higher effort*, *Open PR*, *Capture lesson*, *Done*. |
-| ship | commit `VS-1234: …`, push `aidlc/<id>`, PR from a template | `/lbvs-aidlc-ship` first runs `lbvs-aidlc-conventions-checker` (documented lint/test commands, diff vs conventions, commit hygiene, glossary drift). Clean: asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Important findings: *Fix findings first* / *Ship anyway* / *Stop here*, and the PR body lists what was accepted. Never merges. |
+| review | `review.md` — findings with stable IDs, **Important** or **nit** | Uses the bundled `/code-review`. Then asks exactly: *Fix findings (build)*, *Re-review at higher effort*, *Open PR (lbvs-aidlc-ship)*, *Capture lesson (lbvs-aidlc-learn)*, *Done*. |
+| ship | commit `VS-1234: …`, push `aidlc/<id>`, PR from a template | `/lbvs-aidlc-ship` first runs `lbvs-aidlc-conventions-checker` (documented lint/test commands, diff vs conventions, commit hygiene, glossary drift). Clean: asks exactly *Commit, push and open PR* / *Commit only* / *Stop here*. Important findings: *Fix findings first (lbvs-aidlc-build)* / *Ship anyway: commit, push and open PR* / *Stop here*, and the PR body lists what was accepted. Never merges. |
 
 **The review loop.** Important findings go back to build with their IDs, then verify, then a re-review one effort tier up (`high` → `xhigh`). After three fix cycles it always stops and asks, whatever the flow policy.
 
@@ -109,7 +109,7 @@ claude:  Symptom: two invoices for order 8812 (Sentry link). Reproducing…
          Cause: retry path re-runs the issue step. Fix proposed in services/invoice.py — apply?
 ```
 
-The failing test is committed **before** the fix and the `protect-tests` hook denies edits to it while the fix is in progress. The result is `changes/<id>/evidence.md` — Current / Expected / *SHALL CONTINUE TO* behaviour, the reproduction, the fix, Jira/PR/incident links — followed by an offer to record an incident (if it came from an alert) and a lesson (`/lbvs-aidlc-learn`).
+The failing test is committed — with your authorisation — **before** the fix and the `protect-tests` hook denies edits to it while the fix is in progress. The result is `changes/<id>/evidence.md` — Current / Expected / *SHALL CONTINUE TO* behaviour, the reproduction, the fix, Jira/PR/incident links — followed by an offer to record an incident (if it came from an alert) and a lesson (`/lbvs-aidlc-learn`).
 
 ## The commands
 

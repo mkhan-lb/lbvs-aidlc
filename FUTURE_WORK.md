@@ -28,6 +28,8 @@ Do not build or require this gate now. It depends on a useful evaluation process
 
 **Later steps:** identify actual approval authorities; bind decisions to the relevant changes; integrate the existing review/release systems; implement scoped hooks or managed controls where needed; test missing, rejected, stale and bypassed decisions.
 
+**Now — advisory checks, not gates:** the read-only `lbvs-aidlc-design-reviewer` returns READY / NOT READY before the design gate, `lbvs-aidlc-test-critic` critiques tests when verify offers it, and `lbvs-aidlc-conventions-checker` reruns the repository's documented commands and compares the diff with `docs/repo-profile.md` before `/lbvs-aidlc-ship` asks its question ([pre-PR check](docs/WORKFLOW.md#pre-pr-conventions-check)). Their findings change the shape of a question the engineer answers; none approves, blocks or enforces.
+
 No approval service, external-signoff validation, signed receipt system, custom guardrail framework or managed-settings rollout is being built now. The four bundled hooks (`check-package.sh`, `project-mode.sh`, `protect-tests.sh`, `worktree-create.sh`) are loop guardrails for package integrity, mode context, failing-test protection and worktree naming—not approval controls. Ordinary engineer confirmation at the stage gates, the review loop's three-cycle stop, `/lbvs-aidlc-ship`'s always-asked commit/push/PR question, existing repository rules and tool permissions still apply. Deferral does not authorise auto-approval or auto-merge; `/lbvs-aidlc-ship` never merges, approves, enables auto-merge or edits branch protection.
 
 ## F4 — Delivery integration through CircleCI
@@ -68,9 +70,11 @@ For now, `/lbvs-aidlc` runs the stages but a user answers every gate; "Proceed" 
 
 **Adopted — conventions defaults:** `templates/conventions/` and `python3 scripts/aidlc.py conventions [--apply]` give a greenfield repository a starting point and leave a brownfield repository's own tooling untouched.
 
-**Later steps:** add actual architecture and engineering context beyond the `docs/platform/` pointers; clarify existing ownership and sources of truth; trial the workflow on ordinary work; provide examples/training.
+**Adopted — repository context and knowledge stores:** the committed `docs/repo-profile.md` (with `python3 scripts/aidlc.py profile` freshness), the company glossaries under `docs/glossary/`, the `docs/playbooks/` procedure store and the `docs/adr/` decision store now hold the architecture and engineering context, ownership and sources of truth that stages read before scouting ([repository context](docs/WORKFLOW.md#repository-context), [knowledge stores](docs/WORKFLOW.md#knowledge-stores)). Filling them for each adopting repository is ordinary `/lbvs-aidlc-onboard` and review work, not deferred infrastructure.
 
-**Marketplace distribution** of this package (a `.claude-plugin/marketplace.json` repository pinned through `extraKnownMarketplaces`/`enabledPlugins` or managed settings) is tracked on a **separate branch**; the supported distribution today is the repo-template export. `docs/PLUGINS.md` recommends bundled skills and official plugins per stage but installs nothing.
+**Adopted — marketplace distribution:** the `plugin-marketplace` branch publishes this package as a Claude Code plugin (`claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace`), pinnable per repository through `extraKnownMarketplaces`/`enabledPlugins` or fleet-wide through managed settings ([distribution](docs/REFERENCE.md#distribution)); the repo-template export remains the primary route. `docs/PLUGINS.md` recommends bundled skills and official plugins per stage but installs nothing.
+
+**Later steps:** trial the workflow on ordinary work ([next trial](IMPLEMENTATION_PLAN.md#next-trial)); provide examples/training; decide company-wide pinning of the recommended plugins.
 
 Using Oh My Pi's existing review capability is being researched now; adopting it as a company-wide coding platform or porting the whole workflow to it is not implied. Likewise, ECC's `continuous-learning-v2` contributed only its lesson schema (confidence ladder, observation count, scope, promotion threshold); its Pre/PostToolUse observation hooks, background Haiku observer daemon and observation log were deliberately not imported and are not queued here — the observer is off by default upstream, the model calls run in the background on the engineer's account, and the log is a telemetry-like record of tool inputs and outputs outside the repository.
 

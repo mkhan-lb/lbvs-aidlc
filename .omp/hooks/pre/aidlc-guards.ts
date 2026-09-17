@@ -68,9 +68,11 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     const helper = join(root, "scripts", "aidlc.py");
     if (!existsSync(helper)) { modeLine = ""; return undefined; }
     try {
-      modeLine = execFileSync("python3", [helper, "--root", root, "mode"], { encoding: "utf8", timeout: 10_000 }).trim();
+      modeLine = execFileSync("python3", [helper, "--root", root, "mode"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
     } catch (error) {
-      modeLine = `AIDLC project mode: unavailable (${String(error).split("\n")[0]})`;
+      const stderr = error && typeof error === "object" && "stderr" in error && typeof error.stderr === "string" ? error.stderr.trim() : "";
+      const reason = (stderr || String(error)).split("\n")[0];
+      modeLine = `AIDLC project mode: unavailable (${reason})`;
     }
     return modeLine;
   }

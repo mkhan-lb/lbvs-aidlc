@@ -458,3 +458,33 @@ Not driven natively: a repository profile written by `/aidlc-onboard`, the check
 
 Catalog discovery only; no stage was driven under the new names. Skill-to-skill invocations (`Skill(lbvs-aidlc-fix)` and the like) and Agent-tool delegations by the new agent names are prose contracts until the end-to-end trial runs.
 
+## Pre-trial review against Claude Code guidance
+
+Guidance read on 2026-09-17: code.claude.com/docs `best-practices`, `skills`, `sub-agents`, `memory`, `features-overview`, `hooks-guide`, `settings-reference`; agentskills.io `skill-creation/best-practices`. Four review slices (skills, agents/hooks/plugin, docs, helper) plus context-cost measurement.
+
+### Measured
+
+- Skill listing: **≈4,790 tokens per turn** in a fresh export (`/skill-doctor`, Claude Code 2.1.274): 17 AIDLC skills ≈1,990, 39 ECC/imported skills ≈2,800, 14 manual or name-only skills 0. Largest single entry 200 tokens (orchestrator); every description + `when_to_use` ≤ 576 chars against the 1,536 cap. The listing budget is 1 % of the context window — no truncation on a 1M-context model, truncation of the least-used descriptions on a 200k model; `.claude/settings.json` now sets `skillListingBudgetFraction: 0.03`.
+- `AGENTS.md` ≈ 2.3k tokens before the rewrite (9,154 bytes), ≈ 1.2k after (4,777 bytes, 35 lines). Agent descriptions ≈ 300 tokens in total.
+- Whole-session startup cost could not be isolated by `claude -p` token counts: the account's claude.ai connectors (Slack, Atlassian, Postman, Claude Docs) connect asynchronously and add their tool schemas non-deterministically (15,959 → 63,361 cache-creation tokens across identical runs). The debug log confirmed both `SessionStart` hooks fire and that `context7` connects anonymously with `CONTEXT7_API_KEY` unset.
+
+### Defects found and fixed
+
+- **`protect-tests.sh` never fired inside a worktree**: the marker was looked up only under `CLAUDE_PROJECT_DIR`, which stays at the main checkout while `/lbvs-aidlc-fix` writes `.aidlc/fix/*.json` in the worktree. Now resolved from the hook payload's `cwd` (its git toplevel), then `cwd`, then `CLAUDE_PROJECT_DIR`; smoke-tested deny/allow from a worktree, a subdirectory and with no `cwd`.
+- **`.worktreeinclude` was evaluated as git pathspecs**, not gitignore syntax: `/.env` copied nothing, `**/.env` skipped the root file. Now `git ls-files --exclude-from=.worktreeinclude` selects the files; verified both forms copy.
+- **`WorktreeCreate` from inside a worktree nested the new worktree** under it (`--show-toplevel`); now the main checkout is derived from `--git-common-dir`. Verified: second worktree created beside the first.
+- `aidlc/<id>` names outside the ID grammar created unusable branches (`current` then exited 1); now refused with the grammar in the error. A stale plain directory under `.claude/worktrees/` was returned as a worktree; now refused. `profile` treated comma-separated or untracked `Manifests:` entries as "no change" (false fresh); now reports `stale (… git does not track …)`, and reads only the first 12 lines. `doctor` crashed on a non-object `.mcp.json`; `git` timeouts surfaced as tracebacks.
+- **No `WorktreeRemove` hook**: hook-created worktrees and auto-named branches were never cleaned. Added `worktree-remove` (refuses paths outside `.claude/worktrees/`, never `--force`, deletes only merged `worktree-*` branches) and registered it; verified refuse-outside, keep-dirty, remove-clean-and-delete-branch.
+- `lbvs-aidlc-verifier` had drifted from its omp mirror and its body (4.3 KB) exceeded the 3 KB agent budget; rewritten as a self-contained system prompt. The four reviewer agents now state that Important is reserved for correctness/requirement gaps and everything else is optional.
+- `check` now enforces what was prose: AIDLC skill ≤ 7168 bytes (orchestrator ≤ 7788), frontmatter key allowlist, description + `when_to_use` ≤ 1,536, agent frontmatter/name/body ≤ 3 KB with a byte-equal `.omp/agents` description, `AGENTS.md` ≤ 60 lines. All pass: **152 required assets; 446 local links**.
+- `check-package.sh` is silent on pass (its two lines were context every session) and puts the errors on stdout on failure so Claude sees them. omp's mode fallback now shows the helper's stderr reason.
+- Docs: `AGENTS.md` cut to commands, conventions and gotchas (procedures moved to their skills/WORKFLOW); README and `.omp/RULES.md` contradicted the flow-policy contract; init/onboard greenfield option text unified; `WORKFLOW.md` dead anchor left from the rename; FUTURE_WORK items already delivered marked resolved.
+
+### Decided against guidance
+
+`/lbvs-aidlc-ship` stays model-invocable (engineer's choice, 2026-09-17) so the review and fix gates hand off directly; recorded in `docs/REFERENCE.md#design-decisions`.
+
+### Open proposals (not applied)
+
+Split the optional-CE contracts out of `docs/WORKFLOW.md` (≈120 of 296 lines) into a file read only when CE is selected; move the five source-research docs (`COMPATIBILITY`, `PREREQUISITES`, `COVERAGE`, `DEPENDENCIES`, `MEASURES`) under `docs/research/`; consider `omitClaudeMd: true` for the four read-only critics once the trial shows what they actually need; `.omp/agents` mirrors duplicate the Claude definitions and could be dropped if omp's `claude` provider maps tool names.
+

@@ -22,7 +22,7 @@ The change ID from the parent. `docs/repo-profile.md` (when absent: `CLAUDE.md`,
 
 ## Posture
 
-Report only what you can point at: `file:line`, the convention it breaks and where that convention is written. Skip taste, unchanged code and anything a documented tool already enforces. Consolidate repeats. Important = fails a documented command, ships a secret, or hand-edits a generated path; everything else is a nit. Zero findings is a valid result; padding is not.
+Report only what you can point at: `file:line`, the convention it breaks and where that convention is written. Skip taste, unchanged code and anything a documented tool already enforces. Consolidate repeats. Important = fails a documented command, ships a secret, or hand-edits a generated path; everything else is a nit the engineer may ignore. Zero findings is a valid result; padding is not.
 
 ## Output
 

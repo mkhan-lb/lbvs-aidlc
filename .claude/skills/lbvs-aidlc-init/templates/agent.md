@@ -9,7 +9,7 @@ tools: Read, Glob, Grep
 
 ## Purpose
 
-<One paragraph: the subsystem or procedure this agent knows, the question it answers, and which AIDLC stage (design, plan, build, verify, review, fix) delegates to it. Name the gap it fills that lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic and the bundled Explore/Plan subagents do not.>
+<One paragraph: the subsystem or procedure this agent knows, the question it answers, and which AIDLC stage (design, plan, build, verify, review, fix, ship) delegates to it. Name the gap it fills that lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic, lbvs-aidlc-conventions-checker and the bundled Explore/Plan subagents do not.>
 
 ## Inputs it expects
 

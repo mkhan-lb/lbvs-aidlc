@@ -1,6 +1,6 @@
 ---
 name: lbvs-aidlc-init
-description: Idempotent, report-first setup wizard for adopting AIDLC in a repository — doctor, mode and onboarding, platform facts, MCP/CE auth, code graph, repository-specific agents and skills (agent maker), ignore patterns; every write is confirmed.
+description: Set up AIDLC in a repository with an idempotent, report-first wizard — doctor, mode and onboarding, platform facts, MCP/CE auth, code graph, repository-specific agents and skills (agent maker), ignore patterns; every write is confirmed.
 when_to_use: Use when the user says "set up aidlc", "initialise this repo", "adopt aidlc here", "brownfield setup", "init", or "first time in this repository", or when no `.aidlc/mode`, repository CLAUDE.md or onboarding record exists yet.
 ---
 
@@ -20,7 +20,7 @@ Run `python3 scripts/aidlc.py mode`.
 
 **Brownfield:** invoke `lbvs-aidlc-onboard` via the Skill tool and let it complete (scout and `conventions` reports, modernize/legacy choice, CLAUDE.md, rules and `docs/repo-profile.md` drafts, `.aidlc/mode`, `docs/onboarding.md`). When `docs/repo-profile.md` exists and `python3 scripts/aidlc.py profile` prints `fresh`, onboarding skips its scout and works from the profile; say so and use the profile as the scout report for step 5. Otherwise keep its scout report for step 5, then return here.
 
-**Greenfield:** run `python3 scripts/aidlc.py conventions` (report only) and AskUserQuestion: "Adopt default conventions (`conventions --apply`)", "Keep my own tooling", "Decide later". `--apply` copies only missing files from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` with authenticated `gh api`, never a raw link.
+**Greenfield:** run `python3 scripts/aidlc.py conventions` (report only) and AskUserQuestion: "Adopt default conventions (`python3 scripts/aidlc.py conventions --apply`)", "Keep my own tooling", "Decide later". `--apply` copies only missing files from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` with authenticated `gh api`, never a raw link.
 
 ## 2. Platform facts
 
@@ -36,7 +36,7 @@ If the `graphify` CLI is installed and `graphify-out/graph.json` is absent, AskU
 
 ## 5. Repository-specific agents and skills (agent maker)
 
-Using the scout report (brownfield) or a Glob of the top two levels plus `docs/` (greenfield), propose **at most three** candidates. For each give: name, one-sentence description, tools, which stage delegates to it, and why none of `lbvs-aidlc-verifier`, `lbvs-aidlc-repo-scout`, `lbvs-aidlc-design-reviewer`, `lbvs-aidlc-threat-modeler`, `lbvs-aidlc-test-critic` or the bundled Explore/Plan subagents already covers it. Propose nothing when nothing qualifies.
+Using the scout report (brownfield) or a Glob of the top two levels plus `docs/` (greenfield), propose **at most three** candidates. For each give: name, one-sentence description, tools, which stage delegates to it, and why none of `lbvs-aidlc-verifier`, `lbvs-aidlc-repo-scout`, `lbvs-aidlc-design-reviewer`, `lbvs-aidlc-threat-modeler`, `lbvs-aidlc-test-critic`, `lbvs-aidlc-conventions-checker` or the bundled Explore/Plan subagents already covers it. Propose nothing when nothing qualifies.
 
 Heuristics (cite the evidence for each):
 
@@ -46,7 +46,7 @@ Heuristics (cite the evidence for each):
 - A recurring multi-step procedure written down in docs (release, migration, data fix) — → a repository **skill** under `.claude/skills/<name>/SKILL.md`, not an agent; sketch its steps and stop there.
 - A `docs/playbooks/` entry with Status Verified and Runs ≥ 3 — → propose a repository skill `.claude/skills/<repo>-<playbook>/SKILL.md` sourced from it; never auto-write it.
 
-For each accepted agent, draft `.claude/agents/<name>.md` from [templates/agent.md](templates/agent.md), replacing every angle-bracket placeholder, keeping the body under 3 KB and the description to one sentence — plugin agents cost startup context on every session. AskUserQuestion per candidate: "Write `.claude/agents/<name>.md`", "Skip". Write only on confirmation and Read back; if the file exists, show the differences and never overwrite without a further confirmation.
+For each accepted agent, draft `.claude/agents/<name>.md` from [templates/agent.md](templates/agent.md), replacing every angle-bracket placeholder, keeping the body under 3 KB and the description to one sentence. AskUserQuestion per candidate: "Write `.claude/agents/<name>.md`", "Skip". Write only on confirmation and Read back; if the file exists, show the differences and never overwrite without a further confirmation.
 
 Alternatives to mention once: `/init` with `CLAUDE_CODE_NEW_INIT=1` proposes CLAUDE.md, skills and hooks from Claude Code's own analysis; the official `skill-creator` and `plugin-dev` plugins help author skills and plugins (do not install them here).
 

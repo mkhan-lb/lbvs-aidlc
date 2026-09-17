@@ -29,6 +29,17 @@
         ]
       }
     ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/worktree-remove.sh\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit",
@@ -42,6 +53,7 @@
       }
     ]
   },
+  "skillListingBudgetFraction": 0.03,
   "extraKnownMarketplaces": {
     "compound-engineering-plugin": {
       "source": {

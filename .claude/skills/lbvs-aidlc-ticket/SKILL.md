@@ -44,7 +44,3 @@ Summarise: ticket reference and fetch tool, change ID and its source, intent pat
 ## Boundaries
 
 Never write back to Jira or GitHub, commit, push or create a worktree here. Never invent ticket content or a key. If the fetched record contradicts conversation input, record both and surface the discrepancy rather than choosing.
-
-## Sources
-
-[Anthropic AI-native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook), Plan "Capture as intent.md" (P01) and "Legacy systems and the source of truth" (X01); [Claude Code skills](https://code.claude.com/docs/en/skills); [Claude Code MCP](https://code.claude.com/docs/en/mcp).
