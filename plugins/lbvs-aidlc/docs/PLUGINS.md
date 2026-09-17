@@ -67,9 +67,11 @@ Connector plugins (`github`, `atlassian`, `slack`, `sentry`) add MCP servers tha
 
 The AIDLC stages assume an engineer at the keyboard. Product owners and other non-technical originators can enter through CE brainstorming instead: `ce-brainstorm` interviews them in plain language and returns a brief that `aidlc-intent` imports as the intent source. Engineers set the plugin up and help the originator run it; the contract is in the [workflow guide](WORKFLOW.md#optional-compound-engineering-discovery).
 
+In this repository (and its exports) the plugin is already declared at project scope in `.claude/settings.json`; it installs after workspace trust. For a repository that adopted only the skills, add it by hand:
+
 ```text
 /plugin marketplace add EveryInc/compound-engineering-plugin
-/plugin install compound-engineering@compound-engineering-plugin
+/plugin install compound-engineering@compound-engineering-plugin --scope project
 ```
 
 Requirements and limits: this route needs Claude Code plus the plugin (v3.26.3 reviewed; MIT), so the originator either works in Claude Code with an engineer or hands the brief to one. The playbook's own route for non-engineers is claude.ai or Cowork with a GitHub connector committing `intent.md` on their behalf into a shared intent home; that avoids Claude Code entirely but needs the connector and a watched intent folder that this package does not set up. CE brainstorming is the lighter local option; the claude.ai/Cowork route scales better across an organisation. Neither is required for ordinary engineer-led intent.
