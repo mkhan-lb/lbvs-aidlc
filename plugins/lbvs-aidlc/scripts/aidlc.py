@@ -20,7 +20,7 @@ NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
 SKILLS = ("init", "intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
           "ticket", "spike", "ship", "handoff", "resume", "ideate")
 MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
-SKILL_DIRECTORIES = ("aidlc",) + tuple("aidlc-" + name for name in SKILLS)
+SKILL_DIRECTORIES = ("lbvs-aidlc",) + tuple("lbvs-aidlc-" + name for name in SKILLS)
 CODE_SUFFIXES = frozenset((
     ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".kt", ".cs", ".rb", ".php", ".rs",
     ".swift", ".c", ".cc", ".cpp", ".h", ".hpp", ".scala", ".sql", ".tf", ".vue", ".svelte",
@@ -38,25 +38,25 @@ REQUIRED_ASSETS = (
     "docs/COMPATIBILITY.md", "docs/MEASURES.md", "docs/PLUGINS.md",
     "docs/WORKFLOW.md", "docs/USAGE.md", "docs/REFERENCE.md",
     ".omp/AGENTS.md", ".omp/RULES.md", ".omp/config.yml", ".worktreeinclude",
-    ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/aidlc-verifier.md", ".omp/agents/aidlc-repo-scout.md",
+    ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/lbvs-aidlc-verifier.md", ".omp/agents/lbvs-aidlc-repo-scout.md",
     ".vscode/settings.json", ".vscode/extensions.json",
     ".mcp.json", ".claude/settings.json",
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh",
     ".claude/rules/package-maintenance.md",
-    ".claude/skills/aidlc-review/references/review-options.md",
-    ".claude/skills/aidlc-intent/templates/intent.md",
-    ".claude/skills/aidlc-design/templates/spec.md",
-    ".claude/skills/aidlc-plan/templates/plan.md",
-    ".claude/skills/aidlc-review/templates/review.md",
-    ".claude/skills/aidlc-fix/templates/evidence.md",
-    ".claude/skills/aidlc-handoff/templates/handoff.md",
-    ".claude/skills/aidlc-learn/templates/learning.md",
-    ".claude/skills/aidlc-ideate/templates/ideation.md",
-    ".claude/skills/aidlc-spike/templates/spike.md",
-    ".claude/skills/aidlc-ship/templates/pr-body.md",
-    ".claude/skills/aidlc-init/templates/agent.md",
-    ".claude/skills/aidlc-onboard/templates/repo-profile.md",
+    ".claude/skills/lbvs-aidlc-review/references/review-options.md",
+    ".claude/skills/lbvs-aidlc-intent/templates/intent.md",
+    ".claude/skills/lbvs-aidlc-design/templates/spec.md",
+    ".claude/skills/lbvs-aidlc-plan/templates/plan.md",
+    ".claude/skills/lbvs-aidlc-review/templates/review.md",
+    ".claude/skills/lbvs-aidlc-fix/templates/evidence.md",
+    ".claude/skills/lbvs-aidlc-handoff/templates/handoff.md",
+    ".claude/skills/lbvs-aidlc-learn/templates/learning.md",
+    ".claude/skills/lbvs-aidlc-ideate/templates/ideation.md",
+    ".claude/skills/lbvs-aidlc-spike/templates/spike.md",
+    ".claude/skills/lbvs-aidlc-ship/templates/pr-body.md",
+    ".claude/skills/lbvs-aidlc-init/templates/agent.md",
+    ".claude/skills/lbvs-aidlc-onboard/templates/repo-profile.md",
     "docs/adr/README.md", "docs/adr/template.md",
     "docs/incidents/README.md", "docs/incidents/template.md",
     "docs/security/README.md", "docs/security/threat-model-template.md",
@@ -66,11 +66,11 @@ REQUIRED_ASSETS = (
     "docs/playbooks/README.md", "docs/playbooks/template.md",
     "templates/conventions/CONVENTIONS.md", "templates/conventions/.editorconfig",
     "templates/conventions/.pre-commit-config.yaml", "templates/conventions/ruff.toml", "templates/conventions/biome.json",
-    ".claude/agents/aidlc-verifier.md", ".claude/agents/aidlc-repo-scout.md",
-    ".claude/agents/aidlc-design-reviewer.md", ".claude/agents/aidlc-threat-modeler.md",
-    ".claude/agents/aidlc-test-critic.md", ".claude/agents/aidlc-conventions-checker.md",
-    ".omp/agents/aidlc-design-reviewer.md", ".omp/agents/aidlc-threat-modeler.md",
-    ".omp/agents/aidlc-test-critic.md", ".omp/agents/aidlc-conventions-checker.md",
+    ".claude/agents/lbvs-aidlc-verifier.md", ".claude/agents/lbvs-aidlc-repo-scout.md",
+    ".claude/agents/lbvs-aidlc-design-reviewer.md", ".claude/agents/lbvs-aidlc-threat-modeler.md",
+    ".claude/agents/lbvs-aidlc-test-critic.md", ".claude/agents/lbvs-aidlc-conventions-checker.md",
+    ".omp/agents/lbvs-aidlc-design-reviewer.md", ".omp/agents/lbvs-aidlc-threat-modeler.md",
+    ".omp/agents/lbvs-aidlc-test-critic.md", ".omp/agents/lbvs-aidlc-conventions-checker.md",
     "docs/vendor/aws-aidlc/NOTICE.md",
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
     "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",
@@ -85,9 +85,9 @@ def new_change(root, change_id):
         raise ValueError("target root must be an existing directory")
     # Read the template before creating anything; failure must not leave an empty change.
     # The plugin build lays skills out under skills/ instead of .claude/skills/.
-    template = PACKAGE_ROOT / ".claude/skills/aidlc-intent/templates/intent.md"
+    template = PACKAGE_ROOT / ".claude/skills/lbvs-aidlc-intent/templates/intent.md"
     if not template.is_file():
-        template = PACKAGE_ROOT / "skills/aidlc-intent/templates/intent.md"
+        template = PACKAGE_ROOT / "skills/lbvs-aidlc-intent/templates/intent.md"
     content = template.read_text(encoding="utf-8")
     content = content.replace("{{change_id}}", change_id)
     changes = root / "changes"
@@ -109,7 +109,7 @@ def new_change(root, change_id):
             pass
         raise
     print("Created draft: {}".format(intent))
-    print("Refine the intent with the engineer, then use aidlc-design for the spec.")
+    print("Refine the intent with the engineer, then use lbvs-aidlc-design for the spec.")
     print("No approval, commit, push, or deployment was performed.")
 
 
@@ -138,7 +138,7 @@ def ecc_inventory():
                 raise ValueError("invalid vendor skill entry in {}".format(relative))
             name, manual = skill.get("name"), skill.get("manual")
             if (not isinstance(name, str) or not CHANGE_ID.fullmatch(name)
-                    or name.startswith("aidlc-") or name in modes or not isinstance(manual, bool)):
+                    or name.startswith(("aidlc-", "lbvs-aidlc")) or name in modes or not isinstance(manual, bool)):
                 raise ValueError("invalid or duplicate vendor skill name/invocation mode: {!r}".format(name))
             resources = skill.get("files")
             if not isinstance(resources, list) or not resources:
@@ -232,7 +232,7 @@ def print_mode(root):
     if mode == "brownfield":
         # Plugin hooks receive CLAUDE_PLUGIN_ROOT; the skill is then namespaced.
         prefix = "/lbvs-aidlc:" if os.environ.get("CLAUDE_PLUGIN_ROOT") else "/"
-        print("Brownfield: run {}aidlc-onboard before the first change unless conventions are already recorded.".format(prefix))
+        print("Brownfield: run {}lbvs-aidlc-onboard before the first change unless conventions are already recorded.".format(prefix))
     print("Override with .aidlc/mode containing greenfield or brownfield.")
 
 
@@ -272,7 +272,7 @@ def conventions(root, apply=False):
     elif mode == "greenfield":
         print("Greenfield: run `python3 scripts/aidlc.py conventions --apply` to adopt the defaults, or record your own in CLAUDE.md.")
     else:
-        print("Brownfield: keep the repository's conventions; aidlc-onboard records them in CLAUDE.md. Copy a default only where none exists.")
+        print("Brownfield: keep the repository's conventions; lbvs-aidlc-onboard records them in CLAUDE.md. Copy a default only where none exists.")
     return 0
 
 
@@ -283,7 +283,7 @@ def profile(root):
     """Report whether docs/repo-profile.md exists and whether its manifests changed since it was verified."""
     file = root / PROFILE_PATH
     if not file.is_file():
-        print("profile: missing ({}). Write one with /aidlc-onboard or /aidlc-init; stages will scout until it exists.".format(PROFILE_PATH))
+        print("profile: missing ({}). Write one with /lbvs-aidlc-onboard or /lbvs-aidlc-init; stages will scout until it exists.".format(PROFILE_PATH))
         return 0
     head = file.read_text(encoding="utf-8").split("\n", 12)
     verified = next((line for line in head if line.startswith("Last verified:")), "")
@@ -300,7 +300,7 @@ def profile(root):
     log = git_out(root, "log", "--format=%h", revision + "..HEAD", "--", *paths) if paths else ""
     commits = [line for line in log.split("\n") if line]
     if commits:
-        print("profile: stale ({} manifest commit(s) since {}: {}). Refresh with /aidlc-onboard.".format(
+        print("profile: stale ({} manifest commit(s) since {}: {}). Refresh with /lbvs-aidlc-onboard.".format(
             len(commits), revision[:12], ", ".join(commits[:5]) + (" …" if len(commits) > 5 else "")))
     else:
         print("profile: fresh ({}; no manifest changes since {}).".format(verified.partition(":")[2].strip(), revision[:12]))
@@ -361,7 +361,7 @@ def print_status(root):
     rows = change_stages(root)
     change_id, source = current_change(root)
     if not rows:
-        print("No changes yet. Start one with /aidlc <change-id>.")
+        print("No changes yet. Start one with /lbvs-aidlc <change-id>.")
     for row in rows:
         marker = "*" if row["id"] == change_id else " "
         missing = [name for name, _ in STAGE_FILES if name not in row["present"]]
@@ -372,7 +372,7 @@ def print_status(root):
     if change_id:
         print("Current change: {} (from {}).".format(change_id, source))
     else:
-        print("Current change: none resolved; name one or start /aidlc <change-id>.")
+        print("Current change: none resolved; name one or start /lbvs-aidlc <change-id>.")
     print("Presence of a file is not proof the stage is complete; read the artifact.")
     return 0
 
@@ -380,7 +380,7 @@ def print_status(root):
 def print_current(root):
     change_id, source = current_change(root)
     if not change_id:
-        print("No current change resolved. Ask the engineer for the ID or start /aidlc <change-id>.")
+        print("No current change resolved. Ask the engineer for the ID or start /lbvs-aidlc <change-id>.")
         return 1
     print("{}\t{}".format(change_id, source))
     return 0
@@ -393,7 +393,7 @@ def worktree_path(root, name):
         raise ValueError("unusable worktree name: {!r}".format(name))
     match = re.fullmatch(r"aidlc[+/](.+)", slug)
     change_id = match.group(1) if match else slug
-    # An explicit aidlc prefix, or a name that is already a change under changes/, gets the
+    # An explicit aidlc branch prefix, or a name that is already a change under changes/, gets the
     # descriptive branch; anything else keeps Claude Code's default shape.
     if match or (CHANGE_ID.fullmatch(change_id) and (root / "changes" / change_id).is_dir()):
         branch, directory = "aidlc/" + change_id, "aidlc+" + change_id
@@ -536,8 +536,8 @@ def check_package():
             if not linked.exists():
                 errors.append("broken local link: {} -> {}".format(relative, target))
             link_count += 1
-    modes = {"aidlc": False}
-    modes.update({"aidlc-" + name: name in MANUAL_SKILLS for name in SKILLS})
+    modes = {"lbvs-aidlc": False}
+    modes.update({"lbvs-aidlc-" + name: name in MANUAL_SKILLS for name in SKILLS})
     modes.update(ecc_modes)
     for name, manual in modes.items():
         file = PACKAGE_ROOT / ".claude/skills" / name / "SKILL.md"
@@ -566,7 +566,7 @@ def check_package():
 
 OPTIONAL_TOOLS = (
     # executable, purpose, ordered install candidates (prerequisite executable, argv)
-    ("graphify", "code knowledge graph used by aidlc-repo-scout, aidlc-fix and aidlc-onboard",
+    ("graphify", "code knowledge graph used by lbvs-aidlc-repo-scout, lbvs-aidlc-fix and lbvs-aidlc-onboard",
      (("uv", ["uv", "tool", "install", "graphifyy"]), ("pipx", ["pipx", "install", "graphifyy"]))),
     ("codegraph", "local pre-indexed symbol/call graph exposed as the codegraph MCP server",
      (("npm", ["npm", "install", "-g", "@colbymchenry/codegraph"]),)),

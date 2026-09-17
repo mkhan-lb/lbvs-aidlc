@@ -1,6 +1,6 @@
 #!/bin/sh
 # PreToolUse hook: deny Edit/Write/MultiEdit/NotebookEdit on paths listed as
-# "protected" in any .aidlc/fix/*.json marker (written by /aidlc-fix while a
+# "protected" in any .aidlc/fix/*.json marker (written by /lbvs-aidlc-fix while a
 # reproduction test must stay untouched). Exits 0 silently on anything it
 # cannot interpret so unrelated edits are never blocked.
 AIDLC_HOOK_INPUT=$(cat 2>/dev/null || true)
@@ -47,7 +47,7 @@ def main():
             if not hit:
                 continue
             reason = (
-                "aidlc-fix protects {} while change '{}' is in progress "
+                "lbvs-aidlc-fix protects {} while change '{}' is in progress "
                 "(marker {}). Keep the failing reproduction test unchanged; "
                 "if the test itself is wrong, ask the user to lift protection by deleting the marker."
             ).format(relative, change_id, os.path.relpath(marker, root))

@@ -8,7 +8,7 @@ Review the identified diff or working-tree scope against the available intent, s
 
 - **Bugs:** incorrect behaviour, broken edge cases, regressions, concurrency or error-handling failures.
 - **Security:** injection, authorisation gaps, exposed credentials or personal data, unsafe execution, and bypassable controls.
-- **Compliance:** mismatches with the current spec and plan, applicable policy or design principles. Check that implementation changes did not silently leave the artifacts stale, and that a new or changed architectural boundary, technology choice or contract has a matching record under `docs/adr/` (a gap is a finding, never a blocker). The pre-PR `aidlc-conventions-checker` report's `K<n>` findings (documented commands, conventions, delivery hygiene, glossary drift) are input to the engineer's ship decision, not blockers. Do not flag deliberately deferred lifecycle infrastructure as a defect in this workflow.
+- **Compliance:** mismatches with the current spec and plan, applicable policy or design principles. Check that implementation changes did not silently leave the artifacts stale, and that a new or changed architectural boundary, technology choice or contract has a matching record under `docs/adr/` (a gap is a finding, never a blocker). The pre-PR `lbvs-aidlc-conventions-checker` report's `K<n>` findings (documented commands, conventions, delivery hygiene, glossary drift) are input to the engineer's ship decision, not blockers. Do not flag deliberately deferred lifecycle infrastructure as a defect in this workflow.
 
 Each actionable finding identifies severity, affected file/line or artifact, the failure scenario, evidence, and a proposed correction. Separate demonstrated failures from hypotheses needing reproduction. Report missing context instead of asserting compliance with an unknown policy.
 
@@ -24,7 +24,7 @@ After changes, re-review the affected revision and resolve findings with evidenc
 
 ## Existing reviewer and engineer handoff
 
-Use an existing review capability, supplying the artifact and verification context rather than implementing a new review engine. [Review options](.claude/skills/aidlc-review/references/review-options.md) distinguishes built-in commands, plugins and hosted services, including their posting behavior.
+Use an existing review capability, supplying the artifact and verification context rather than implementing a new review engine. [Review options](.claude/skills/lbvs-aidlc-review/references/review-options.md) distinguishes built-in commands, plugins and hosted services, including their posting behavior.
 
 The reviewer reports findings; the engineer decides what to fix. Keep findings local by default, then verify fixes and re-review the changed result. Do not approve, publish comments, merge or release unless explicitly instructed and permitted. Existing repository rules remain in force, but this package does not implement or require a new approval boundary.
 
