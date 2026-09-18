@@ -906,7 +906,17 @@ def check_package():
             errors.extend(check_aidlc_skill(name, text, frontmatter))
     errors.extend(check_agents())
     errors.extend(check_instructions_size())
+    errors.extend(check_plugin_build())
     return finish_check(errors, assets, link_count)
+
+
+def check_plugin_build():
+    """The committed plugins/lbvs-aidlc tree must equal a fresh build; drift is the one way a single branch can lie."""
+    builder = PACKAGE_ROOT / "scripts" / "build_plugin.py"
+    if not builder.is_file():
+        return []
+    result = subprocess.run([sys.executable, str(builder), "--check"], capture_output=True, text=True, timeout=120, check=False)
+    return [line for line in result.stdout.splitlines() if line.startswith("plugin drift:")] if result.returncode else []
 
 
 SKILL_KEYS = frozenset(("name", "description", "when_to_use", "argument-hint", "disable-model-invocation"))

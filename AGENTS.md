@@ -16,6 +16,7 @@ Company AIDLC package from Anthropic's AI-native SDLC playbook, exported as a re
 - `python3 scripts/aidlc.py install <repo> [--apply]` / `sync <repo> [--apply]` / `update [--from <pkg>] [--apply]` — put the AIDLC assets into an existing repository and update them later (`update` runs inside the adopter and clones the source recorded in `.aidlc/manifest.json`): report first; never overwrites a differing file; skips our index/template for a knowledge store the repository already keeps; never creates or overwrites `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json`, `.mcp.json`, `.worktreeinclude`, `.omp/AGENTS.md`, `.omp/config.yml` (prints merge hints instead); never commits. This — not `--root` from the package checkout — is how a repository adopts the workflow.
 - `python3 scripts/aidlc.py profile` — prints `profile: missing|fresh|stale (<n> manifest commits since <rev>)` for `docs/repo-profile.md`; refresh with `/lbvs-aidlc-onboard`.
 - `python3 scripts/aidlc.py worktree` / `worktree-remove` — the `WorktreeCreate` / `WorktreeRemove` hook entrypoints; read the hook JSON on stdin. Not for direct use.
+- `python3 scripts/build_plugin.py` — regenerates the committed Claude Code plugin under `plugins/lbvs-aidlc/` from the sources; run it in the same commit as any change to an AIDLC skill, agent, hook or shared doc. `check` runs `--check` and fails on drift.
 
 ## Working rules
 

@@ -179,18 +179,21 @@ Prefer an existing reviewer over a custom engine. [Review options](../.claude/sk
 ## Distribution
 
 
-| Branch | Form | Use |
+One branch, `main`, carries all three forms:
+
+| Form | Where it lives | Use |
 | --- | --- | --- |
-| `main` | Repo template — `python3 scripts/aidlc.py install <repo> [--apply]` / `sync <repo> [--apply]` / `update` (from the adopter) copy and update the AIDLC assets inside an existing repository; `package <new-dir>` exports a standalone tree | Primary. Existing services install and commit the assets (works on every host that reads `.claude/skills/` and `.omp/`); new services start from the export. |
-| `plugin-marketplace` | Claude Code plugin marketplace — `.claude-plugin/marketplace.json` + generated `plugins/lbvs-aidlc/` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:lbvs-aidlc <id>`) installed per repository via `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json`, or fleet-wide via managed settings. |
+| In-repo install | `python3 scripts/aidlc.py install <repo> [--apply]` / `sync <repo> [--apply]` / `update` (from the adopter) | Primary for existing services: the assets are committed in the adopting repository, so every host that reads `.claude/skills/` and `.omp/` has them on checkout. |
+| Standalone export | `python3 scripts/aidlc.py package <new-dir>` | New services. |
+| Claude Code plugin | `.claude-plugin/marketplace.json` + the generated `plugins/lbvs-aidlc/` tree, both committed on `main` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:lbvs-aidlc <id>`) with nothing in the repository, per repository via `extraKnownMarketplaces` + `enabledPlugins` or fleet-wide via managed settings. Claude Code only: it has no `.omp/`. |
 
 ```sh
 # plugin route
-claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
+claude plugin marketplace add mkhan-lb/lbvs-aidlc
 claude plugin install lbvs-aidlc@lbvs-aidlc
 ```
 
-The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.py`), the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md`, the package-integrity hook, the worktree hook or `.omp/` — so under Oh My Pi a plugin-only repository has the skills but not the agents or the protect hook; use `install` there. Regenerate it on that branch with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc.
+The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.py`), the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md`, the package-integrity hook, the worktree hook or `.omp/` — so under Oh My Pi a plugin-only repository has the skills but not the agents or the protect hook; use `install` there. Regenerate it with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc, in the same commit; `python3 scripts/aidlc.py check` runs `build_plugin.py --check` and fails on any drift between the sources and the committed `plugins/` tree, so the SessionStart hook reports a forgotten regeneration.
 
 ## Repository layout
 

@@ -104,4 +104,4 @@ The separate caveman proxy (`@caveman-ai/cli`) is BSL-1.1 licensed and sends ano
 
 ## Distribution note
 
-This package is also published as a Claude Code plugin marketplace on the `plugin-marketplace` branch, installable per repository or fleet-wide through `extraKnownMarketplaces`/`enabledPlugins` or managed settings (see [distribution](REFERENCE.md#distribution)). Company-wide pinning of the recommendations above is a separate decision ([future work](../FUTURE_WORK.md#f7--company-adoption-and-spec-driven-additions)); the repo-template export remains the primary distribution.
+This package is also published as a Claude Code plugin marketplace from the committed `plugins/lbvs-aidlc/` tree on `main`, installable per repository or fleet-wide through `extraKnownMarketplaces`/`enabledPlugins` or managed settings (see [distribution](REFERENCE.md#distribution)). Company-wide pinning of the recommendations above is a separate decision ([future work](../FUTURE_WORK.md#f7--company-adoption-and-spec-driven-additions)); the repo-template export remains the primary distribution.

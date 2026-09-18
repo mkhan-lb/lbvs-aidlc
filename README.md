@@ -29,7 +29,7 @@ cd /path/to/new-service && claude
 **Existing repository** — install the plugin (namespaced commands, nothing overwritten):
 
 ```sh
-claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
+claude plugin marketplace add mkhan-lb/lbvs-aidlc
 claude plugin install lbvs-aidlc@lbvs-aidlc
 # then, inside the repository:  /lbvs-aidlc:lbvs-aidlc-init
 ```

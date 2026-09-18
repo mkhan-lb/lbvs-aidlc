@@ -97,7 +97,7 @@ Success: no artifact relies on a remembered API signature; a new data store, que
 - Unattended stage transitions and artifact-triggered jobs. The `/lbvs-aidlc` gates stay in the engineer's session: they are either answered by the engineer or auto-advanced under a policy the engineer stated in that conversation, announced and interruptible; "proceed" is never inferred, never assumed from an unstated policy, and never applied to review or to commit, push, merge, publication or deployment.
 - Delivery execution, with **CircleCI** through the `app-delivery-kit` orb as the intended later CI/CD platform: running pipelines, promoting images and approving environment holds. `/lbvs-aidlc-ship` stops at the open PR; `docs/platform/` only records what exists.
 - Maintenance automation: operational monitoring, scheduled hosted security scans and incident-channel integrations that would write into `docs/incidents/` and `docs/security/` without an engineer. The stores and the manual offers exist now; the feeds do not.
-- Company-specific rollout and training. Marketplace-plugin distribution (the `plugin-marketplace` branch, [docs/REFERENCE.md#distribution](docs/REFERENCE.md#distribution)) and the Kiro-derived spec additions are adopted, not deferred.
+- Company-specific rollout and training. Marketplace-plugin distribution (the committed `plugins/` tree, [docs/REFERENCE.md#distribution](docs/REFERENCE.md#distribution)) and the Kiro-derived spec additions are adopted, not deferred.
 
 Deferral does not remove existing repository protections or permit an agent to approve, merge, publish or deploy without the user's instruction.
 
