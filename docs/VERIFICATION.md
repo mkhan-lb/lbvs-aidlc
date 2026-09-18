@@ -54,6 +54,8 @@ Two native probes on scratch repositories, headless `omp -p`, the Claude marketp
 
 - Style hook from the generated plugin: the first user turn carried `Reply style: caveman lite (rules: <plugin cache>/skills/caveman/SKILL.md)` and the reply followed lite; with `.aidlc/style` containing `off` the line was absent.
 
+- Adapter extension (rules in shell scripts only) from the generated plugin: a write to a protected test blocked with the protect message; a `/tmp/` write to `changes/demo/intent.md` blocked and the file never created; `git commit --allow-empty` ran and landed (plain commits are not hooked); `gh pr create` blocked with the PR-guard reason (no UI); the style line present.
+
 Not exercised: the same hooks under Claude Code (the shell scripts were smoke-tested with hook-shaped JSON on stdin only); `ask` behaviour in an interactive Claude session; `lbvs-ecc` and `lbvs-aidlc-observer` installation; auto-update. Marketplace and plugin were removed after each probe.
 
 ## Earlier unverified full-playbook capabilities

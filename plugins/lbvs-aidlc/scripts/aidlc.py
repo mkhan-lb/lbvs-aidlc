@@ -44,6 +44,7 @@ REQUIRED_ASSETS = (
     ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/lbvs-aidlc-verifier.md", ".omp/agents/lbvs-aidlc-repo-scout.md",
     ".vscode/settings.json", ".vscode/extensions.json",
     ".mcp.json", ".claude/settings.json", ".claude-plugin/marketplace.json", "scripts/build_plugin.py",
+    ".codex-plugin/plugin.json", "plugins/lbvs-aidlc/.codex-plugin/plugin.json",
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
     ".claude/hooks/pr-guard.sh", ".claude/hooks/artifact-guard.sh",
@@ -877,6 +878,7 @@ def check_package():
             errors.extend(check_aidlc_skill(name, text, frontmatter))
     errors.extend(check_agents())
     errors.extend(check_instructions_size())
+    errors.extend(check_compliance_table())
     errors.extend(check_plugin_build())
     return finish_check(errors, assets, link_count)
 
@@ -952,6 +954,39 @@ def check_instructions_size():
     if lines > INSTRUCTION_LINES:
         return ["AGENTS.md is {} lines; keep it at most {} (facts Claude cannot infer; procedures belong in skills)".format(lines, INSTRUCTION_LINES)]
     return []
+
+
+COMPLIANCE_DOC = "docs/COMPATIBILITY.md"
+COMPLIANCE_STATES = ("native", "adapter-backed", "instruction-backed", "reference-only", "unsupported")
+COMPLIANCE_CELL = re.compile(r"(?:{})(?: \(unverified\))?\Z".format("|".join(COMPLIANCE_STATES)))
+
+
+def compliance_rows(text):
+    """Body rows of the table under `## Host compliance`: (surface, cells) per row, or None when the section is missing."""
+    _, marker, section = text.partition("\n## Host compliance\n")
+    if not marker:
+        return None
+    rows = [line for line in section.split("\n## ", 1)[0].splitlines() if line.startswith("|")]
+    parsed = [[cell.strip() for cell in row.strip().strip("|").split("|")] for row in rows[2:]]
+    return [(cells[0], cells[1:]) for cells in parsed if cells]
+
+
+def check_compliance_table():
+    """docs/COMPATIBILITY.md#host-compliance names every hook script and grades every host with one of the five states."""
+    rows = compliance_rows((PACKAGE_ROOT / COMPLIANCE_DOC).read_text(encoding="utf-8"))
+    if rows is None:
+        return ["{} has no `## Host compliance` section".format(COMPLIANCE_DOC)]
+    errors = []
+    surfaces = [surface for surface, _ in rows]
+    for hook in sorted((PACKAGE_ROOT / ".claude/hooks").glob("*.sh")):
+        if not any("`{}`".format(hook.name) in surface for surface in surfaces):
+            errors.append("host compliance table has no row for hook `{}`".format(hook.name))
+    for surface, cells in rows:
+        for cell in cells:
+            if not COMPLIANCE_CELL.fullmatch(cell):
+                errors.append("host compliance cell {!r} in row {!r} is not one of {} (optionally followed by ' (unverified)')".format(
+                    cell, surface, ", ".join(COMPLIANCE_STATES)))
+    return errors
 
 
 def finish_check(errors, assets, link_count):

@@ -5,4 +5,4 @@ tools: read, glob, grep
 read-summarize: false
 ---
 
-Read `.claude/agents/lbvs-aidlc-threat-modeler.md` first and follow it exactly; it is the single definition of this agent. Tool names in this host are lowercase (`read`, `glob`, `grep`). Never edit, create, delete or run commands.
+Read `.claude/agents/lbvs-aidlc-threat-modeler.md` first and follow it exactly; it is the single definition of this agent. Tool names in this host are lowercase.

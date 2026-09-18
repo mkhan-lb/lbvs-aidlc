@@ -1,0 +1,12 @@
+{
+  "name": "lbvs-aidlc",
+  "version": "0.2.0",
+  "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding, project-mode detection and git/artifact guards.",
+  "author": {
+    "name": "Logicbroker / Virtualstock engineering"
+  },
+  "repository": "https://github.com/mkhan-lb/lbvs-aidlc",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

@@ -21,6 +21,33 @@ Checked against official documentation on 16 September 2026. This records docume
 - The optional ECC import adds 26 discoverable reference/pattern skills and 11 explicit-invocation operational skills, plus the AIDLC-integrated `architecture-decision-records`; `doc-coauthoring` is imported from anthropics/skills the same way. They inherit the current provider and normal permissions; imported frontmatter does not grant tools or install hooks. The small native setup above is authored for this project, not copied ECC runtime configuration. Pinned provenance and adaptations live in the [ECC manifest](vendor/ecc/manifest.json) and the [anthropic-skills manifest](vendor/anthropic-skills/manifest.json) with its [NOTICE](vendor/anthropic-skills/NOTICE.md). The [MCP catalog](../mcp-configs/ecc.mcp-servers.example.json) is inactive reference material whose GitHub entry is outdated, not a connection or compatibility claim; `.mcp.json` is the live configuration. See [usage and boundaries](USAGE.md#12-use-the-optional-ecc-skill-library).
 - Worktrees: the EnterWorktree tool, `WorktreeCreate` hooks and `.worktreeinclude` are Claude Code features. Here the hook runs `python3 scripts/aidlc.py worktree`, which maps the requested name `aidlc/<change-id>` to the directory `.claude/worktrees/aidlc+<change-id>` on branch `aidlc/<change-id>` from local `HEAD`, reuses an existing directory, keeps `worktree-<name>` for other names and performs the `.worktreeinclude` copy itself because the default behaviour no longer runs. No host-side worktree marker is written, so Claude Code's worktree sweep does not manage these trees; remove them with `git worktree remove`. Where the tool or hook is unavailable, `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>` is the documented fallback and the copied local files must be recreated by hand. `python3 scripts/aidlc.py mode`, `status`, `current` and `worktree` are plain Python and work in any host; only the SessionStart injection and the hook wiring are Claude-specific.
 
+## Host compliance
+
+What each host does with each surface of this package, as of 18 September 2026. `aidlc.py check` parses this table: every `.claude/hooks/*.sh` file must have a row and every cell must hold one of the five states below. Codex entries marked `(unverified)` describe what `.codex-plugin/plugin.json` declares; no Codex session has loaded it yet.
+
+| Surface | Claude Code | Oh My Pi | Codex | Copilot Chat |
+| --- | --- | --- | --- | --- |
+| The 17 `lbvs-aidlc*` skills | native | native | adapter-backed (unverified) | unsupported |
+| Shared skills (`architecture-decision-records`, `doc-coauthoring`, `unslop`, `caveman`) | native | native | adapter-backed (unverified) | unsupported |
+| The six `lbvs-aidlc-*` agents | native | native | unsupported | unsupported |
+| `AGENTS.md` shared instructions | native | native | instruction-backed | instruction-backed |
+| `check-package.sh` | native | adapter-backed | unsupported | unsupported |
+| `project-mode.sh` | native | adapter-backed | unsupported | unsupported |
+| `scaffold-check.sh` | native | adapter-backed | unsupported | unsupported |
+| `style-mode.sh` | native | adapter-backed | unsupported | unsupported |
+| `protect-tests.sh` | native | adapter-backed | unsupported | unsupported |
+| `artifact-guard.sh` | native | adapter-backed | unsupported | unsupported |
+| `pr-guard.sh` | native | adapter-backed | unsupported | unsupported |
+| `argument-guard.sh` | native | adapter-backed | unsupported | unsupported |
+| `worktree-create.sh` | native | adapter-backed | unsupported | unsupported |
+| `worktree-remove.sh` | native | adapter-backed | unsupported | unsupported |
+| Helper `mode` line (`scripts/aidlc.py mode`) | native | adapter-backed | unsupported | unsupported |
+| `bin/aidlc` on the Bash PATH | native | reference-only | unsupported | unsupported |
+| MCP declaration (`.mcp.json`) | native | native | adapter-backed (unverified) | unsupported |
+| Reply style (caveman lite) | native | adapter-backed | unsupported | unsupported |
+
+A `native` surface is loaded by the host from the file this package ships, with no code of ours in between. An `adapter-backed` surface reaches the host through code this package supplies for that host, here the `.omp/hooks/pre/aidlc-guards.ts` extension for Oh My Pi and the `.codex-plugin/plugin.json` manifest for Codex. An `instruction-backed` surface is text the host reads as instructions and may follow, with nothing that enforces it. A `reference-only` surface ships in the package and can be read or run by hand, but the host does not load it. An `unsupported` surface has no equivalent on that host, so the behaviour is absent there. The suffix `(unverified)` means the declaration exists and no session on that host has exercised it.
+
 ## Conflicts and qualifications requiring care
 
 | Source example or claim | Current documented qualification | Implementation treatment |
