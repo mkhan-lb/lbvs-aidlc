@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate plugins/ (lbvs-aidlc, lbvs-ecc, lbvs-aidlc-observer) and .claude-plugin/marketplace.json from the
-repo-template sources. Regenerate after editing any AIDLC skill, agent, hook, vendored skill or shared doc; the
-generated trees are committed so the marketplace can serve them."""
+"""Generate plugins/ (lbvs-aidlc, lbvs-ecc, lbvs-aidlc-observer), the .omp/agents twins, .claude-plugin/marketplace.json
+and .codex-plugin/plugin.json from the repo-template sources. Regenerate after editing any AIDLC skill, agent, hook,
+vendored skill or shared doc; the generated trees are committed so the marketplace can serve them."""
 
 import json
 import re
@@ -16,6 +16,8 @@ from aidlc import PACKAGE_ROOT, SKILL_DIRECTORIES, ecc_inventory  # noqa: E402
 PLUGIN_VERSION = "0.2.0"
 PLUGINS_ROOT = PACKAGE_ROOT / "plugins"
 MARKETPLACE = PACKAGE_ROOT / ".claude-plugin/marketplace.json"
+CODEX_MANIFEST = PACKAGE_ROOT / ".codex-plugin/plugin.json"
+OMP_AGENTS = PACKAGE_ROOT / ".omp/agents"
 REPOSITORY = "https://github.com/mkhan-lb/lbvs-aidlc"
 AUTHOR = {"name": "Logicbroker / Virtualstock engineering"}
 DOCS = ("WORKFLOW.md", "USAGE.md", "ARTIFACTS.md", "PLUGINS.md")
@@ -74,9 +76,13 @@ def copy_rewritten(source, target):
     target.write_text(rewrite(source.read_text(encoding="utf-8")), encoding="utf-8")
 
 
+def render_json(data):
+    return (json.dumps(data, indent=2) + "\n").encode("utf-8")
+
+
 def write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    path.write_bytes(render_json(data))
 
 
 def write_manifest(plugin_root, name):
@@ -88,6 +94,42 @@ def write_manifest(plugin_root, name):
         "repository": REPOSITORY,
         "keywords": PLUGINS[name]["keywords"],
     })
+
+
+def codex_manifest(skills, mcp_servers):
+    """Codex plugin manifest in the shape ECC ships; skills and MCP only, no hooks or agents. Unverified in a Codex session."""
+    return {
+        "name": "lbvs-aidlc",
+        "version": PLUGIN_VERSION,
+        "description": PLUGINS["lbvs-aidlc"]["description"],
+        "author": AUTHOR,
+        "repository": REPOSITORY,
+        "license": "MIT",
+        "skills": skills,
+        "mcpServers": mcp_servers,
+    }
+
+
+def omp_agent(name):
+    """The Oh My Pi twin of .claude/agents/<name>: same description, lowercase tools, verbatim reads, a body that defers to the Claude file."""
+    frontmatter = (PACKAGE_ROOT / ".claude/agents" / name).read_text(encoding="utf-8")[4:].partition("\n---\n")[0]
+    fields = {block.partition(":")[0]: block.rstrip("\n") for block in re.split(r"^(?=[A-Za-z_-]+:)", frontmatter, flags=re.M) if block}
+    tools = [tool.strip().lower() for tool in fields["tools"].partition(":")[2].split(",")] if "tools" in fields else []
+    body = "Read `.claude/agents/{}` first and follow it exactly; it is the single definition of this agent. Tool names in this host are lowercase.".format(name)
+    if "bash" in tools:
+        body += " `bash` can still mutate state: respect the delegating session's authorised scope and never edit source, tests or artifacts."
+    head = ["name: " + name[:-3], fields["description"]] + (["tools: " + ", ".join(tools)] if tools else []) + ["read-summarize: false"]
+    return "---\n" + "\n".join(head) + "\n---\n\n" + body + "\n"
+
+
+def build_omp_agents(agents_root):
+    """Regenerate every .omp/agents twin under agents_root; returns the twin count."""
+    if agents_root.exists():
+        shutil.rmtree(agents_root)
+    agents_root.mkdir(parents=True)
+    for name in AGENTS:
+        (agents_root / name).write_text(omp_agent(name), encoding="utf-8")
+    return len(AGENTS)
 
 
 def vendor_skills():
@@ -149,7 +191,8 @@ def aidlc_readme():
         'The helper is reachable as `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" <subcommand>` or `bin/aidlc`; '
         "`conventions` uses the bundled `templates/conventions/`.\n\n"
         "Oh My Pi loads the same plugin: `package.json` registers `omp/aidlc-guards.ts`, which supplies the mode line, "
-        "test protection, artifact lint and the commit/push confirmation for omp sessions.\n\n"
+        "test protection, artifact lint and the commit/push confirmation for omp sessions. `.codex-plugin/plugin.json` "
+        "exposes the skills and `.mcp.json` to Codex; agents and hooks are not carried, and this surface is unverified in a Codex session.\n\n"
         "The plugin does not ship a `CLAUDE.md`; run `/lbvs-aidlc:lbvs-aidlc-onboard` or `/init` in the adopting repository. "
         "Shared workflow docs live under `docs/` inside the plugin and are referenced via `${CLAUDE_PLUGIN_ROOT}`.\n"
     )
@@ -189,6 +232,7 @@ def build_aidlc(plugin_root, vendored):
         "omp": {"extensions": ["./omp/aidlc-guards.ts"]},
     })
     write_json(plugin_root / "hooks/hooks.json", aidlc_hooks())
+    write_json(plugin_root / ".codex-plugin/plugin.json", codex_manifest("./skills/", "./.mcp.json"))
     (plugin_root / "README.md").write_text(aidlc_readme(), encoding="utf-8")
 
 
@@ -243,31 +287,39 @@ def marketplace():
     }
 
 
-def render_marketplace():
-    return (json.dumps(marketplace(), indent=2) + "\n").encode("utf-8")
+def root_files():
+    """{generated repository-root file: wanted bytes}."""
+    return {
+        MARKETPLACE: render_json(marketplace()),
+        CODEX_MANIFEST: render_json(codex_manifest("./plugins/lbvs-aidlc/skills/", "./plugins/lbvs-aidlc/.mcp.json")),
+    }
 
 
 def tree(root):
     return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()} if root.is_dir() else {}
 
 
-def drifted(wanted, committed):
-    return sorted(set(wanted) ^ set(committed)) + sorted(p for p in wanted.keys() & committed.keys() if wanted[p] != committed[p])
+def drifted(fresh, committed):
+    """Repository-relative paths where the committed tree differs from the freshly built one."""
+    wanted, current = tree(fresh), tree(committed)
+    prefix = committed.relative_to(PACKAGE_ROOT).as_posix() + "/"
+    changed = sorted(p for p in wanted.keys() & current.keys() if wanted[p] != current[p])
+    return [prefix + p for p in sorted(set(wanted) ^ set(current)) + changed]
 
 
 def check():
-    """Exit 1 when a committed plugin or the marketplace differs from a fresh build; lists the drifted paths."""
+    """Exit 1 when a committed plugin, agent twin or root manifest differs from a fresh build; lists the drifted paths."""
     drift = []
     with tempfile.TemporaryDirectory(prefix="lbvs-aidlc-plugins-") as temporary:
         fresh = Path(temporary)
-        build(fresh)
+        build(fresh / "plugins")
+        build_omp_agents(fresh / "agents")
         for name in BUILDERS:
-            drift.extend("{}/{}".format(name, path) for path in drifted(tree(fresh / name), tree(PLUGINS_ROOT / name)))
+            drift.extend(drifted(fresh / "plugins" / name, PLUGINS_ROOT / name))
+        drift.extend(drifted(fresh / "agents", OMP_AGENTS))
+    drift.extend(path.relative_to(PACKAGE_ROOT).as_posix() for path, wanted in root_files().items() if not path.is_file() or path.read_bytes() != wanted)
     for path in drift:
-        print("plugin drift: {}/{}".format(PLUGINS_ROOT.relative_to(PACKAGE_ROOT), path))
-    if not MARKETPLACE.is_file() or MARKETPLACE.read_bytes() != render_marketplace():
-        drift.append(MARKETPLACE)
-        print("plugin drift: {}".format(MARKETPLACE.relative_to(PACKAGE_ROOT)))
+        print("plugin drift: {}".format(path))
     if drift:
         print("Regenerate with: python3 scripts/build_plugin.py")
     return 1 if drift else 0
@@ -279,10 +331,13 @@ def main():
     if sys.argv[1:]:
         print("usage: build_plugin.py [--check]", file=sys.stderr)
         return 2
+    print("Generated {} ({} agent twins)".format(OMP_AGENTS.relative_to(PACKAGE_ROOT), build_omp_agents(OMP_AGENTS)))
     for name, count in build(PLUGINS_ROOT).items():
         print("Generated {}/{} ({} files)".format(PLUGINS_ROOT.relative_to(PACKAGE_ROOT), name, count))
-    MARKETPLACE.write_bytes(render_marketplace())
-    print("Generated {}".format(MARKETPLACE.relative_to(PACKAGE_ROOT)))
+    for path, content in root_files().items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        print("Generated {}".format(path.relative_to(PACKAGE_ROOT)))
     return 0
 
 

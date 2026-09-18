@@ -1,114 +1,32 @@
 /**
- * Oh My Pi counterpart of the Claude Code hooks in .claude/settings.json (and the plugin's
- * hooks/hooks.json). omp does not run Claude's shell hooks, so this extension supplies the
- * same guarantees:
- *   - the `AIDLC project mode:` line on the first turn (`aidlc.py mode`), followed by the
- *     scaffold line when `.aidlc/manifest.json` was written by another plugin version
- *   - refusal to edit reproduction tests listed in `.aidlc/fix/*.json` while a fix is in progress
- *   - confirmation before any `git commit` / `git push` (blocked outright without a UI)
- *   - the content boundary on changes/**\/*.md and docs/solutions/**\/*.md (`aidlc.py lint-artifacts --stdin`)
- * Loaded from the plugin (omp/aidlc-guards.ts beside scripts/aidlc.py) it uses the plugin's helper and
- * sets CLAUDE_PLUGIN_ROOT; loaded from the package (.omp/hooks/pre/) it uses the project's scripts/aidlc.py.
+ * Oh My Pi adapter for the AIDLC hook scripts. omp does not run Claude Code's shell hooks, so this
+ * extension builds the same JSON payload Claude Code would send, runs the same scripts, and turns
+ * their decisions into omp results:
+ *   - SessionStart:  `aidlc.py mode`, scaffold-check.sh, style-mode.sh → text attached to the first user turn
+ *   - PreToolUse:    write/edit → protect-tests.sh and artifact-guard.sh (one payload per target file);
+ *                    bash       → pr-guard.sh
+ *   `deny` blocks the call; `ask` asks the engineer through the omp UI and blocks without one.
+ * Every rule lives in the scripts. Nothing here decides on its own.
+ * Loaded from the plugin (omp/aidlc-guards.ts beside hooks/ and scripts/) it uses the plugin's copies and
+ * exports CLAUDE_PLUGIN_ROOT; loaded from the package (.omp/hooks/pre/) it uses .claude/hooks and scripts/aidlc.py.
  * Worktree naming stays with the Claude hook; omp sessions use `git worktree add` per the skill fallback.
  */
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
 const SESSION_MARKERS = [join("scripts", "aidlc.py"), ".git"];
-const FIX_MARKERS = [join(".aidlc", "fix"), ".git"];
 const PLUGIN_ROOT = resolve(import.meta.dir, "..");
-const PLUGIN_HELPER = join(PLUGIN_ROOT, "scripts", "aidlc.py");
-const PLUGIN_LAYOUT = existsSync(PLUGIN_HELPER);
+const PLUGIN_LAYOUT = existsSync(join(PLUGIN_ROOT, "scripts", "aidlc.py"));
 if (PLUGIN_LAYOUT && !process.env.CLAUDE_PLUGIN_ROOT) process.env.CLAUDE_PLUGIN_ROOT = PLUGIN_ROOT;
 
-const COMMAND_SEPARATORS = /&&|\|\||[;|\n]/;
-const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
-const GIT_OPTIONS_WITH_VALUE: Record<string, true> = { "-C": true, "-c": true, "--git-dir": true, "--work-tree": true, "--namespace": true, "--exec-path": true };
-const GH_OPTIONS_WITH_VALUE: Record<string, true> = { "-R": true, "--repo": true };
-const PR_SUBCOMMANDS: Record<string, true> = { create: true, merge: true, ready: true, edit: true, close: true, reopen: true };
-const FORCE_FLAGS = ["--force", "-f", "--force-with-lease", "--force-if-includes"];
-const GUARDED_ARTIFACTS = /^(changes|docs\/solutions)\/.*\.md$/;
-const PR_REASON = "AIDLC: opening or merging a pull request and force-pushing run only on your confirmation; /lbvs-aidlc-ship asks its own question first.";
+const EDIT_SCRIPTS = ["protect-tests.sh", "artifact-guard.sh"];
+const BASH_SCRIPTS = ["pr-guard.sh"];
+const SESSION_SCRIPTS = ["scaffold-check.sh", "style-mode.sh"];
 
-function wordsOf(segment: string): string[] {
-  const words = segment.trim().split(/\s+/).filter(Boolean);
-  while (words.length && ENV_ASSIGNMENT.test(words[0])) words.shift();
-  if (words.length) words[0] = words[0].replace(/^[({]+/, "");
-  return words;
-}
-
-function positional(words: string[], optionsWithValue: Record<string, true>): string[] {
-  for (let i = 1; i < words.length; i++) {
-    if (optionsWithValue[words[i]]) i++;
-    else if (!words[i].startsWith("-")) return words.slice(i);
-  }
-  return [];
-}
-
-/** True when a simple command opens/merges a pull request (`gh pr …`, `gh api … /pulls` non-GET) or force-pushes. */
-function needsConfirmation(segment: string): boolean {
-  const words = wordsOf(segment);
-  if (!words.length) return false;
-  if (words[0] === "gh") {
-    const rest = positional(words, GH_OPTIONS_WITH_VALUE);
-    if (rest[0] === "pr" && rest.length > 1 && PR_SUBCOMMANDS[rest[1]]) return true;
-    const method = words.findIndex((word) => word === "-X" || word === "--method");
-    return rest[0] === "api" && rest.some((word) => word.includes("/pulls")) && method >= 0 && words[method + 1]?.toUpperCase() !== "GET";
-  }
-  if (words[0] === "git") {
-    const rest = positional(words, GIT_OPTIONS_WITH_VALUE);
-    return rest[0] === "push" && rest.slice(1).some((word) => word.startsWith("+") || FORCE_FLAGS.some((flag) => word.startsWith(flag)));
-  }
-  return false;
-}
-
-function touchesRemoteHistory(command: string): boolean {
-  return command.split(COMMAND_SEPARATORS).some(needsConfirmation);
-}
-
-function readVersion(path: string, key: string): string | undefined {
-  try {
-    const value = JSON.parse(readFileSync(path, "utf8"))[key];
-    return typeof value === "string" && value ? value : undefined;
-  } catch { return undefined; }
-}
-
-/** `AIDLC scaffold: …` when the repository's manifest was written by another plugin version. */
-function scaffoldLine(root: string): string | undefined {
-  const installed = readVersion(join(root, ".aidlc", "manifest.json"), "plugin_version");
-  if (!installed) return undefined;
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || join(root, "plugins", "lbvs-aidlc");
-  const running = readVersion(join(pluginRoot, ".claude-plugin", "plugin.json"), "version");
-  if (!running || running === installed) return undefined;
-  return `AIDLC scaffold: installed with plugin ${installed}, running ${running} — run \`aidlc update\` to refresh repository seeds.`;
-}
-
-/** Output of the shared style-mode.sh for `root`, so both hosts inject identical reply-style text; empty when off or unavailable. */
-function styleText(root: string): string {
-  const script = PLUGIN_LAYOUT ? join(PLUGIN_ROOT, "hooks", "style-mode.sh") : join(root, ".claude", "hooks", "style-mode.sh");
-  if (!existsSync(script)) return "";
-  try {
-    return execFileSync("sh", [script], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"], env: { ...process.env, CLAUDE_PROJECT_DIR: root } }).trim();
-  } catch { return ""; }
-}
-
-/** New text per target of a write (`content`) or hashline edit (`+` body rows under each `[path#TAG]` section). */
-function newTextByTarget(toolName: string, input: Record<string, unknown>): Map<string, string> {
-  const texts = new Map<string, string>();
-  if (toolName === "write" && typeof input.path === "string" && typeof input.content === "string") {
-    texts.set(input.path, input.content);
-  } else if (toolName === "edit" && typeof input.input === "string") {
-    let target: string | undefined;
-    for (const line of input.input.split("\n")) {
-      const header = /^\[([^\]#\n]+)#[0-9A-Fa-f]{4}\]\s*$/.exec(line);
-      if (header) target = header[1].trim();
-      else if (target && line.startsWith("+")) texts.set(target, `${texts.get(target) ?? ""}${line.slice(1)}\n`);
-    }
-  }
-  return texts;
-}
+type Decision = { permissionDecision?: string; permissionDecisionReason?: string };
+type TextBlock = { type: string; text?: string };
 
 /** Nearest ancestor of `start` (inclusive) holding one of `markers`; `start` itself when none does. */
 function projectRoot(start: string, markers: string[] = SESSION_MARKERS): string {
@@ -121,106 +39,95 @@ function projectRoot(start: string, markers: string[] = SESSION_MARKERS): string
   }
 }
 
-function globToRegExp(pattern: string): RegExp {
-  let source = "";
-  for (let i = 0; i < pattern.length; i++) {
-    const ch = pattern[i];
-    if (ch === "*") {
-      if (pattern[i + 1] === "*") { source += ".*"; i++; } else source += "[^/]*";
-    } else if (ch === "?") source += "[^/]";
-    else source += ch.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  }
-  return new RegExp(`^${source}$`);
+function helperPath(root: string): string {
+  return PLUGIN_LAYOUT ? join(PLUGIN_ROOT, "scripts", "aidlc.py") : join(root, "scripts", "aidlc.py");
 }
 
-function protectedEntries(root: string): { change: string; pattern: string }[] {
-  const dir = join(root, ".aidlc", "fix");
-  if (!existsSync(dir)) return [];
-  const entries: { change: string; pattern: string }[] = [];
-  for (const file of readdirSync(dir)) {
-    if (!file.endsWith(".json")) continue;
-    try {
-      const marker = JSON.parse(readFileSync(join(dir, file), "utf8"));
-      const change = typeof marker.change_id === "string" ? marker.change_id : file.replace(/\.json$/, "");
-      for (const pattern of Array.isArray(marker.protected) ? marker.protected : []) {
-        if (typeof pattern === "string" && pattern) entries.push({ change, pattern });
-      }
-    } catch { /* a malformed marker never blocks unrelated edits */ }
-  }
-  return entries;
+function scriptPath(root: string, name: string): string {
+  return PLUGIN_LAYOUT ? join(PLUGIN_ROOT, "hooks", name) : join(root, ".claude", "hooks", name);
 }
 
-function targetsOf(toolName: string, input: Record<string, unknown>): string[] {
-  if (toolName === "write" && typeof input.path === "string") return [input.path];
-  if (toolName === "edit" && typeof input.input === "string") {
-    return [...input.input.matchAll(/^\[([^\]#\n]+)#[0-9A-Fa-f]{4}\]\s*$/gm)].map((m) => m[1].trim());
-  }
-  return [];
+/** Run one hook script with a Claude-shaped payload on stdin; empty string when absent, silent or failing. */
+function runHook(root: string, name: string, payload: Record<string, unknown>): string {
+  const script = scriptPath(root, name);
+  if (!existsSync(script)) return "";
+  try {
+    return execFileSync("sh", [script], {
+      input: JSON.stringify(payload), encoding: "utf8", timeout: 20_000, stdio: ["pipe", "pipe", "ignore"],
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    }).trim();
+  } catch { return ""; }
 }
 
-type TextBlock = { type: string; text?: string };
+function decisionOf(output: string): Decision {
+  if (!output.startsWith("{")) return {};
+  try { return (JSON.parse(output).hookSpecificOutput ?? {}) as Decision; } catch { return {}; }
+}
+
+/** Claude PreToolUse payloads for an omp tool call: bash → one Bash payload; write/edit → one Write payload per target
+ *  (`+` body rows under each `[path#TAG]` hashline section become that target's new content). */
+function preToolUsePayloads(toolName: string, input: Record<string, unknown>, cwd: string): Record<string, unknown>[] {
+  const base = { hook_event_name: "PreToolUse", cwd };
+  if (toolName === "bash" && typeof input.command === "string") {
+    return [{ ...base, tool_name: "Bash", tool_input: { command: input.command } }];
+  }
+  const texts = new Map<string, string>();
+  if (toolName === "write" && typeof input.path === "string") {
+    texts.set(input.path, typeof input.content === "string" ? input.content : "");
+  } else if (toolName === "edit" && typeof input.input === "string") {
+    let target: string | undefined;
+    for (const line of input.input.split("\n")) {
+      const header = /^\[([^\]#\n]+)#[0-9A-Fa-f]{4}\]\s*$/.exec(line);
+      if (header) { target = header[1].trim(); if (!texts.has(target)) texts.set(target, ""); }
+      else if (target && line.startsWith("+")) texts.set(target, `${texts.get(target)}${line.slice(1)}\n`);
+    }
+  }
+  return [...texts].map(([path, content]) => ({
+    ...base, tool_name: "Write",
+    tool_input: { file_path: isAbsolute(path) ? path : resolve(cwd, path), content },
+  }));
+}
 
 export default function aidlcGuards(pi: ExtensionAPI): void {
-  let modeLine: string | undefined;
+  let sessionText: string | undefined;
 
-  // `AIDLC project mode: …` plus, when the repository seeds came from another plugin version, the scaffold line.
-  function resolveMode(cwd: string): string | undefined {
-    if (modeLine !== undefined) return modeLine || undefined;
+  /** `AIDLC project mode: …` from the helper, then whatever the SessionStart scripts print (scaffold line, reply style). */
+  function sessionContext(cwd: string): string | undefined {
+    if (sessionText !== undefined) return sessionText || undefined;
     const root = projectRoot(cwd);
-    const helper = PLUGIN_LAYOUT ? PLUGIN_HELPER : join(root, "scripts", "aidlc.py");
-    if (!existsSync(helper)) { modeLine = ""; return undefined; }
-    try {
-      modeLine = execFileSync("python3", [helper, "--root", root, "mode"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
-    } catch (error) {
-      const stderr = error && typeof error === "object" && "stderr" in error && typeof error.stderr === "string" ? error.stderr.trim() : "";
-      const reason = (stderr || String(error)).split("\n")[0];
-      modeLine = `AIDLC project mode: unavailable (${reason})`;
+    const helper = helperPath(root);
+    const lines: string[] = [];
+    if (existsSync(helper)) {
+      try {
+        lines.push(execFileSync("python3", [helper, "--root", root, "mode"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"] }).trim());
+      } catch (error) {
+        const stderr = error && typeof error === "object" && "stderr" in error && typeof error.stderr === "string" ? error.stderr.trim() : "";
+        lines.push(`AIDLC project mode: unavailable (${(stderr || String(error)).split("\n")[0]})`);
+      }
     }
-    const scaffold = scaffoldLine(root);
-    if (scaffold) modeLine = `${modeLine}\n${scaffold}`;
-    const style = styleText(root);
-    if (style) modeLine = `${modeLine}\n${style}`;
-    return modeLine;
+    for (const name of SESSION_SCRIPTS) {
+      const output = runHook(root, name, { hook_event_name: "SessionStart", cwd: root, source: "startup" });
+      if (output) lines.push(output);
+    }
+    sessionText = lines.join("\n");
+    return sessionText || undefined;
   }
 
-  /** Block reason when `text` bound for `rel` breaks the content boundary; undefined when clean or unlintable. */
-  function artifactViolation(root: string, rel: string, text: string): string | undefined {
-    const helper = PLUGIN_LAYOUT ? PLUGIN_HELPER : join(root, "scripts", "aidlc.py");
-    if (!existsSync(helper)) return undefined;
-    try {
-      execFileSync("python3", [helper, "lint-artifacts", "--stdin", rel], { cwd: root, input: text, encoding: "utf8", timeout: 20_000, stdio: ["pipe", "pipe", "pipe"] });
-      return undefined;
-    } catch (error) {
-      if (!error || typeof error !== "object" || !("status" in error) || error.status !== 1) return undefined;
-      const stdout = "stdout" in error && typeof error.stdout === "string" ? error.stdout : "";
-      const hits = stdout.split("\n").filter((line) => line.trim()).slice(0, 5).join("\n");
-      return `AIDLC: ${rel} would carry session or machine-local references:\n${hits}\nContent boundary: docs/ARTIFACTS.md#content-boundary`;
-    }
-  }
-
-  // Opening or merging a PR and force-pushing run only on the engineer's confirmation; without a UI the call is blocked.
-  // Ordinary git commit/push follow the host's own permission flow.
   pi.on("tool_call", async (event, ctx) => {
-    if (event.toolName !== "bash") return;
-    const command = (event.input as Record<string, unknown>).command;
-    if (typeof command !== "string" || !touchesRemoteHistory(command)) return;
-    if (!ctx.hasUI) return { block: true, reason: PR_REASON };
-    const confirmed = await ctx.ui.confirm("AIDLC", `${command}\nOpen/merge this pull request or force-push?`);
-    if (!confirmed) return { block: true, reason: PR_REASON };
-  });
-
-  // Content boundary on change artifacts and lessons, measured against the repository holding the target.
-  pi.on("tool_call", async (event, ctx) => {
-    if (event.toolName !== "edit" && event.toolName !== "write") return;
-    const sessionRoot = projectRoot(ctx.cwd);
-    for (const [target, text] of newTextByTarget(event.toolName, event.input as Record<string, unknown>)) {
-      const absolute = isAbsolute(target) ? target : resolve(ctx.cwd, target);
-      for (const root of [projectRoot(dirname(absolute), [".git"]), sessionRoot]) {
-        const rel = relative(root, absolute).split("\\").join("/");
-        if (!GUARDED_ARTIFACTS.test(rel)) continue;
-        const reason = artifactViolation(root, rel, text);
-        if (reason) return { block: true, reason };
-        break;
+    const scripts = event.toolName === "bash" ? BASH_SCRIPTS : event.toolName === "write" || event.toolName === "edit" ? EDIT_SCRIPTS : [];
+    if (!scripts.length) return;
+    const root = projectRoot(ctx.cwd);
+    for (const payload of preToolUsePayloads(event.toolName, event.input as Record<string, unknown>, ctx.cwd)) {
+      for (const name of scripts) {
+        const decision = decisionOf(runHook(root, name, payload));
+        const reason = decision.permissionDecisionReason ?? `AIDLC: ${name} refused this call.`;
+        if (decision.permissionDecision === "deny") return { block: true, reason };
+        if (decision.permissionDecision === "ask") {
+          if (!ctx.hasUI) return { block: true, reason };
+          const summary = String((payload.tool_input as Record<string, unknown>).command ?? (payload.tool_input as Record<string, unknown>).file_path);
+          const confirmed = await ctx.ui.confirm("AIDLC", `${summary}\n${reason}\nContinue?`);
+          if (!confirmed) return { block: true, reason };
+        }
       }
     }
   });
@@ -229,15 +136,15 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
 
   // Shown in the transcript for the engineer.
   pi.on("before_agent_start", async (_event, ctx) => {
-    const text = resolveMode(ctx.cwd);
+    const text = sessionContext(ctx.cwd);
     if (!text || announced) return;
     announced = true;
     return { message: { customType: "aidlc-project-mode", content: text, display: true, details: { root: projectRoot(ctx.cwd) } } };
   });
 
-  // Custom transcript messages are not part of the model's context, so attach the line to the first user turn.
+  // Custom transcript messages are not part of the model's context, so attach the text to the first user turn.
   pi.on("context", async (event, ctx) => {
-    const text = resolveMode(ctx.cwd);
+    const text = sessionContext(ctx.cwd);
     if (!text) return;
     const messages = event.messages;
     const first = messages.findIndex((m) => m.role === "user" && Array.isArray(m.content));
@@ -247,31 +154,5 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     const updated = messages.slice();
     updated[first] = { ...messages[first], content: [...blocks, { type: "text", text: `[aidlc-project-mode]\n${text}` }] } as typeof messages[number];
     return { messages: updated };
-  });
-
-  // Protection is checked against the session root and against the repository that holds the
-  // target itself: a fix worktree's markers must hold even when the session cwd is elsewhere.
-  pi.on("tool_call", async (event, ctx) => {
-    if (event.toolName !== "edit" && event.toolName !== "write") return;
-    const sessionRoot = projectRoot(ctx.cwd);
-    const sessionEntries = protectedEntries(sessionRoot);
-    for (const target of targetsOf(event.toolName, event.input as Record<string, unknown>)) {
-      const absolute = isAbsolute(target) ? target : resolve(ctx.cwd, target);
-      const targetRoot = projectRoot(dirname(absolute), FIX_MARKERS);
-      const scopes = [{ root: sessionRoot, entries: sessionEntries }];
-      if (targetRoot !== sessionRoot) scopes.unshift({ root: targetRoot, entries: protectedEntries(targetRoot) });
-      for (const { root, entries } of scopes) {
-        const rel = relative(root, absolute).split("\\").join("/");
-        for (const { change, pattern } of entries) {
-          const regex = globToRegExp(pattern);
-          if (regex.test(rel) || regex.test(absolute) || rel === pattern) {
-            return {
-              block: true,
-              reason: `lbvs-aidlc-fix protects ${rel} while change '${change}' is in progress (marker .aidlc/fix/${change}.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.`,
-            };
-          }
-        }
-      }
-    }
   });
 }
