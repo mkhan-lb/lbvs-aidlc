@@ -115,7 +115,7 @@ Use `changes/<change-id>/` with `intent.md`, `spec.md`, `plan.md` and, when usef
 python3 scripts/aidlc.py new example-change
 ```
 
-Replace the ID with the real change; a ticket key can prefix it (`vs-1234-order-export`). Use lowercase letters/digits separated by single hyphens. `python3 scripts/aidlc.py status` shows which changes already exist and how far each one got. Templates are starting instructions, not completed work. Do not invent facts to fill them. These files ship with the code and are read by the adopting repository's maintainers: keep them inside the [content boundary](ARTIFACTS.md#content-boundary) — repository-relative paths, environment by kind and version, decisions not transcript, and no account of how the workflow or the workstation behaved. See [artifact conventions](ARTIFACTS.md).
+Replace the ID with the real change; a ticket key can prefix it (`vs-1234-order-export`). Use lowercase letters/digits separated by single hyphens. `python3 scripts/aidlc.py status` shows which changes already exist and how far each one got. Templates are starting instructions, not completed work. Do not invent facts to fill them. These files ship with the code and are read by the adopting repository's maintainers: write them to the [`unslop`](../.claude/skills/unslop/SKILL.md) rules and keep them inside the [content boundary](ARTIFACTS.md#content-boundary) — repository-relative paths, environment by kind and version, decisions not transcript, and no account of how the workflow or the workstation behaved. See [artifact conventions](ARTIFACTS.md).
 
 ## Repository context
 

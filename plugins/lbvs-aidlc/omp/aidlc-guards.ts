@@ -26,24 +26,46 @@ if (PLUGIN_LAYOUT && !process.env.CLAUDE_PLUGIN_ROOT) process.env.CLAUDE_PLUGIN_
 const COMMAND_SEPARATORS = /&&|\|\||[;|\n]/;
 const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const GIT_OPTIONS_WITH_VALUE: Record<string, true> = { "-C": true, "-c": true, "--git-dir": true, "--work-tree": true, "--namespace": true, "--exec-path": true };
+const GH_OPTIONS_WITH_VALUE: Record<string, true> = { "-R": true, "--repo": true };
+const PR_SUBCOMMANDS: Record<string, true> = { create: true, merge: true, ready: true, edit: true, close: true, reopen: true };
+const FORCE_FLAGS = ["--force", "-f", "--force-with-lease", "--force-if-includes"];
 const GUARDED_ARTIFACTS = /^(changes|docs\/solutions)\/.*\.md$/;
-const COMMIT_REASON = "AIDLC: git commit/push runs only on your confirmation; /lbvs-aidlc-ship and /lbvs-aidlc-fix ask before reaching this.";
+const PR_REASON = "AIDLC: opening or merging a pull request and force-pushing run only on your confirmation; /lbvs-aidlc-ship asks its own question first.";
 
-/** True when any simple command in `command` (split on && || ; | newline) is `git … commit` or `git … push`. */
-function touchesGitHistory(command: string): boolean {
-  for (const segment of command.split(COMMAND_SEPARATORS)) {
-    const words = segment.trim().split(/\s+/).filter(Boolean);
-    while (words.length && ENV_ASSIGNMENT.test(words[0])) words.shift();
-    if (!words.length || words[0].replace(/^[({]+/, "") !== "git") continue;
-    for (let i = 1; i < words.length; i++) {
-      if (GIT_OPTIONS_WITH_VALUE[words[i]]) i++;
-      else if (!words[i].startsWith("-")) {
-        if (words[i] === "commit" || words[i] === "push") return true;
-        break;
-      }
-    }
+function wordsOf(segment: string): string[] {
+  const words = segment.trim().split(/\s+/).filter(Boolean);
+  while (words.length && ENV_ASSIGNMENT.test(words[0])) words.shift();
+  if (words.length) words[0] = words[0].replace(/^[({]+/, "");
+  return words;
+}
+
+function positional(words: string[], optionsWithValue: Record<string, true>): string[] {
+  for (let i = 1; i < words.length; i++) {
+    if (optionsWithValue[words[i]]) i++;
+    else if (!words[i].startsWith("-")) return words.slice(i);
+  }
+  return [];
+}
+
+/** True when a simple command opens/merges a pull request (`gh pr …`, `gh api … /pulls` non-GET) or force-pushes. */
+function needsConfirmation(segment: string): boolean {
+  const words = wordsOf(segment);
+  if (!words.length) return false;
+  if (words[0] === "gh") {
+    const rest = positional(words, GH_OPTIONS_WITH_VALUE);
+    if (rest[0] === "pr" && rest.length > 1 && PR_SUBCOMMANDS[rest[1]]) return true;
+    const method = words.findIndex((word) => word === "-X" || word === "--method");
+    return rest[0] === "api" && rest.some((word) => word.includes("/pulls")) && method >= 0 && words[method + 1]?.toUpperCase() !== "GET";
+  }
+  if (words[0] === "git") {
+    const rest = positional(words, GIT_OPTIONS_WITH_VALUE);
+    return rest[0] === "push" && rest.slice(1).some((word) => word.startsWith("+") || FORCE_FLAGS.some((flag) => word.startsWith(flag)));
   }
   return false;
+}
+
+function touchesRemoteHistory(command: string): boolean {
+  return command.split(COMMAND_SEPARATORS).some(needsConfirmation);
 }
 
 function readVersion(path: string, key: string): string | undefined {
@@ -165,14 +187,15 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     }
   }
 
-  // git commit/push run only on the engineer's confirmation; without a UI the call is blocked.
+  // Opening or merging a PR and force-pushing run only on the engineer's confirmation; without a UI the call is blocked.
+  // Ordinary git commit/push follow the host's own permission flow.
   pi.on("tool_call", async (event, ctx) => {
     if (event.toolName !== "bash") return;
     const command = (event.input as Record<string, unknown>).command;
-    if (typeof command !== "string" || !touchesGitHistory(command)) return;
-    if (!ctx.hasUI) return { block: true, reason: COMMIT_REASON };
-    const confirmed = await ctx.ui.confirm("AIDLC", `${command}\nRun this git commit/push?`);
-    if (!confirmed) return { block: true, reason: COMMIT_REASON };
+    if (typeof command !== "string" || !touchesRemoteHistory(command)) return;
+    if (!ctx.hasUI) return { block: true, reason: PR_REASON };
+    const confirmed = await ctx.ui.confirm("AIDLC", `${command}\nOpen/merge this pull request or force-push?`);
+    if (!confirmed) return { block: true, reason: PR_REASON };
   });
 
   // Content boundary on change artifacts and lessons, measured against the repository holding the target.
