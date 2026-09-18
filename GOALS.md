@@ -86,7 +86,7 @@ Success: no artifact relies on a remembered API signature; a new data store, que
 - Concrete artifact-aware handoff to existing local reviewers, with prepared/partial/returned status and honest context coverage.
 - Review → fix → re-review, with local findings by default.
 - A worked local scenario and honest evidence of what was exercised.
-- Complete standalone resource export to a new directory; existing-repository adoption remains an explicit reviewed merge, not an automatic installer or company rollout.
+- Complete standalone resource export to a new directory, and `install`/`sync` into an existing repository — report first, never overwriting, never touching the repository-owned instruction and settings files, never committing; the engineer reviews and commits the result. Company rollout remains separate.
 - The requested 37-skill ECC library, with pinned provenance, retained licensing, task-scoped adaptations and the inactive ECC MCP catalog kept as a reference snapshot (the live configuration is `.mcp.json`). Importing operational guidance does not activate the deferred services below.
 
 ## Deferred

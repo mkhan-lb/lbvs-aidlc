@@ -4,7 +4,7 @@ Use this guide for the conversation, command, expected result, and next action a
 
 ## Before you start
 
-- Open the intended repository in Claude Code with the complete project resources available. Copying one skill or using the helper's `--root` does not install the workflow. The [standalone export recipe](#11-export-and-adopt-without-overwriting-a-repository) produces a new tree; existing-repository adoption remains an explicit reviewed merge.
+- Open the intended repository in Claude Code with the complete project resources available. Copying one skill or using the helper's `--root` does not install the workflow — the SO2-1386 trial ran that way and paid for it with a wrong-root mode line, a hook watching the wrong repository and a lesson in the wrong store. Adopt through [`install`/`sync`](#11-install-into-an-existing-repository-or-export-a-new-one) for an existing repository, `package` for a new one, or the plugin ([distribution](REFERENCE.md#distribution)).
 - Every ID-taking AIDLC command accepts **at most one ID** matching `^[a-z0-9]+(-[a-z0-9]+)*$`, and a ticket key fits as a lowercase prefix (`vs-1234-order-export`). Omit the argument and the command resolves the change itself — branch name, then `.aidlc/current`, then the only change without `review.md` — and says which source it used. `/lbvs-aidlc-ideate` still takes a topic ID before a change exists and has no such fallback; `/lbvs-aidlc-onboard` takes no ID; `/lbvs-aidlc-ticket` takes the ticket key or issue URL and derives the change ID for you; `/lbvs-aidlc-ship [change-id]` resolves like the rest. Put requests, paths, CE choices, the flow policy, review tiers and review targets in conversation, never after the ID.
 - In the recipes, send the **Say** text as an ordinary conversation message, then invoke the separate **Run** slash command. Adapt the example scope to your application; do not copy its requirements blindly.
 - Use a normal writable session for saving artifacts, handoff creation, and implementation. Enter native plan/read-only mode yourself for `/lbvs-aidlc-plan`; the agent does not change permissions. Confirmation of a proposal does not change the mode or authorise unrelated actions.
@@ -755,22 +755,54 @@ Run `/lbvs-aidlc-learn order-export` again only for the intended capture/update�
 
 If glossary changes are forbidden, choose ordinary capture or stop; do not ask CE to silently omit its required step. In plan/read-only mode, use ordinary eligible draft text labelled **not saved** or defer capture—never invoke CE to bypass the mode.
 
-## 11. Export and adopt without overwriting a repository
+## 11. Install into an existing repository, or export a new one
 
-**Prerequisite:** Python 3; an existing parent directory and a destination that does not exist.
+Three routes, one source of truth ([distribution](REFERENCE.md#distribution)): **install/sync** copies the AIDLC assets into an existing repository and keeps them updatable; **package** exports a brand-new standalone tree; the **plugin** keeps everything out of the repository for Claude Code fleets. Existing repositories take the first route.
+
+### Install
+
+**Prerequisite:** Python 3; the adopting repository checked out beside this package. Report first, write on `--apply`.
 
 **Run from the package checkout:**
+
+```sh
+python3 scripts/aidlc.py install ../my-service
+python3 scripts/aidlc.py install ../my-service --apply
+```
+
+**Expect:** the report lists every file it would `write`, every existing file it will `keep` because yours differs, every store seed it will `skip` because you already keep that store (a repository with its own `docs/adr/` is not given our `README.md` index and `template.md`; same for `incidents`, `security`, `references`, `playbooks`, `glossary`, `platform` — reconcile through `/lbvs-aidlc-onboard`), and the eight **repository-owned** files it never creates or overwrites — `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json`, `.mcp.json`, `.worktreeinclude`, `.omp/AGENTS.md`, `.omp/config.yml` — each with a one-line merge hint and the exact hooks block to add to `.claude/settings.json`. Installed: the 17 AIDLC skills and the ECC library with their templates, the six agents with `.omp/agents/` counterparts, `.omp/RULES.md`, both protect hooks plus project-mode and worktree hooks, `scripts/aidlc.py`, `REVIEW.md`, `docs/WORKFLOW.md` and `docs/ARTIFACTS.md` (the two files skills read at runtime), `docs/USAGE.md` and `docs/PLUGINS.md` (engineer reading), the knowledge-store indexes and templates, glossary, playbooks, platform pointer, `templates/conventions/` and the vendor licences. Not installed: the package's own `GOALS.md`, `FUTURE_WORK.md`, `README.md`, `docs/REFERENCE.md`, verification/coverage docs, the package-integrity hook and rule — links to them from the installed docs point back at this package. `--apply` also writes `.aidlc/manifest.json` (package source and branch, revision, date, one SHA-256 per installed file, the skipped store seeds) — commit it with the files; `.aidlc/current` and `.aidlc/fix/` stay ignored.
+
+**Next:** merge the eight hints by hand, `git add` and commit in the adopting repository (the helper never commits), then run [`/lbvs-aidlc-init`](#set-up-a-repository-lbvs-aidlc-init) there — it runs `/lbvs-aidlc-onboard` for a brownfield repository, offers the missing `.gitignore` lines and proposes repository-specific agents.
+
+### Sync (from the package) or update (from the repository)
+
+Same comparison, two entry points. From an updated package checkout:
+
+```sh
+python3 scripts/aidlc.py sync ../my-service
+python3 scripts/aidlc.py sync ../my-service --apply
+```
+
+From inside the adopting repository, with no package checkout at hand — `update` shallow-clones the source and branch recorded in `.aidlc/manifest.json` into a temporary directory, runs that clone's `sync` against this repository and removes the clone; `--from <path>` uses a local package checkout instead:
+
+```sh
+python3 scripts/aidlc.py update
+python3 scripts/aidlc.py update --apply
+python3 scripts/aidlc.py update --from ../the-aidlc --apply
+```
+
+**Expect:** a three-way comparison of package, manifest and repository: `update` (package changed, you did not touch the file), `add` (new in the package — a skill added upstream arrives this way), `conflict` (changed in both — never written; resolve by hand, then sync again), `removed` (gone from the package — never deleted for you), `local` (you edited it, package unchanged — kept), `absent` (you deleted it — kept absent), `guidance` when a repository-owned hint changed, and a count of skipped store seeds, which stay skipped. `--apply` writes only `update` and `add` and refreshes the manifest to the new revision; conflicts keep their recorded hash so the next run still shows them. Exit code 1 while a conflict exists. Neither command commits.
+
+### Export a new tree
+
+**Prerequisite:** an existing parent directory and a destination that does not exist.
 
 ```sh
 python3 scripts/aidlc.py package /path/to/new-aidlc-copy
 python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
 ```
 
-**Expect:** a complete standalone tree with the declared skills (orchestrator, setup wizard, ticket intake, spike, stages, ship, fix, onboard, utilities, the imported `architecture-decision-records` and `doc-coauthoring`), the six agents with their `.omp/agents/` counterparts, bundled templates (including the init skill's `templates/agent.md`), shared docs/helper, `AGENTS.md`/`CLAUDE.md`, settings, the five hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/references/` and `docs/platform/` indexes and templates, `templates/conventions/`, the vendor manifests and locally linked source/evidence dependencies. No `.git`, canonical change artifacts, solution/ideation stores, `.aidlc/`, local settings, arbitrary credentials/configs or plugin is copied. Existing destinations—including empty directories and symlinks—are refused, not merged. Missing/unsafe source dependencies fail before destination creation; an unexpected later copy error reports the partial new tree for inspection. Declared/linked content is copied verbatim, not secret-scanned; inspect it before sharing.
-
-**Next for standalone use:** launch Claude in the exported tree; create/refine an intent through the ordinary workflow. Establish Git history through your own normal process when needed—the exporter does not initialise or commit a repository.
-
-**Next for an existing codebase:** compare and explicitly merge the selected `.claude/skills/`, agents if wanted, helper and shared documentation dependencies. Review the shared settings, hooks, scoped rules, `.worktreeinclude` and the `.mcp.json` server declarations rather than overwriting existing configuration — drop a declared server the team has not approved. Reconcile `AGENTS.md`, `CLAUDE.md`, `REVIEW.md`, README/docs and ignore patterns (`.claude/worktrees/`, `.aidlc/fix/`, `.aidlc/current`, `.codegraph/`) with the project's existing content and authority; never replace them wholesale with package defaults. Once the package is in place, [`/lbvs-aidlc-init`](#set-up-a-repository-lbvs-aidlc-init) walks the rest — it runs `/lbvs-aidlc-onboard` for a brownfield repository, offers to fill `platform.md`, reports MCP/CE auth, proposes repository-specific agents and appends the missing ignore lines, each only on confirmation. If the repository already has a `CLAUDE.md`, keep it as the Claude-specific section and move shared text into `AGENTS.md` behind an `@AGENTS.md` import, or let onboarding draft one. Adopt the knowledge stores by keeping the `docs/adr/`, `docs/incidents/` and `docs/security/` indexes and templates, or point the skills at existing equivalents. Run the package check from the adopted helper and exercise the intended workflow in that codebase. The exporter copies config only into the new standalone tree; it does not mutate an existing repository or global settings. It is not an installer/updater, and `--root` only changes the target of `new`/`doctor`. Export and adoption boundaries are catalogued in [REFERENCE.md](REFERENCE.md).
+**Expect:** a complete standalone tree — everything `install` writes plus the repository-owned files, the package's own docs and the package-integrity hook — with no `.git`, change artifacts, solution/ideation stores, `.aidlc/` or local settings. Launch Claude in it and establish Git history through your own process; the exporter does not initialise or commit a repository.
 
 Do not use `--add-dir` as a shortcut and assume these repository-root-relative shared docs follow the skills. No plugin namespace relocation, automatic upgrade or cross-harness guarantee is provided. Review exported source/evidence before any separately authorised sharing or publication.
 
