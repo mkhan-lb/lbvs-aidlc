@@ -47,7 +47,7 @@ REQUIRED_ASSETS = (
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
     ".claude/hooks/pr-guard.sh", ".claude/hooks/artifact-guard.sh",
-    ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh",
+    ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh", ".claude/hooks/style-mode.sh",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/lbvs-aidlc-review/references/review-options.md",
     ".claude/skills/lbvs-aidlc-intent/templates/intent.md",
@@ -80,6 +80,7 @@ REQUIRED_ASSETS = (
     "docs/vendor/ecc/manifest.json", "docs/vendor/ecc/LICENSE",
     "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/anthropic-skills/NOTICE.md",
     "docs/vendor/cursor-plugins/manifest.json", "docs/vendor/cursor-plugins/LICENSE",
+    "docs/vendor/caveman/manifest.json", "docs/vendor/caveman/LICENSE",
     "mcp-configs/ecc.mcp-servers.example.json",
 ) + tuple(".claude/skills/{}/SKILL.md".format(name) for name in SKILL_DIRECTORIES)
 
@@ -119,7 +120,7 @@ def new_change(root, change_id):
     print("No approval, commit, push, or deployment was performed.")
 
 
-VENDOR_MANIFESTS = ("docs/vendor/ecc/manifest.json", "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/cursor-plugins/manifest.json")
+VENDOR_MANIFESTS = ("docs/vendor/ecc/manifest.json", "docs/vendor/anthropic-skills/manifest.json", "docs/vendor/cursor-plugins/manifest.json", "docs/vendor/caveman/manifest.json")
 
 
 def ecc_inventory():

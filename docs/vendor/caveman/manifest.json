@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/JuliusBrussee/caveman",
+    "commit": "880114a42067d045b91dffe6a553f6ab2cc399ad",
+    "source_tree": "skills",
+    "license": "MIT for skills/ (root LICENSE scope note and LICENSING.md); the Engine-linked directories under BSL-1.1 were not imported",
+    "license_file": "docs/vendor/caveman/LICENSE"
+  },
+  "notes": [
+    "Only skills/caveman/SKILL.md was copied. The upstream plugin's SessionStart/UserPromptSubmit hooks (src/hooks/*.js, MIT) were not imported; lbvs-aidlc supplies its own style-mode.sh so both hosts inject the same text.",
+    "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating."
+  ],
+  "skills": [
+    {
+      "name": "caveman",
+      "source": "skills/caveman/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/caveman/SKILL.md",
+          "source": "skills/caveman/SKILL.md",
+          "upstream_sha256": "0bf09a0a9a017d004a81d4b693e5a2d830e1a28230a5885df773e1ed9c0571cc",
+          "imported_sha256": "325459f3c8ad059bfea3f5b130fda3c8ed5df06c1619a395262d2d842c1febbb"
+        }
+      ],
+      "changes": [
+        "Frontmatter: name and description retained verbatim; added when_to_use and metadata.origin. Added one AIDLC integration paragraph; upstream body retained byte-for-byte."
+      ],
+      "dependencies": [],
+      "limits": [
+        "The default level is lite; no A/B measurement of its effect on this package's sessions has been made."
+      ]
+    }
+  ]
+}
