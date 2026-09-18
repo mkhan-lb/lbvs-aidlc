@@ -33,7 +33,7 @@ Read the selected snapshot, relevant same-change artifacts and only the code nee
 
 ## Optional CE orientation
 
-Only when the user explicitly selects CE: confirm `compound-engineering:ce-handoff` is loaded (else offer install/reload or labelled ordinary orientation). Apply the same source-selection rules first; a pending shortlist or a current-artifacts-only case is not delegated to CE. For a validated snapshot, state a caller brief pinning the exact source and current artifact paths with the boundaries above (read this file only, no discovery, commands, mutation or continuation; orient and stop), then invoke `Skill` `compound-engineering:ce-handoff` with exact arguments `resume changes/<change-id>/handoffs/<topic>.md`. Use the actual returned orientation and its limits; if CE cannot read the file, report that and stop without switching sources.
+Only when the user explicitly selects CE: confirm `compound-engineering:ce-handoff` is loaded (else offer install/reload or labelled ordinary orientation). Apply the same source-selection rules first; a pending shortlist or a current-artifacts-only case is not delegated to CE. For a validated snapshot, state a caller brief pinning the exact source and current artifact paths with the boundaries above (read this file only, no discovery, commands, mutation or continuation; orient and stop), then invoke `compound-engineering:ce-handoff` via the skill route with exact arguments `resume changes/<change-id>/handoffs/<topic>.md`. Use the actual returned orientation and its limits; if CE cannot read the file, report that and stop without switching sources.
 
 ## Report and stop
 

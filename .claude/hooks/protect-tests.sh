@@ -1,10 +1,11 @@
 #!/bin/sh
 # PreToolUse hook: deny Edit/Write/MultiEdit/NotebookEdit on paths listed as
 # "protected" in any .aidlc/fix/*.json marker (written by /lbvs-aidlc-fix while a
-# reproduction test must stay untouched). Markers are looked up from the hook's
-# `cwd` (which follows Claude into a worktree) and from CLAUDE_PROJECT_DIR (which
-# stays at the main checkout). Exits 0 silently on anything it cannot interpret so
-# unrelated edits are never blocked.
+# reproduction test must stay untouched). Markers are looked up from the repository
+# that holds the target file (its git top level or nearest `.aidlc/fix` ancestor, which
+# may be a worktree the session did not start in), then from the hook's `cwd` and from
+# CLAUDE_PROJECT_DIR (the main checkout). Exits 0 silently on anything it cannot
+# interpret so unrelated edits are never blocked.
 AIDLC_HOOK_INPUT=$(cat 2>/dev/null || true)
 export AIDLC_HOOK_INPUT
 exec python3 - "${CLAUDE_PROJECT_DIR:-$PWD}" <<'PY'
@@ -20,10 +21,23 @@ def git_toplevel(path):
         return None
     return result.stdout.strip() or None
 
-def roots(payload):
-    candidates = []
+def fix_root(path):
+    path = os.path.realpath(path)
+    while True:
+        if os.path.isdir(os.path.join(path, ".aidlc", "fix")):
+            return path
+        parent = os.path.dirname(path)
+        if parent == path:
+            return None
+        path = parent
+
+def roots(payload, target):
     cwd = payload.get("cwd")
-    if isinstance(cwd, str) and cwd:
+    if not (isinstance(cwd, str) and cwd):
+        cwd = None
+    target_dir = os.path.dirname(target if os.path.isabs(target) else os.path.join(cwd or sys.argv[1], target))
+    candidates = [fix_root(target_dir), git_toplevel(target_dir)]
+    if cwd:
         candidates += [git_toplevel(cwd), cwd]
     candidates.append(sys.argv[1])
     seen = []
@@ -55,7 +69,7 @@ def main():
     target = tool_input.get("file_path") or tool_input.get("notebook_path")
     if not isinstance(target, str) or not target:
         return
-    for root in roots(payload):
+    for root in roots(payload, target):
         markers = sorted(glob.glob(os.path.join(root, ".aidlc", "fix", "*.json")))
         if not markers:
             continue

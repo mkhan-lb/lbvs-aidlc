@@ -1,5 +1,7 @@
 # Evidence: {{change_id}}
 
+Content boundary: docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Record what was actually observed while fixing `{{change_id}}`. Fill each section with facts from this session; write `none` or `not run` rather than inventing a value. Remove these drafting instructions before saving.
 
 ## Change ID
@@ -29,7 +31,8 @@ Three lines the reproduction and regression tests map to. Keep the wording stabl
 ## Reproduction
 
 - Steps: exact commands or interactions that showed the defect
-- Failing test: repository-relative path (the file protected by `.aidlc/fix/{{change_id}}.json`)
+- Environment: kind and versions (container image, language/framework versions, isolated test database) — no machine names or temp paths
+- Failing test: repository-relative path (the file protected by `.aidlc/fix/{{change_id}}.json`); when a reproduction commit was made, its SHA
 - Pre-fix output: verbatim failing output or exit status, with the command that produced it
 
 ## Fix
@@ -44,11 +47,12 @@ Three lines the reproduction and regression tests map to. Keep the wording stabl
 - Unchanged: for each `SHALL CONTINUE TO` line, the check run and its result, or `not run` with the reason
 - Other commands and actual output: suite/lint runs after the fix, with exit status and relevant output
 - `/verify` observations: what the bundled verification did against the running app, or `not run` with the reason (no runtime, tool unavailable)
-- Screenshots / recordings: repository-relative or artifact paths for UI changes, or `none`
+- Screenshots / recordings: repository-relative paths for UI changes, or `none`
 
 ## Regression protection
 
 - Test kept: path of the reproduction test now passing, and where it runs (suite, CI job) if known
+- Protection verified: the hook refused a no-op edit before the fix (yes/no)
 - Eval seed suggestion: a one-line candidate case for the team eval set, or `none`
 
 ## Lesson link
@@ -57,4 +61,4 @@ Three lines the reproduction and regression tests map to. Keep the wording stabl
 
 ## Limits
 
-Checks not run, environments not covered, assumptions still open, and anything the evidence above does not establish.
+Checks not run, environments not covered, assumptions still open, and anything the evidence above does not establish. Workflow or tooling limitations belong in the package repository, not here; at most one pointer line.

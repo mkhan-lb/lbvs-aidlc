@@ -30,6 +30,8 @@ Not run: <checks and reasons, or `none`>
 
 Open Important findings: 0 (required to ship). Accepted findings and the engineer's reason: <IDs, or `none`>.
 
+Reproduction commit: <sha and subject, or `none`>
+
 Accepted conventions findings (lbvs-aidlc-conventions-checker, shipped anyway with the engineer's reason): <K-IDs with one-line reason each, or `none`>.
 
 ## Knowledge records
@@ -45,6 +47,7 @@ Accepted conventions findings (lbvs-aidlc-conventions-checker, shipped anyway wi
 - [ ] Tests relevant to the change run: <result>
 - [ ] No secrets, credentials or `.env` content in the diff
 - [ ] `changes/{{change_id}}/` artifacts committed with the code
+- [ ] `changes/{{change_id}}/` passes lint-artifacts: <result>
 - [ ] Spec, plan and code agree (no stale artifact)
 
 <This body is rendered by `lbvs-aidlc-ship` from real artifacts. Never tick a box or cite a result that was not observed; write `none` or `not run` instead.>

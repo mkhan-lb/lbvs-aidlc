@@ -84,6 +84,20 @@ Using Oh My Pi's existing review capability is being researched now; adopting it
 
 **Now:** non-technical originators use optional Compound Engineering brainstorming (`ce-brainstorm`) with an engineer, and the brief becomes the intent source. **Later:** evaluate the playbook's claude.ai/Cowork route—a shared, version-controlled intent home written through a GitHub connector—and decide who may write to it. Caveman remains opt-in at user scope for engineers only and is never recommended for non-technical readers.
 
+## F9 — Host-native stage dispatch in Oh My Pi (resolved 2026-09-17)
+
+**Observed:** during the SO2-1386 ticket-intake trial on 17 September 2026, intake saved and read back the intent in the-edge, but the subsequent orchestrator stopped because it required a literal `Skill` tool and explicitly prohibited continuing without it. The Oh My Pi session exposed the stage skills through `skill://` reads, not a `Skill` invocation tool.
+
+**Resolution:** the contract now names a host-neutral [skill route](docs/WORKFLOW.md#skill-route) — the Skill tool in Claude Code; `/skill:<name> <id>` or a `skill://<name>` read in Oh My Pi — and every stage skill invokes the next one "via the skill route". A skill absent from the host catalogue is unavailable; one exposed through another route is not. The same trial surfaced the fixes recorded alongside: the [content boundary](docs/ARTIFACTS.md#content-boundary) and `lint-artifacts`, the single [reproduction commit](docs/WORKFLOW.md#reproduction-commit), the PR back-link commit, the protection probe and per-repository marker lookup in both hooks, source-identity recording for container runtimes, the lesson-store rule and tier recording for reviewers without an effort argument.
+
+**Still open from the trial:** the OMP session's `AIDLC project mode:` line describes the session root, not a sibling target repository; a stage that targets another checkout should compute the mode for that root (`python3 scripts/aidlc.py --root <target> mode`). Not yet verified end to end: ticket → orchestrator → stage handover in Oh My Pi with a target repository different from the package checkout, now that the route is defined.
+
+## F10 — Trial artifacts already shipped
+
+**Observed:** the SO2-1386 change in `Virtualstock/the-edge` ([PR #9357](https://github.com/Virtualstock/the-edge/pull/9357)) was shipped before the content boundary existed. Its `changes/so2-1386-product-patch-500/` files carry machine paths, session references and workflow narrative (33 `lint-artifacts` hits), and a lesson was written to a new `docs/solutions/` tree although the-edge keeps its knowledge in `.claude/knowledge/`.
+
+**Deferred by the engineer (2026-09-17):** leave the PR as the record of the first trial; clean it in a follow-up commit on the same branch once the templates and lint have landed here. Whether the Docker worktree/container fact belongs in the-edge's `.claude/knowledge/operations.md` or only in this package is undecided.
+
 ## Re-entry rule
 
 Resume a deferred area only when it is explicitly selected. State the goal, dependencies, implementation work and verification required at that time. Do not label deferred work as a blocker for drafting, planning, local implementation or review today.

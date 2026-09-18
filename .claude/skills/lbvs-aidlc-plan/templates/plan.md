@@ -3,6 +3,8 @@
 Status: draft
 Change ID: {{change_id}}
 
+Content boundary: docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Prepare this proposal read-only before implementation. An engineer without the conversation should be able to carry it out. Follow `docs/WORKFLOW.md`; save only after the normal authorised transition out of plan mode.
 
 ## Context and inputs

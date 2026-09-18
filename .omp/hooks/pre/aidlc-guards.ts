@@ -10,12 +10,16 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
-function projectRoot(cwd: string): string {
-  let dir = resolve(cwd);
+const SESSION_MARKERS = [join("scripts", "aidlc.py"), ".git"];
+const FIX_MARKERS = [join(".aidlc", "fix"), ".git"];
+
+/** Nearest ancestor of `start` (inclusive) holding one of `markers`; `start` itself when none does. */
+function projectRoot(start: string, markers: string[] = SESSION_MARKERS): string {
+  let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, "scripts", "aidlc.py")) || existsSync(join(dir, ".git"))) return dir;
+    if (markers.some((marker) => existsSync(join(dir, marker)))) return dir;
     const parent = dirname(dir);
-    if (parent === dir) return resolve(cwd);
+    if (parent === dir) return resolve(start);
     dir = parent;
   }
 }
@@ -101,21 +105,27 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     return { messages: updated };
   });
 
+  // Protection is checked against the session root and against the repository that holds the
+  // target itself: a fix worktree's markers must hold even when the session cwd is elsewhere.
   pi.on("tool_call", async (event, ctx) => {
     if (event.toolName !== "edit" && event.toolName !== "write") return;
-    const root = projectRoot(ctx.cwd);
-    const entries = protectedEntries(root);
-    if (entries.length === 0) return;
+    const sessionRoot = projectRoot(ctx.cwd);
+    const sessionEntries = protectedEntries(sessionRoot);
     for (const target of targetsOf(event.toolName, event.input as Record<string, unknown>)) {
       const absolute = isAbsolute(target) ? target : resolve(ctx.cwd, target);
-      const rel = relative(root, absolute).split("\\").join("/");
-      for (const { change, pattern } of entries) {
-        const regex = globToRegExp(pattern);
-        if (regex.test(rel) || regex.test(absolute) || rel === pattern) {
-          return {
-            block: true,
-            reason: `lbvs-aidlc-fix protects ${rel} while change '${change}' is in progress (marker .aidlc/fix/${change}.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.`,
-          };
+      const targetRoot = projectRoot(dirname(absolute), FIX_MARKERS);
+      const scopes = [{ root: sessionRoot, entries: sessionEntries }];
+      if (targetRoot !== sessionRoot) scopes.unshift({ root: targetRoot, entries: protectedEntries(targetRoot) });
+      for (const { root, entries } of scopes) {
+        const rel = relative(root, absolute).split("\\").join("/");
+        for (const { change, pattern } of entries) {
+          const regex = globToRegExp(pattern);
+          if (regex.test(rel) || regex.test(absolute) || rel === pattern) {
+            return {
+              block: true,
+              reason: `lbvs-aidlc-fix protects ${rel} while change '${change}' is in progress (marker .aidlc/fix/${change}.json). Keep the failing reproduction test unchanged; if the test itself is wrong, ask the user to lift protection by deleting the marker.`,
+            };
+          }
         }
       }
     }

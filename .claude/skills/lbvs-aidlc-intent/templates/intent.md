@@ -3,6 +3,8 @@
 Status: draft
 Change ID: {{change_id}}
 
+Content boundary: docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Describe the actual request. Replace instructions with known context and retain meaningful questions; do not invent people, decisions, or evidence. Follow `docs/WORKFLOW.md`.
 
 ## Context and sources
@@ -28,6 +30,8 @@ List unresolved task decisions and their effect on the outcome. Carry them into 
 ## Decision notes (optional)
 
 Record useful corrections or direction already given in the conversation. Keep the meaning and scope of human decisions accurate; this section is not an approval form.
+
+Record decisions, not transcript: what was decided and why, never quoted conversation or host/tooling events.
 
 ## Next step
 
