@@ -43,9 +43,11 @@ REQUIRED_ASSETS = (
     ".omp/AGENTS.md", ".omp/RULES.md", ".omp/config.yml", ".worktreeinclude",
     ".omp/hooks/pre/aidlc-guards.ts", ".omp/agents/lbvs-aidlc-verifier.md", ".omp/agents/lbvs-aidlc-repo-scout.md",
     ".vscode/settings.json", ".vscode/extensions.json",
-    ".mcp.json", ".claude/settings.json",
+    ".mcp.json", ".claude/settings.json", ".claude-plugin/marketplace.json", "scripts/build_plugin.py",
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
+    ".claude/hooks/commit-guard.sh", ".claude/hooks/artifact-guard.sh",
+    ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/lbvs-aidlc-review/references/review-options.md",
     ".claude/skills/lbvs-aidlc-intent/templates/intent.md",
@@ -414,6 +416,16 @@ def artifact_files(root, change_id=None):
             yield from sorted(p for p in scope.rglob("*.md") if p.is_file())
 
 
+def lint_text(relative, text):
+    hits = 0
+    for number, line in enumerate(text.splitlines(), 1):
+        for rule, pattern in ARTIFACT_RULES:
+            for match in pattern.finditer(line):
+                print("{}:{}: {} {}".format(relative, number, rule, match.group(0)))
+                hits += 1
+    return hits
+
+
 def lint_artifacts(root, change_id=None):
     """Content boundary (docs/ARTIFACTS.md#content-boundary): change artifacts and lessons carry no session or machine-local references."""
     if change_id and not CHANGE_ID.fullmatch(change_id):
@@ -424,15 +436,18 @@ def lint_artifacts(root, change_id=None):
     count = 0
     for file in artifact_files(root, change_id):
         count += 1
-        relative = file.relative_to(root)
-        for number, line in enumerate(file.read_text(encoding="utf-8").splitlines(), 1):
-            for rule, pattern in ARTIFACT_RULES:
-                for match in pattern.finditer(line):
-                    print("{}:{}: {} {}".format(relative, number, rule, match.group(0)))
-                    hits += 1
+        hits += lint_text(file.relative_to(root).as_posix(), file.read_text(encoding="utf-8"))
     if hits:
         return 1
     print("lint-artifacts: clean ({} files)".format(count))
+    return 0
+
+
+def lint_stdin(relative):
+    """The artifact-guard hooks pipe an edit's new text here before it lands in the file."""
+    if lint_text(Path(relative).as_posix(), sys.stdin.read()):
+        return 1
+    print("lint-artifacts: clean ({})".format(relative))
     return 0
 
 
@@ -532,124 +547,94 @@ def remove_worktree():
     return 0
 
 
-def distributable():
-    """Every declared package resource plus what its Markdown links to, as (files, directories) relative to PACKAGE_ROOT."""
-    check_instruction_files()
-    ecc_files, ecc_modes = ecc_inventory()
-    seeds = set(REQUIRED_ASSETS + ecc_files) | {"scripts/aidlc.py", ".gitignore"}
-    skill_directories = set(SKILL_DIRECTORIES) | set(ecc_modes)
-    pending = [PACKAGE_ROOT / relative for relative in sorted(seeds)]
-    files = set()
-    directories = set()
-    while pending:
-        source = pending.pop()
-        # Reject symlink resources rather than copying their targets into a release.
-        for component in (source, *source.parents):
-            if component == PACKAGE_ROOT:
-                break
-            if component.is_symlink():
-                raise ValueError("refusing a symlinked package resource: {}".format(source))
-        try:
-            relative = source.resolve().relative_to(PACKAGE_ROOT)
-        except ValueError:
-            raise ValueError("package link escapes source root: {}".format(source)) from None
-        parts = relative.parts
-        allowed = (
-            not parts
-            or relative.as_posix() in seeds
-            or (parts[0] == "docs" and not any(part.startswith(".") for part in parts)
-                and (len(parts) == 1 or parts[1] not in ("solutions", "ideation")))
-            or parts[:2] == ("templates", "conventions")
-            or (parts[:2] == (".claude", "skills") and
-                (len(parts) == 2 or parts[2] in skill_directories))
-        )
-        if not allowed:
-            raise ValueError("not a distributable package resource: {}".format(relative))
-        if relative in files or relative in directories:
-            continue
-        if source.is_dir():
-            if relative.as_posix() in seeds:
-                raise ValueError("required package asset is not a file: {}".format(relative))
-            # A navigation link does not authorise copying every file in a directory.
-            directories.add(relative)
-            continue
-        if not source.is_file():
-            raise ValueError("missing package resource: {}".format(relative))
-        files.add(relative)
-        if source.suffix == ".md":
-            pending.extend(source.parent / path for _, path in local_links(source.read_text(encoding="utf-8")))
-    return files, directories
-
-
-def package(destination):
-    """Export declared resources and their local links; never overlay a repository."""
-    destination = destination.absolute()
-    if destination.exists() or destination.is_symlink():
-        raise FileExistsError("package destination already exists: {}".format(destination))
-    if not destination.parent.is_dir():
-        raise ValueError("package destination parent must be an existing directory")
-    files, directories = distributable()
-    # Reserve the new destination exclusively, including against dangling symlinks.
-    destination.mkdir()
-    try:
-        for relative in sorted(directories):
-            (destination / relative).mkdir(parents=True, exist_ok=True)
-        for relative in sorted(files):
-            target = destination / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with (PACKAGE_ROOT / relative).open("rb") as source, target.open("xb") as output:
-                shutil.copyfileobj(source, output)
-    except OSError as error:
-        # Do not erase a partial tree that another writer may have touched.
-        raise ValueError("incomplete new package left at {}: {}".format(destination, error)) from error
-    print("Created standalone package: {} ({} files)".format(destination, len(files)))
-    print("Existing repositories are never overlaid. Review and merge adoption changes explicitly.")
-    print("Shared project configuration is included. No existing/local/global settings, permissions, plugins, or remote records were changed.")
-
-
 MANIFEST_PATH = Path(".aidlc/manifest.json")
-# Files that describe this package repository itself; an adopting repository has its own or needs none.
-PACKAGE_ONLY = frozenset((
-    "GOALS.md", "IMPLEMENTATION_PLAN.md", "FUTURE_WORK.md", "README.md", "LICENSE",
-    "docs/COVERAGE.md", "docs/DEPENDENCIES.md", "docs/MEASURES.md", "docs/PREREQUISITES.md",
-    "docs/VERIFICATION.md", "docs/COMPATIBILITY.md", "docs/REFERENCE.md",
-    ".claude/rules/package-maintenance.md", ".claude/hooks/check-package.sh",
-    ".vscode/settings.json", ".vscode/extensions.json", "mcp-configs/ecc.mcp-servers.example.json",
-))
-PACKAGE_ONLY_PREFIXES = ("docs/sources/", "docs/evidence/")
+PLUGIN_MANIFEST = Path("plugins/lbvs-aidlc/.claude-plugin/plugin.json")
+MARKETPLACE = Path(".claude-plugin/marketplace.json")
+PACKAGE_NAME = "lbvs-aidlc"
 # Knowledge stores: a repository that already keeps one is not seeded with our index and template.
 STORE_DIRS = ("docs/adr", "docs/incidents", "docs/security", "docs/references", "docs/playbooks",
               "docs/glossary", "docs/platform")
+# Repository state the plugin cannot carry; skills, agents, hooks, helper and docs come from the plugin.
+SCAFFOLD_FILES = ("REVIEW.md",)
+GENERATED = {"changes/.gitkeep": b""}
 # Files the adopting repository owns: install never creates or overwrites them, it prints what to merge.
 REPO_OWNED = {
-    "AGENTS.md": "add one line pointing at docs/WORKFLOW.md and `/lbvs-aidlc` (Codex and Copilot read this file)",
-    "CLAUDE.md": "add `@AGENTS.md` or one line pointing at docs/WORKFLOW.md; do not create it where the repository forbids a root CLAUDE.md",
+    "AGENTS.md": "add one line pointing at `/lbvs-aidlc` and the plugin's docs/WORKFLOW.md (Codex and Copilot read this file)",
+    "CLAUDE.md": "add `@AGENTS.md` or one line pointing at `/lbvs-aidlc`; do not create it where the repository forbids a root CLAUDE.md",
     ".gitignore": "append: **/.aidlc/fix/  **/.aidlc/current  **/.claude/worktrees/  **/.claude/settings.local.json  .codegraph/",
-    ".claude/settings.json": "merge the hooks block below (project-mode, protect-tests, worktree-create, worktree-remove)",
-    ".mcp.json": "declare context7, github and atlassian as in the package (no credentials)",
     ".worktreeinclude": "list the ignored files worktrees need (.env, .claude/settings.local.json)",
-    ".omp/AGENTS.md": "`@../AGENTS.md` (or your instruction file) plus the Oh My Pi section from the package",
-    ".omp/config.yml": "skills.enableSkillCommands: true so /skill:lbvs-aidlc* commands appear in Oh My Pi",
+    ".claude/settings.json": "merge the plugin declaration below; the plugin carries the skills, agents, hooks and helper",
 }
+OMP_INSTALL = ("Oh My Pi: omp plugin marketplace add {repo} && omp plugin install --scope project {plugin}@{market}"
+               "  (writes .omp/plugins/installed_plugins.json; commit it)")
 
 
-def installable():
-    files, directories = distributable()
-    keep = lambda relative: (relative.as_posix() not in PACKAGE_ONLY
-                             and not relative.as_posix().startswith(PACKAGE_ONLY_PREFIXES))
-    return ({f for f in files if keep(f) and f.as_posix() not in REPO_OWNED},
-            {d for d in directories if keep(d)},
-            {f for f in files if f.as_posix() in REPO_OWNED})
+def scaffold():
+    """Every file install seeds, relative to the adopting repository."""
+    files = {Path(name) for name in SCAFFOLD_FILES + tuple(GENERATED)}
+    for store in STORE_DIRS:
+        files.update(p.relative_to(PACKAGE_ROOT) for p in (PACKAGE_ROOT / store).rglob("*") if p.is_file())
+    return files
 
 
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def seed(relative):
+    name = relative.as_posix()
+    return GENERATED[name] if name in GENERATED else (PACKAGE_ROOT / relative).read_bytes()
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
 
 
 def package_revision():
     revision = git_out(PACKAGE_ROOT, "rev-parse", "HEAD") or "unknown"
     dirty = bool(git_out(PACKAGE_ROOT, "status", "--porcelain")) if revision != "unknown" else False
     return revision + ("+dirty" if dirty else "")
+
+
+def plugin_version():
+    manifest = PACKAGE_ROOT / PLUGIN_MANIFEST
+    if not manifest.is_file():
+        return "unknown"
+    return json.loads(manifest.read_text(encoding="utf-8")).get("version", "unknown")
+
+
+def origin_repo():
+    """`owner/repo` of this package's origin remote, as Claude's marketplace source and `omp plugin marketplace add` want it."""
+    url = git_out(PACKAGE_ROOT, "remote", "get-url", "origin")
+    path = url.split(":", 1)[1] if "://" not in url and ":" in url else urlsplit(url).path
+    return re.sub(r"\.git\Z", "", path.strip("/")) or "OWNER/REPO"
+
+
+def plugin_declaration():
+    """The .claude/settings.json block that enables this marketplace and its plugins, plus the Oh My Pi command."""
+    market = json.loads((PACKAGE_ROOT / MARKETPLACE).read_text(encoding="utf-8"))
+    repo = origin_repo()
+    block = {
+        "extraKnownMarketplaces": {market["name"]: {"source": {"source": "github", "repo": repo}}},
+        "enabledPlugins": {"{}@{}".format(PACKAGE_NAME, market["name"]): True},
+    }
+    lines = [json.dumps(block, indent=2)]
+    for plugin in market.get("plugins", []):
+        if plugin["name"] != PACKAGE_NAME and plugin.get("defaultEnabled", True):
+            lines.append('  optional in enabledPlugins: "{}@{}": true  ({})'.format(
+                plugin["name"], market["name"], plugin.get("description", "")))
+    lines.append(OMP_INSTALL.format(repo=repo, plugin=PACKAGE_NAME, market=market["name"]))
+    return "\n".join(lines)
+
+
+def owned_hints():
+    hints = dict(REPO_OWNED)
+    hints[".claude/settings.json"] += "\n" + plugin_declaration()
+    return hints
+
+
+def print_owned_hints(names):
+    print("Repository-owned files (never written; merge by hand):")
+    for name in sorted(names):
+        print("  {:<24} {}".format(name, REPO_OWNED[name]))
+    if ".claude/settings.json" in names:
+        print(plugin_declaration())
 
 
 def store_of(relative):
@@ -666,21 +651,6 @@ def foreign_stores(repo, recorded=()):
             if store not in seeded and (repo / store).is_dir() and any((repo / store).iterdir())}
 
 
-def hook_hints():
-    settings = json.loads((PACKAGE_ROOT / ".claude/settings.json").read_text(encoding="utf-8"))
-    hooks = settings["hooks"]
-    for group in hooks["SessionStart"]:
-        group["hooks"] = [hook for hook in group["hooks"] if "check-package" not in hook["command"]]
-    return json.dumps({"hooks": hooks}, indent=2)
-
-
-def print_owned_hints(owned):
-    print("Repository-owned files (never written; merge by hand):")
-    for relative in sorted(owned):
-        print("  {:<24} {}".format(relative.as_posix(), REPO_OWNED[relative.as_posix()]))
-    print(hook_hints())
-
-
 def adoption_root(repo):
     repo = repo.resolve()
     if not repo.is_dir():
@@ -690,15 +660,16 @@ def adoption_root(repo):
     return repo
 
 
-def write_manifest(repo, files, owned, skipped=()):
+def write_manifest(repo, files, skipped=()):
     manifest = {
-        "package": "lbvs-aidlc",
+        "package": PACKAGE_NAME,
+        "plugin_version": plugin_version(),
         "source": git_out(PACKAGE_ROOT, "remote", "get-url", "origin") or "unknown",
         "branch": git_out(PACKAGE_ROOT, "rev-parse", "--abbrev-ref", "HEAD") or "unknown",
         "revision": package_revision(),
         "installed": datetime.date.today().isoformat(),
-        "files": {f.as_posix(): digest(PACKAGE_ROOT / f) for f in sorted(files)},
-        "owned": {f.as_posix(): digest(PACKAGE_ROOT / f) for f in sorted(owned)},
+        "files": {f.as_posix(): digest(seed(f)) for f in sorted(files)},
+        "owned": {name: digest(text.encode("utf-8")) for name, text in sorted(owned_hints().items())},
         "skipped": sorted(f.as_posix() for f in skipped),
     }
     target = repo / MANIFEST_PATH
@@ -707,11 +678,11 @@ def write_manifest(repo, files, owned, skipped=()):
 
 
 def install(repo, apply=False):
-    """Copy the AIDLC assets into an existing repository; never overwrite, never touch repository-owned files."""
+    """Seed repository state into an existing repository; never overwrite, never touch repository-owned files."""
     repo = adoption_root(repo)
     if (repo / MANIFEST_PATH).exists():
         raise ValueError("{} exists: already installed; use `sync`".format(MANIFEST_PATH))
-    files, directories, owned = installable()
+    files = scaffold()
     stores = foreign_stores(repo)
     plan = {"write": [], "identical": [], "keep": [], "skip": []}
     for relative in sorted(files):
@@ -720,11 +691,11 @@ def install(repo, apply=False):
             plan["skip"].append(relative)
         elif not target.exists():
             plan["write"].append(relative)
-        elif digest(target) == digest(PACKAGE_ROOT / relative):
+        elif digest(target.read_bytes()) == digest(seed(relative)):
             plan["identical"].append(relative)
         else:
             plan["keep"].append(relative)
-    print("install {} <- lbvs-aidlc @ {}".format(repo, package_revision()))
+    print("install {} <- {} plugin {} @ {}".format(repo, PACKAGE_NAME, plugin_version(), package_revision()))
     for relative in plan["write"]:
         print("  write     {}".format(relative.as_posix()))
     for relative in plan["keep"]:
@@ -733,31 +704,29 @@ def install(repo, apply=False):
         print("  skip      {}  (you already keep {}/; reconcile via /lbvs-aidlc-onboard)".format(
             relative.as_posix(), store_of(relative)))
     print("{} to write, {} identical, {} kept, {} skipped, {} repository-owned.".format(
-        len(plan["write"]), len(plan["identical"]), len(plan["keep"]), len(plan["skip"]), len(owned)))
-    print_owned_hints(owned)
+        len(plan["write"]), len(plan["identical"]), len(plan["keep"]), len(plan["skip"]), len(REPO_OWNED)))
+    print_owned_hints(REPO_OWNED)
     if not apply:
         print("Report only; add --apply to write.")
         return 0
-    for relative in sorted(directories):
-        (repo / relative).mkdir(parents=True, exist_ok=True)
     for relative in plan["write"]:
         target = repo / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(PACKAGE_ROOT / relative, target)
-    write_manifest(repo, files - set(plan["skip"]), owned, plan["skip"])
+        target.write_bytes(seed(relative))
+    write_manifest(repo, files - set(plan["skip"]), plan["skip"])
     print("Wrote {} files and {}. Review with `git status`, then commit; nothing was committed.".format(
         len(plan["write"]), MANIFEST_PATH))
     return 0
 
 
 def sync(repo, apply=False):
-    """Three-way compare package, manifest and repository; update untouched files, report the rest."""
+    """Three-way compare package, manifest and repository; update untouched files, report the rest, delete nothing."""
     repo = adoption_root(repo)
     manifest_file = repo / MANIFEST_PATH
     if not manifest_file.is_file():
         raise ValueError("{} missing: not installed; use `install`".format(MANIFEST_PATH))
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-    files, directories, owned = installable()
+    files = scaffold()
     recorded = manifest.get("files", {})
     skipped = set(manifest.get("skipped", []))
     stores = foreign_stores(repo, recorded)
@@ -768,10 +737,10 @@ def sync(repo, apply=False):
         if name in skipped or (name not in recorded and store_of(relative) in stores):
             skipped.add(name)
             continue
-        source, target = PACKAGE_ROOT / relative, repo / relative
-        pkg = digest(source) if relative in files else None
+        target = repo / relative
+        pkg = digest(seed(relative)) if relative in files else None
         old = recorded.get(name)
-        local = digest(target) if target.is_file() else None
+        local = digest(target.read_bytes()) if target.is_file() else None
         if pkg is None:
             plan["removed"].append(relative)
         elif pkg == old:
@@ -787,24 +756,26 @@ def sync(repo, apply=False):
             plan["update"].append(relative)
         else:
             plan["conflict"].append(relative)
-    owned_changed = [f for f in sorted(owned)
-                     if manifest.get("owned", {}).get(f.as_posix()) not in (None, digest(PACKAGE_ROOT / f))]
-    print("sync {} <- lbvs-aidlc @ {} (installed {} @ {})".format(
-        repo, package_revision(), manifest.get("installed", "?"), manifest.get("revision", "?")))
+    hints = owned_hints()
+    owned_changed = [name for name in sorted(hints)
+                     if manifest.get("owned", {}).get(name) not in (None, digest(hints[name].encode("utf-8")))]
+    print("sync {} <- {} plugin {} @ {} (installed {} @ {}, plugin {})".format(
+        repo, PACKAGE_NAME, plugin_version(), package_revision(), manifest.get("installed", "?"),
+        manifest.get("revision", "?"), manifest.get("plugin_version", "?")))
     labels = {
         "update": "package changed, yours untouched",
         "add": "new in package",
         "conflict": "changed in both; resolve by hand",
-        "removed": "removed from package; delete by hand",
+        "removed": "no longer scaffolded; delete or keep — the plugin provides it",
         "local": "edited locally, package unchanged; kept",
         "absent": "deleted locally, package unchanged; kept absent",
     }
     for kind in ("update", "add", "conflict", "removed", "local", "absent"):
         for relative in plan[kind]:
             print("  {:<9} {}  ({})".format(kind, relative.as_posix(), labels[kind]))
-    for relative in owned_changed:
-        print("  guidance  {}  (repository-owned; package hint changed)".format(relative.as_posix()))
-    print("{} current, {} to update, {} to add, {} conflicts, {} removed upstream, {} local edits, {} absent, {} skipped stores.".format(
+    for name in owned_changed:
+        print("  guidance  {}  (repository-owned; package hint changed)".format(name))
+    print("{} current, {} to update, {} to add, {} conflicts, {} no longer scaffolded, {} local edits, {} absent, {} skipped stores.".format(
         current, len(plan["update"]), len(plan["add"]), len(plan["conflict"]),
         len(plan["removed"]), len(plan["local"]), len(plan["absent"]), len(skipped)))
     if owned_changed:
@@ -812,13 +783,11 @@ def sync(repo, apply=False):
     if not apply:
         print("Report only; add --apply to write the updates and additions.")
         return 1 if plan["conflict"] else 0
-    for relative in sorted(directories):
-        (repo / relative).mkdir(parents=True, exist_ok=True)
     for relative in plan["update"] + plan["add"]:
         (repo / relative).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(PACKAGE_ROOT / relative, repo / relative)
+        (repo / relative).write_bytes(seed(relative))
     # Conflicts keep their recorded hash so the next sync still sees them; everything else moves to the package's.
-    write_manifest(repo, {f for f in files if f.as_posix() not in skipped}, owned, (Path(name) for name in skipped))
+    write_manifest(repo, {f for f in files if f.as_posix() not in skipped}, (Path(name) for name in skipped))
     refreshed = json.loads(manifest_file.read_text(encoding="utf-8"))
     for relative in plan["conflict"]:
         refreshed["files"][relative.as_posix()] = recorded[relative.as_posix()]
@@ -871,7 +840,7 @@ def check_package():
         content = file.read_bytes()
         if not content.strip():
             errors.append("empty asset: {}".format(relative))
-        if relative in (".mcp.json", ".claude/settings.json"):
+        if relative in (".mcp.json", ".claude/settings.json", ".claude-plugin/marketplace.json"):
             try:
                 if not isinstance(json.loads(content), dict):
                     errors.append("configuration must be a JSON object: {}".format(relative))
@@ -1113,11 +1082,10 @@ def main():
     commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
     lint = commands.add_parser("lint-artifacts", help="scan changes/<id>/**/*.md (all changes without an ID) and docs/solutions/**/*.md for session references and machine paths; exit 1 on any hit")
     lint.add_argument("--root", dest="lint_root", type=Path, metavar="PATH", help="repository to scan (default: the repository containing the current directory)")
+    lint.add_argument("--stdin", metavar="PATH", help="lint text read from stdin as if it were repository file PATH (the artifact-guard hooks use this); no scan")
     lint.add_argument("change_id", nargs="?", help="limit the scan to changes/<change_id>/")
-    export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
-    export.add_argument("destination", type=Path)
-    for name, text in (("install", "copy the AIDLC assets into an existing repository (report only; --apply writes new files, never overwrites)"),
-                       ("sync", "compare an installed repository with this package (report only; --apply updates files you have not edited)")):
+    for name, text in (("install", "seed repository state (REVIEW.md, knowledge-store seeds, changes/) into an existing repository and print the plugin declaration to merge (report only; --apply writes new files, never overwrites)"),
+                       ("sync", "compare an installed repository's seeds with this package (report only; --apply updates files you have not edited; never deletes)")):
         adopt = commands.add_parser(name, help=text)
         adopt.add_argument("repo", type=Path, help="root of the adopting repository")
         adopt.add_argument("--apply", action="store_true", help="write; without it only report")
@@ -1128,15 +1096,14 @@ def main():
     root = (args.root or Path.cwd()).resolve()
     try:
         if args.command == "lint-artifacts":
+            if args.stdin:
+                return lint_stdin(args.stdin)
             return lint_artifacts((args.lint_root or args.root or repository_root(Path.cwd())).resolve(), args.change_id)
         if args.command == "new":
             new_change(root, args.change_id)
             return 0
         if args.command == "check":
             return check_package()
-        if args.command == "package":
-            package(args.destination)
-            return 0
         if args.command == "install":
             return install(args.repo, apply=args.apply)
         if args.command == "sync":

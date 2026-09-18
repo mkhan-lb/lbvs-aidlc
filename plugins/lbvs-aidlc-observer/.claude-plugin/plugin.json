@@ -1,0 +1,14 @@
+{
+  "name": "lbvs-aidlc-observer",
+  "description": "Opt-in continuous-learning observer: records tool use into project-scoped instincts; off by default.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Logicbroker / Virtualstock engineering"
+  },
+  "repository": "https://github.com/mkhan-lb/lbvs-aidlc",
+  "keywords": [
+    "observer",
+    "learning",
+    "hooks"
+  ]
+}

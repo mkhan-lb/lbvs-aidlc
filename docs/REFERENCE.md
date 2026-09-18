@@ -14,6 +14,8 @@ python3 scripts/aidlc.py mode
 python3 scripts/aidlc.py conventions
 python3 scripts/aidlc.py new example-change
 python3 scripts/aidlc.py lint-artifacts --root ../my-service example-change
+python3 scripts/aidlc.py install ../my-service --apply
+aidlc update --apply            # inside an adopting repository; `aidlc` is on PATH while the plugin is enabled
 ```
 
 Replace `example-change` with the real change ID (`^[a-z0-9]+(-[a-z0-9]+)*$`). `new` creates only `changes/example-change/intent.md` as a draft and refuses to overwrite. `mode` prints one line, `AIDLC project mode: greenfield` or `brownfield`, with its reasons; `.aidlc/mode` containing either word overrides detection. `doctor` reports `python3`, `git` and `claude`, the optional tools the skills use when present (`graphify`, `codegraph`, `gh`, `omp`) and, for every server declared in `.mcp.json`, what authentication it needs and whether the environment variable is set; `doctor --install` additionally runs the listed installer (`uv tool install` or `pipx`, `npm install -g`, `brew install`) for each missing optional tool and nothing else — it never installs plugins, edits settings or connects a server. None of the commands approve, commit, push or deploy.
@@ -32,10 +34,14 @@ For a separate target directory, put the root option before the subcommand: `pyt
 | [`CLAUDE.md`](../CLAUDE.md) | `@AGENTS.md` import plus a Claude-specific section; no symlink. |
 | `.omp/` | Oh My Pi: `AGENTS.md` imports `@../AGENTS.md`; `RULES.md` holds the sticky rules; `agents/` defines `lbvs-aidlc-verifier`, `lbvs-aidlc-repo-scout`, `lbvs-aidlc-design-reviewer`, `lbvs-aidlc-threat-modeler`, `lbvs-aidlc-test-critic` and `lbvs-aidlc-conventions-checker` as omp task agents (deferring to `.claude/agents/`, tools lowercase); `hooks/pre/aidlc-guards.ts` injects the project-mode line and blocks edits to protected tests — markers are read from the repository that contains the edited file and from the session root, so a fix aimed at a sibling worktree stays protected — because omp does not run Claude's shell hooks. |
 | `.vscode/` | Recommends the Claude Code extension; points Copilot Chat's code-generation instructions at `AGENTS.md`; maps the settings JSON schema. Optional, editor-only. |
-| [`.claude/settings.json`](../.claude/settings.json) | Registers the five hooks below and declares the Compound Engineering marketplace/plugin at project scope; no permissions, model selection or telemetry. |
+| [`.claude/settings.json`](../.claude/settings.json) | Registers the nine hooks below for this repository (adopters get the same hooks from the plugin's `hooks/hooks.json`) and declares the Compound Engineering marketplace/plugin at project scope; no permissions, model selection or telemetry. |
 | [`.claude/hooks/check-package.sh`](../.claude/hooks/check-package.sh) | `SessionStart`: read-only package check (`aidlc.py check`); prints nothing when it passes and the errors as context when it fails. |
 | `.claude/hooks/project-mode.sh` | `SessionStart`: injects the `AIDLC project mode:` line as context. |
 | `.claude/hooks/protect-tests.sh` | `PreToolUse` on `Edit\|Write\|MultiEdit\|NotebookEdit`: denies edits to test paths listed in `.aidlc/fix/*.json` while a fix is in progress; markers are looked up from the repository that contains the edited file first, then the session's working tree and `CLAUDE_PROJECT_DIR`, so it holds inside worktrees and when the fix targets a sibling checkout. `/lbvs-aidlc-fix` probes it with a no-op edit before implementing and stops if the edit goes through. |
+| `.claude/hooks/commit-guard.sh` | `PreToolUse` on `Bash` with `if: Bash(git *)`: any `git … commit` or `git … push` in the command (chained, `-C <dir>`, env-prefixed, `--force`) returns `permissionDecision: "ask"`, so the engineer confirms in the permission prompt — even in auto mode; `/lbvs-aidlc-ship` and `/lbvs-aidlc-fix` still ask their own question first. Headless runs without a permission host see it as a refusal. |
+| `.claude/hooks/artifact-guard.sh` | `PreToolUse` on `Edit\|Write\|MultiEdit\|NotebookEdit` under `changes/**/*.md` or `docs/solutions/**/*.md`: pipes the new text through `aidlc.py lint-artifacts --stdin` and denies with the hit lines — the [content boundary](ARTIFACTS.md#content-boundary) enforced at write time, not only at review. |
+| `.claude/hooks/argument-guard.sh` | `UserPromptExpansion` matching `lbvs-aidlc`: blocks a `/lbvs-aidlc*` command whose argument is not one bare ID (`lbvs-aidlc-init`/`onboard` take none; `lbvs-aidlc-ticket` is exempt), with the reason shown in the transcript. |
+| `.claude/hooks/scaffold-check.sh` | `SessionStart`: when `.aidlc/manifest.json` records a different `plugin_version` from the running plugin, prints one line asking for `aidlc update`. |
 | `.claude/hooks/worktree-create.sh` | `WorktreeCreate`: runs `python3 scripts/aidlc.py worktree` so `aidlc/<change-id>` becomes `.claude/worktrees/aidlc+<change-id>` on branch `aidlc/<change-id>`, copying `.worktreeinclude` files itself (gitignore syntax, evaluated by git). Refuses IDs outside `^[a-z0-9]+(-[a-z0-9]+)*$` and stale directories that are not worktrees; always creates under the main checkout, even when called from inside a worktree. |
 | `.claude/hooks/worktree-remove.sh` | `WorktreeRemove`: runs `python3 scripts/aidlc.py worktree-remove` — removes only paths under `.claude/worktrees/`, never forces (a dirty tree is kept and the refusal reported), deletes only fully merged auto-named `worktree-*` branches; `aidlc/<id>` branches stay. |
 | [`.claude/rules/`](../.claude/rules/package-maintenance.md) | Path-scoped rules; loaded when matching files are touched. |
@@ -48,16 +54,19 @@ For a separate target directory, put the root option before the subcommand: `pyt
 
 [.mcp.json](../.mcp.json) declares three remote (HTTP) servers and no credentials: **context7** (`https://mcp.context7.com/mcp`, current library docs; works anonymously with lower rate limits — set `CONTEXT7_API_KEY` to the literal value `Bearer <key>` for more), **github** (`https://api.githubcopilot.com/mcp/`; requires `GITHUB_PERSONAL_ACCESS_TOKEN`, which `gh auth token` prints for the logged-in account) and **atlassian** (`https://mcp.atlassian.com/v2/mcp`; OAuth 2.1 in the browser the first time you run `/mcp`). Claude Code asks once per project before connecting project-declared servers, and `python3 scripts/aidlc.py doctor` reports which variables are set. The ECC catalog under `mcp-configs/` is a verbatim upstream snapshot for reference only — its GitHub entry is outdated — so the live configuration is `.mcp.json`. `.claude/settings.local.json` is ignored and never exported; `.aidlc/fix/` and `.codegraph/` are ignored. Inherited user/managed settings, hooks and MCP connections still apply. The hooks are integrity and guardrail aids, not approval or security boundaries. See [runtime-file usage](USAGE.md#project-runtime-files-and-shared-instructions).
 
-## Export and adoption
+## Plugins and the repository scaffold
 
-```sh
-python3 scripts/aidlc.py package /path/to/new-aidlc-copy
-python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
-```
+The engine ships as three plugins generated into `plugins/` by `python3 scripts/build_plugin.py` and listed in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), which Claude Code and Oh My Pi both read:
 
-The destination must not exist and its parent must exist. Export includes the declared skills, agents, templates, shared guidance, the helper, settings, hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/references/` and `docs/platform/` indexes and templates (plus any record they link), `templates/conventions/`, the vendor manifests and locally linked reference/evidence files. It does not copy Git history, `changes/` artifacts, solution/ideation stores, `.aidlc/`, local settings, credentials or plugin installations. Content is copied verbatim, **not secret-scanned**; inspect it before sharing.
+| Plugin | Contents | Enabled |
+| --- | --- | --- |
+| `lbvs-aidlc` | the 17 `lbvs-aidlc*` skills plus `architecture-decision-records` and `doc-coauthoring`; the six agents; `hooks/hooks.json` (mode line, scaffold check, protect-tests, artifact guard, commit guard, argument guard, worktree hooks); `bin/aidlc` on the Bash PATH; `scripts/aidlc.py`; `docs/{WORKFLOW,ARTIFACTS,USAGE,PLUGINS}.md`; `REVIEW.md`; `templates/conventions/`; `.mcp.json`; `package.json` → `omp.extensions` → `omp/aidlc-guards.ts` for Oh My Pi | on install |
+| `lbvs-ecc` | the 37 ECC reference skills with their licence and manifest | on install; a repository opts in |
+| `lbvs-aidlc-observer` | `continuous-learning-v2` with its observation hooks registered | `defaultEnabled: false` — `claude plugin enable lbvs-aidlc-observer@lbvs-aidlc` when an engineer wants it |
 
-Launch Claude in the exported tree to use it. For an **existing codebase**, use `python3 scripts/aidlc.py install <repo>` (report) then `install <repo> --apply`: it writes the AIDLC assets that are absent, keeps any existing file that differs, never creates or overwrites the eight repository-owned files (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json`, `.mcp.json`, `.worktreeinclude`, `.omp/AGENTS.md`, `.omp/config.yml`) — it prints a merge hint and the hooks block for each — and leaves the package's own docs and integrity hook behind. `.aidlc/manifest.json` records the package revision and a hash per installed file; a knowledge store the repository already keeps (`docs/adr/` with content, say) is not seeded with our index and template and stays skipped. `sync <repo> [--apply]` later compares package, manifest and repository three ways and updates only files you have not edited, reporting conflicts, upstream removals and local edits without touching them; `update [--from <pkg>] [--apply]`, run inside the adopting repository, clones the source recorded in the manifest and runs that clone's `sync`. None of them commits; `--add-dir` alone is not a supported installation. See the [adoption recipe](USAGE.md#11-install-into-an-existing-repository-or-export-a-new-one).
+`PLUGIN_VERSION` in `build_plugin.py` is the release number: bump it, regenerate, commit; engineers receive the new version on `/plugin marketplace update` (automatically once an administrator sets `autoUpdate: true` on the marketplace in managed settings), Oh My Pi on `omp plugin upgrade`. Skills are namespaced `/lbvs-aidlc:<name>` in Claude Code. `python3 scripts/aidlc.py check` runs `build_plugin.py --check` and fails on any drift between the sources and the committed trees.
+
+An adopting repository holds only its own state. `python3 scripts/aidlc.py install <repo>` (report) then `install <repo> --apply` writes `REVIEW.md` when absent, the knowledge-store seeds (`docs/adr/`, `incidents/`, `security/`, `references/`, `playbooks/`, `glossary/`, `platform/` — skipped for any store the repository already keeps), `changes/.gitkeep` and `.aidlc/manifest.json` (package source, branch, revision, plugin version, one hash per file, skipped seeds). It never creates or overwrites `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json` or `.worktreeinclude`; for each it prints what to merge — for `.claude/settings.json` the exact `extraKnownMarketplaces` + `enabledPlugins` block, so a teammate without the plugin is told what to install, and for Oh My Pi the `omp plugin install --scope project` command whose `.omp/plugins/installed_plugins.json` is committed. `sync <repo> [--apply]` compares package, manifest and repository three ways and updates only files you have not edited; `update [--from <pkg>] [--apply]`, run inside the repository, clones the recorded source and runs its `sync`; a manifest from the earlier full install lists the now plugin-provided files as `removed` and deletes nothing. None of them commits. See the [adoption recipe](USAGE.md#11-install-the-plugin-and-scaffold-a-repository).
 
 ## Commands
 
@@ -127,8 +136,8 @@ The test for where something belongs: **a recurring correction becomes a rule** 
 
 | Host | What loads | Gaps |
 | --- | --- | --- |
-| Claude Code | Everything: skills, six agents, five hooks, `CLAUDE.md` → `AGENTS.md`, plugin declaration. | — |
-| Oh My Pi | `.claude/skills/` (via the `claude` provider), `.omp/AGENTS.md` + `RULES.md`, `.omp/agents/` (six counterparts), `.omp/hooks/pre/aidlc-guards.ts` (mode line + test protection, verified natively). | No Skill tool — stages are reached through the [skill route](WORKFLOW.md#skill-route) (`/skill:<name> <id>` or a `skill://<name>` read); the `reviewer` task agent has no effort argument, so tiers are recorded as `effort not configurable`; no `WorktreeCreate` equivalent — create worktrees with `git worktree add`; the mode line describes the session root, not a sibling target repository; the package-integrity check is not run at start (run `aidlc.py check` yourself). |
+| Claude Code | The `lbvs-aidlc` plugin: skills (`/lbvs-aidlc:*`), six agents, nine hooks from `hooks/hooks.json`, `bin/aidlc`, shared docs; `CLAUDE.md` → `AGENTS.md` in the repository. | Plugins from an external source are not auto-installed from project settings (v2.1.195+): each engineer runs `claude plugin install` once; cloud sessions and managed settings install them. |
+| Oh My Pi | The same marketplace (`omp plugin marketplace add`, `omp plugin install --scope project`): plugin skills, the six agents from `agents/`, and `omp/aidlc-guards.ts` loaded through `package.json` `omp.extensions` (mode line, protect-tests, commit confirm, artifact guard, scaffold line) — verified natively on a scratch repository. | No Skill tool — stages are reached through the [skill route](WORKFLOW.md#skill-route) (`/skill:<name> <id>` or a `skill://<name>` read); the `reviewer` task agent has no effort argument, so tiers are recorded as `effort not configurable`; no `WorktreeCreate` equivalent — create worktrees with `git worktree add`; the mode line describes the session root, not a sibling target repository; the package-integrity check is not run at start (run `aidlc.py check` yourself). |
 | Codex | `AGENTS.md` (verified once). | Skills/agents/hooks are Claude-format; no `.agents/skills` mirror is supplied. |
 | VS Code + Copilot Chat | `AGENTS.md` via `.vscode/settings.json` code-generation instructions. | Copilot has no skills, gates or hooks; it only sees the shared instructions. |
 
@@ -179,13 +188,12 @@ Prefer an existing reviewer over a custom engine. [Review options](../.claude/sk
 ## Distribution
 
 
-One branch, `main`, carries all three forms:
+One branch, `main`, one marketplace, two halves:
 
-| Form | Where it lives | Use |
+| Half | Where it lives | Who installs it |
 | --- | --- | --- |
-| In-repo install | `python3 scripts/aidlc.py install <repo> [--apply]` / `sync <repo> [--apply]` / `update` (from the adopter) | Primary for existing services: the assets are committed in the adopting repository, so every host that reads `.claude/skills/` and `.omp/` has them on checkout. |
-| Standalone export | `python3 scripts/aidlc.py package <new-dir>` | New services. |
-| Claude Code plugin | `.claude-plugin/marketplace.json` + the generated `plugins/lbvs-aidlc/` tree, both committed on `main` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:lbvs-aidlc <id>`) with nothing in the repository, per repository via `extraKnownMarketplaces` + `enabledPlugins` or fleet-wide via managed settings. Claude Code only: it has no `.omp/`. |
+| Engine | plugins `lbvs-aidlc`, `lbvs-ecc`, `lbvs-aidlc-observer` from `.claude-plugin/marketplace.json` (generated `plugins/` trees committed here) | each engineer once (`claude plugin install`, `omp plugin install`), or the organisation through managed `extraKnownMarketplaces`/`enabledPlugins`; a repository's `.claude/settings.json` declaration tells anyone missing it what to run |
+| Repository state | `python3 scripts/aidlc.py install <repo> [--apply]`, refreshed by `sync`/`update` | once per repository, committed with the code: `REVIEW.md`, knowledge-store seeds, `changes/`, `.aidlc/manifest.json` |
 
 ```sh
 # plugin route
@@ -193,7 +201,7 @@ claude plugin marketplace add mkhan-lb/lbvs-aidlc
 claude plugin install lbvs-aidlc@lbvs-aidlc
 ```
 
-The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.py`), the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md`, the package-integrity hook, the worktree hook or `.omp/` — so under Oh My Pi a plugin-only repository has the skills but not the agents or the protect hook; use `install` there. Regenerate it with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc, in the same commit; `python3 scripts/aidlc.py check` runs `build_plugin.py --check` and fails on any drift between the sources and the committed `plugins/` tree, so the SessionStart hook reports a forgotten regeneration.
+What the plugins do not carry: a `CLAUDE.md`/`AGENTS.md` (the repository's own), the package-integrity hook and maintenance rule (this repository's), `.worktreeinclude` (repository-owned). Regenerate with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc, in the same commit; `python3 scripts/aidlc.py check` runs `build_plugin.py --check` and fails on any drift, so the SessionStart hook reports a forgotten regeneration.
 
 ## Repository layout
 
@@ -209,7 +217,7 @@ The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.
 ├── .claude/
 │   ├── settings.json            # SessionStart + PreToolUse + WorktreeCreate hooks; CE plugin declaration
 │   ├── settings.local.json      # ignored local {}; never exported
-│   ├── hooks/                   # check-package.sh, project-mode.sh, protect-tests.sh, worktree-create.sh, worktree-remove.sh
+│   ├── hooks/                   # check-package, project-mode, scaffold-check, protect-tests, artifact-guard, commit-guard, argument-guard, worktree-create, worktree-remove
 │   ├── rules/                   # path-scoped rules
 │   ├── skills/
 │   │   ├── lbvs-aidlc/               # orchestrator
@@ -222,7 +230,9 @@ The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.
 │   │   ├── architecture-decision-records/, doc-coauthoring/   # imported, AIDLC-integrated
 │   │   └── <ECC skill>/         # 38 selected bundles
 │   └── agents/                  # lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic, lbvs-aidlc-conventions-checker
-├── scripts/aidlc.py             # check, doctor [--install], mode, status, current, profile, conventions [--apply], lint-artifacts [--root], install/sync <repo> [--apply], update [--from], worktree, worktree-remove, package, new
+├── scripts/aidlc.py             # check, doctor [--install], mode, status, current, profile, conventions [--apply], lint-artifacts [--root|--stdin], install/sync <repo> [--apply], update [--from], worktree, worktree-remove, new
+├── scripts/build_plugin.py      # generates plugins/{lbvs-aidlc,lbvs-ecc,lbvs-aidlc-observer}; --check for drift
+├── .claude-plugin/marketplace.json, plugins/   # the marketplace and its three generated plugins
 ├── templates/conventions/       # default .editorconfig, .pre-commit-config.yaml, ruff.toml, biome.json, CONVENTIONS.md
 ├── mcp-configs/                 # inactive upstream example catalog (reference only)
 ├── docs/                        # USAGE, REFERENCE, WORKFLOW, ARTIFACTS, PLUGINS, VERIFICATION, sources/, evidence/

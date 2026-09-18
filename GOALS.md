@@ -86,7 +86,7 @@ Success: no artifact relies on a remembered API signature; a new data store, que
 - Concrete artifact-aware handoff to existing local reviewers, with prepared/partial/returned status and honest context coverage.
 - Review → fix → re-review, with local findings by default.
 - A worked local scenario and honest evidence of what was exercised.
-- Complete standalone resource export to a new directory, and `install`/`sync` into an existing repository — report first, never overwriting, never touching the repository-owned instruction and settings files, never committing; the engineer reviews and commits the result. Company rollout remains separate.
+- Distribution as versioned plugins served from this repository's marketplace (`lbvs-aidlc`, `lbvs-ecc`, `lbvs-aidlc-observer`), read by Claude Code and Oh My Pi alike, plus `install`/`sync`/`update` for the repository's own state — report first, never overwriting, never touching the repository-owned instruction and settings files, never committing; the engineer reviews and commits the result. Company rollout remains separate.
 - The requested ECC library, now 38 skills, with pinned provenance, retained licensing, task-scoped adaptations and the inactive ECC MCP catalog kept as a reference snapshot (the live configuration is `.mcp.json`). `continuous-learning-v2` is imported complete — observation hooks, observer scripts, instinct CLI — but off by default: nothing registers its hooks; an engineer enables the separate `lbvs-aidlc-observer@lbvs-aidlc` plugin after `/lbvs-aidlc-init` prints the command, and its observations (tool inputs and outputs) stay under `~/.local/share/ecc-homunculus/`, outside the repository. Importing operational guidance does not activate the deferred services below.
 
 ## Deferred

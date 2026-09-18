@@ -14,6 +14,11 @@
             "type": "command",
             "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/project-mode.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/scaffold-check.sh\"",
+            "timeout": 10
           }
         ]
       }
@@ -40,6 +45,18 @@
         ]
       }
     ],
+    "UserPromptExpansion": [
+      {
+        "matcher": "lbvs-aidlc",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/argument-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit",
@@ -47,6 +64,22 @@
           {
             "type": "command",
             "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/protect-tests.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/artifact-guard.sh\"",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git *)",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/commit-guard.sh\"",
             "timeout": 10
           }
         ]

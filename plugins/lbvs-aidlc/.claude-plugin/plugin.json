@@ -1,7 +1,7 @@
 {
   "name": "lbvs-aidlc",
-  "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding and project-mode detection.",
-  "version": "0.1.0",
+  "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding, project-mode detection and git/artifact guards.",
+  "version": "0.2.0",
   "author": {
     "name": "Logicbroker / Virtualstock engineering"
   },

@@ -11,30 +11,33 @@ Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-na
 - **5 small hooks**: package check (silent when it passes) and project-mode line at session start, protection of a failing test while you fix the bug, descriptive worktree names (`aidlc/vs-1234-order-export`) and safe worktree removal that keeps uncommitted work.
 - **Repository context that is read, not re-derived**: a committed repository profile (`docs/repo-profile.md`), the company glossary (`docs/glossary/` — Logicbroker and Virtualstock), playbooks for repeatable procedures, and platform facts. Stages read these first and scout only what is missing or stale.
 - **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons, playbooks — all Markdown, all written only after you confirm.
-- **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `profile`, `conventions`, `package` and friends.
+- **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `profile`, `conventions`, `install`/`sync`/`update` and friends — reachable as `aidlc` on the Bash PATH while the plugin is enabled.
 - Optional extras: 38 vendored [ECC](https://github.com/affaan-m/ECC) pattern skills, ADR and doc-coauthoring skills, Compound Engineering brainstorming for non-engineers, MCP declarations for Context7, GitHub and Jira.
 
 Everything Claude does here is advisory instruction plus your confirmation. The skills are not security controls; your repository's permissions, branch protection and CI still apply.
 
 ## Install
 
-**New service** — export a standalone tree and start there:
+The engine is a plugin; a repository holds only its own state. Two steps, new or existing repository alike.
 
-```sh
-git clone https://github.com/mkhan-lb/lbvs-aidlc && cd lbvs-aidlc
-python3 scripts/aidlc.py package /path/to/new-service
-cd /path/to/new-service && claude
-```
-
-**Existing repository** — install the plugin (namespaced commands, nothing overwritten):
+**1. The plugin — once per engineer** (Claude Code; Oh My Pi reads the same marketplace):
 
 ```sh
 claude plugin marketplace add mkhan-lb/lbvs-aidlc
-claude plugin install lbvs-aidlc@lbvs-aidlc
-# then, inside the repository:  /lbvs-aidlc:lbvs-aidlc-init
+claude plugin install lbvs-aidlc@lbvs-aidlc          # skills, agents, hooks, helper, docs
+claude plugin install lbvs-ecc@lbvs-aidlc            # optional: 37 reference skills
+# Oh My Pi
+omp plugin marketplace add mkhan-lb/lbvs-aidlc && omp plugin install --scope project lbvs-aidlc@lbvs-aidlc
 ```
 
-The plugin carries the skills, all six agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library, the package-integrity hook, the worktree hook or `.omp/` (so Oh My Pi gets skills only). To put the assets into an existing repository instead — which every host then reads on checkout — run `python3 scripts/aidlc.py install ../<repo>` and, after the report, `--apply`; `sync` updates later ([recipe](docs/USAGE.md#11-install-into-an-existing-repository-or-export-a-new-one)).
+**2. The scaffold — once per repository**, from a checkout of this package:
+
+```sh
+python3 scripts/aidlc.py install ../my-service          # report
+python3 scripts/aidlc.py install ../my-service --apply  # REVIEW.md, knowledge-store seeds, .aidlc/manifest.json
+```
+
+The report also prints what only you may write: the plugin declaration for `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`, so teammates are told what to install), `.gitignore` lines and a pointer line for `AGENTS.md`/`CLAUDE.md`. Commit the result, then run `/lbvs-aidlc:lbvs-aidlc-init` in the repository. Later, `aidlc update` (from inside the repository) refreshes the seeds; plugin updates arrive by version through the marketplace. A third plugin, `lbvs-aidlc-observer`, ships disabled and is enabled only when you ask ([recipe](docs/USAGE.md#11-install-the-plugin-and-scaffold-a-repository)).
 
 Before the first session, `python3 scripts/aidlc.py doctor` tells you which optional tools and MCP credentials are present and how to get the missing ones.
 
