@@ -33,7 +33,7 @@ Use existing write capabilities and the template's useful sections; create only 
 
 ## Optional CE creation
 
-Only when the user explicitly selects CE: confirm `compound-engineering:ce-handoff` is loaded (else offer install/reload or labelled ordinary creation); complete the checks above; state a caller brief pinning the exact repository destination (overriding CE's temporary store — no second copy), the authority/redaction/no-overwrite boundaries, no canonical-plan save or next workflow, and the mandatory post-write Read; invoke `Skill` `compound-engineering:ce-handoff` with arguments `create` or `create <focus>`. Then Read the exact agreed file yourself; a wrong destination, missing file or incomplete content is incomplete creation even if CE reports success. Do not fall back to ordinary creation unless the user chooses it.
+Only when the user explicitly selects CE: confirm `compound-engineering:ce-handoff` is loaded (else offer install/reload or labelled ordinary creation); complete the checks above; state a caller brief pinning the exact repository destination (overriding CE's temporary store — no second copy), the authority/redaction/no-overwrite boundaries, no canonical-plan save or next workflow, and the mandatory post-write Read; invoke `compound-engineering:ce-handoff` via the skill route with arguments `create` or `create <focus>`. Then Read the exact agreed file yourself; a wrong destination, missing file or incomplete content is incomplete creation even if CE reports success. Do not fall back to ordinary creation unless the user chooses it.
 
 ## Report
 

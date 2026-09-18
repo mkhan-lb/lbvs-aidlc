@@ -4,6 +4,8 @@ Change ID: {{change_id}}
 Latest pass: <N> · tier <standard / escalated / maximum / cloud> · execution status <prepared — not run / running / returned / partial / failed>
 Open Important findings: <count or 0> · fix cycles used: <n> of 3
 
+Content boundary: ${CLAUDE_PLUGIN_ROOT}/docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Report findings and actual evidence, not approval. Follow `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), and `${CLAUDE_PLUGIN_ROOT}/skills/lbvs-aidlc-review/references/review-options.md`. Use this shape in conversation; persist to `changes/{{change_id}}/review.md` only when specifically requested after review results return. Preparation alone is not an executed review. Keep the review report-only; do not run the application/checks, fix code, publish, or install anything.
 
 ## Same-change intent and policy
@@ -33,7 +35,7 @@ Repeat this whole section for every pass (`## Pass 2`, …), appending below the
 
 - Tier and exact command (`standard` = `/code-review high`, `escalated` = `/code-review xhigh`, `maximum` = `/code-review max`, `cloud` = `/code-review ultra`):
 - Selected provider and identity/provenance actually observed; exposure in this session (model-invocable Skill / supported command or agent / user-only command / unavailable / unknown):
-- Execution status: prepared — not run / running / returned / partial / failed; started/returned time and native result/session reference:
+- Execution status: prepared — not run / running / returned / partial / failed; native result and session references stay in the conversation:
 - Context delivery mechanism; evidence the reviewer received the packet, artifacts and `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`) policy (or unconfirmed):
 - Errors, interrupted work, denied permissions and missing prerequisites:
 - If not run: separate copyable provider command and complete filled-in handoff packet; exact engineer action still required. Do not label this as findings.
@@ -43,7 +45,7 @@ Repeat this whole section for every pass (`## Pass 2`, …), appending below the
 - Scope kind and semantics: merge-base-to-head / tip-to-tip / staged + unstaged + untracked / explicitly identified subset:
 - Actual base/head/merge-base SHAs, or working-tree HEAD/unborn state:
 - Captured tracked diff and staged/unstaged path inventory; renamed/deleted paths; untracked content supplied:
-- Unchanged supporting files and callers inspected; provider-reported inspected paths:
+- Unchanged supporting files and callers inspected (repository-relative paths):
 - Excluded, filtered, unreadable, binary, unrelated or otherwise unreviewed paths; reason for each gap:
 - Scope freshness (current / stale / unknown): state comparison at preparation, invocation and return; later edits not covered:
 
@@ -63,7 +65,7 @@ Finding IDs are stable across passes: `R1, R2 …` in first-seen order. A later 
 - AIDLC policy mapping: Bugs / Security / Compliance; **Important** / **nit**; any disagreement with the provider explained:
 - Requirement ID(s) or intended behavior affected:
 - Disposition: open / fixed / accepted — or fix claimed — not re-reviewed / not rechecked:
-- Disposition evidence (re-review assessment reference) and who made any acceptance decision:
+- Disposition evidence (re-review pass number and returned assessment) and who made any acceptance decision:
 
 If no findings were returned, quote the provider's bounded result and its actual coverage; retain the native verdict, explanation and confidence separately — a "correct" verdict is not approval. If no provider result exists, write `no provider result`, not `no findings`. An ADR gap is a Compliance finding with its own ID, never a blocker.
 
@@ -73,7 +75,7 @@ Separately labelled artifact-alignment observations made during reconciliation; 
 
 ### Checks run since the previous pass
 
-| R-ID | Check or interaction | Exercised revision and environment | Actual result | Evidence reference | Executed / failed / proposed / not run |
+| R-ID | Check or interaction | Exercised revision and environment | Actual result | Evidence (repository path or quoted output) | Executed / failed / proposed / not run |
 | --- | --- | --- | --- | --- | --- |
 
 The review pass itself runs nothing. For fixes performed in a separately authorised build pass, include pre-fix evidence when available and the post-fix result; never manufacture a historical failure.
@@ -91,6 +93,6 @@ Blockers, unreviewed behavior, missing evidence/context and concrete next action
 
 ## References
 
-Only links supplied by the user or read back from a tool (`gh`, git log, Atlassian MCP): PR URL recorded by `lbvs-aidlc-ship`, ticket, ADR/incident/threat-model paths. Never guess a URL.
+Only links supplied by the user or read back from a tool (`gh`, git log, Atlassian MCP): PR URL recorded by `lbvs-aidlc-ship`, ticket, ADR/incident/threat-model paths. Repository paths and URLs only; never guess a URL.
 
 If saving was requested: record the destination and report actual post-write Read confirmation in the conversation. A Write acknowledgement alone does not verify persistence; a failed read-back is an unverified save. Saving does not expand reviewed scope.

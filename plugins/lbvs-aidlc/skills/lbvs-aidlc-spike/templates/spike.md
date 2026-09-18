@@ -3,6 +3,8 @@
 Status: draft
 Change ID: {{change_id}}
 
+Content boundary: ${CLAUDE_PLUGIN_ROOT}/docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Record a time-boxed investigation. Replace instructions with what was actually observed; do not invent sources, measurements or decisions. Follow `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md`. This record informs an intent, spec or ADR — it approves nothing and changes no code.
 
 ## Question

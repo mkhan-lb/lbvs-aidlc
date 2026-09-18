@@ -3,6 +3,8 @@
 Status: draft
 Change ID: {{change_id}}
 
+Content boundary: ${CLAUDE_PLUGIN_ROOT}/docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Describe the requirements and design for the working intent. Follow `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md`; this artifact does not grant permissions or create an approval gate.
 
 ## Context and inputs

@@ -8,6 +8,8 @@
 
 Capture one solved, verified lesson whose reasoning is not readily recoverable from code, tests or existing docs. This is supporting knowledge, not a second spec, plan, rule or approval record. Readers weight every lesson equally, so keep one topic per file and mark a lesson **Needs re-check** rather than leaving a stale one to mislead. Replace the descriptive title, fill only supported content and remove these drafting instructions. If the lesson does not qualify, save nothing.
 
+Content boundary: ${CLAUDE_PLUGIN_ROOT}/docs/ARTIFACTS.md#content-boundary — repository-relative paths, no session references, no workflow or machine narrative.
+
 Confidence follows the observation count above and is only raised when the same lesson is re-observed in another change (`lbvs-aidlc-learn` offers the bump instead of writing a duplicate). Promotion rule: a lesson observed in at least 2 changes with Confidence ≥ 0.8 is a candidate rule for `AGENTS.md` or `.claude/rules/`; the skill proposes it to the engineer and never writes those files itself.
 
 ## Problem and durable insight
@@ -28,6 +30,6 @@ Explain when to apply this lesson, the practical prevention step and remaining r
 
 ## Sources and related knowledge
 
-Link relevant existing `changes/{{change_id}}/` artifacts, current defining source and actual verification evidence, with useful sections or line locations where known. Name missing/unavailable evidence explicitly. Include a related learning only when actually read, explaining the distinction; do not duplicate an existing same-topic lesson. Necessary conversation-only observations must be attributed with enough context to understand their limits. Redact secrets and unrelated personal information.
+Link relevant existing `changes/{{change_id}}/` artifacts, current defining source and actual verification evidence by repository-relative path, with useful sections or line locations where known. Name missing/unavailable evidence explicitly. Include a related learning only when actually read, explaining the distinction; do not duplicate an existing same-topic lesson. Necessary conversation-only observations are summarised and attributed, never quoted, with enough context to understand their limits. Redact secrets and unrelated personal information.
 
 For an explicitly authorised update, preserve the existing path, useful structure and unrelated content; record the actual update date and what new evidence changed. Optional corpus metadata may be retained, but never claim CE authorship unless CE actually ran.

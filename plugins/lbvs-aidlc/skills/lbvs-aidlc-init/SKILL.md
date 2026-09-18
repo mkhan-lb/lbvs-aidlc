@@ -18,7 +18,7 @@ Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" doctor`. Show which requir
 
 Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`.
 
-**Brownfield:** invoke `lbvs-aidlc-onboard` via the Skill tool and let it complete (scout and `conventions` reports, modernize/legacy choice, CLAUDE.md, rules and `docs/repo-profile.md` drafts, `.aidlc/mode`, `docs/onboarding.md`). When `docs/repo-profile.md` exists and `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" profile` prints `fresh`, onboarding skips its scout and works from the profile; say so and use the profile as the scout report for step 5. Otherwise keep its scout report for step 5, then return here.
+**Brownfield:** invoke `lbvs-aidlc-onboard` via the skill route and let it complete (scout and `conventions` reports, modernize/legacy choice, CLAUDE.md, rules and `docs/repo-profile.md` drafts, `.aidlc/mode`, `docs/onboarding.md`). When `docs/repo-profile.md` exists and `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" profile` prints `fresh`, onboarding skips its scout and works from the profile; say so and use the profile as the scout report for step 5. Otherwise keep its scout report for step 5 and return here.
 
 **Greenfield:** run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions` (report only) and AskUserQuestion: "Adopt default conventions (`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" conventions --apply`)", "Keep my own tooling", "Decide later". `--apply` copies only missing files from `templates/conventions/` and never overwrites. When the project needs cloud delivery, point to `docs/platform/README.md`: the app-template route fetches `AGENT-SETUP.md` with authenticated `gh api`, never a raw link.
 
@@ -56,7 +56,7 @@ Read `.gitignore`. Check for lines covering `.claude/worktrees/`, `.aidlc/fix/`,
 
 ## 7. Summary and next step
 
-List **Written** (paths), **Recommended** (installs, auth, plugins — for the engineer to do) and **Skipped**. Then AskUserQuestion exactly: "Start a change (/lbvs-aidlc)", "Start from a ticket (/lbvs-aidlc-ticket)", "Done". Invoke `lbvs-aidlc` or `lbvs-aidlc-ticket` via the Skill tool on the first two; otherwise end.
+List **Written** (paths), **Recommended** (installs, auth, plugins — for the engineer to do) and **Skipped**. Then AskUserQuestion exactly: "Start a change (/lbvs-aidlc)", "Start from a ticket (/lbvs-aidlc-ticket)", "Done". Invoke `lbvs-aidlc` or `lbvs-aidlc-ticket` via the skill route on the first two; otherwise end.
 
 ## Guardrails
 

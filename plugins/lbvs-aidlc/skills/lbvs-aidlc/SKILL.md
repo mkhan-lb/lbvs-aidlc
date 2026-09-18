@@ -33,11 +33,11 @@ Check the current branch/worktree (`git rev-parse --abbrev-ref HEAD`, `git workt
 
 ## Step 1 — project mode
 
-Read the `AIDLC project mode:` line injected at session start, or run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`. For **brownfield** with no repository `CLAUDE.md` or recorded conventions (`.aidlc/mode`, `docs/onboarding.md`), invoke `lbvs-aidlc-onboard` via the Skill tool before intent and honour its outcome. Greenfield, or brownfield already onboarded, continues directly.
+Read the `AIDLC project mode:` line injected at session start, or run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode`. For **brownfield** with no repository `CLAUDE.md` or recorded conventions (`.aidlc/mode`, `docs/onboarding.md`), invoke `lbvs-aidlc-onboard` via the skill route before intent and honour its outcome. Otherwise continue directly.
 
 ## Step 2 — kind of work
 
-Ask with AskUserQuestion: "Feature/change", "Bug fix" or "Spike/investigation". For **Bug fix**, invoke `lbvs-aidlc-fix` via the Skill tool with the same change ID and stop orchestrating stages; the fix loop owns reproduction, evidence and its own learning offer. For **Spike/investigation**, invoke `lbvs-aidlc-spike` the same way and stop; its gate offers intent or an ADR afterwards. For **Feature/change**, continue.
+Ask with AskUserQuestion: "Feature/change", "Bug fix" or "Spike/investigation". For **Bug fix**, invoke `lbvs-aidlc-fix` via the skill route with the same change ID and stop; the fix loop owns reproduction, evidence and its own learning offer. For **Spike/investigation**, invoke `lbvs-aidlc-spike` the same way and stop; its gate offers intent or an ADR afterwards. For **Feature/change**, continue.
 
 ## Step 3 — resume point
 
@@ -45,7 +45,7 @@ Glob `changes/<change-id>/`. Derive the real stage: no directory → intent; `in
 
 ## Step 4 — run the stages
 
-Order: `lbvs-aidlc-intent` → `lbvs-aidlc-design` → `lbvs-aidlc-plan` → `lbvs-aidlc-build` → `lbvs-aidlc-verify` → `lbvs-aidlc-review`. Invoke each through the Skill tool passing **only the bare change ID** as arguments — every stage validates `^[a-z0-9]+(-[a-z0-9]+)*$` and appended prose corrupts that argument. State the request, flow policy, CE selections and decisions as conversation text in the same turn instead. Each stage then either announces an auto-advance under the stated policy or asks with AskUserQuestion: "Proceed to <next stage>", "Revise this stage", "Stop here". Honour that answer: **Proceed** invokes the next stage; **Revise** re-runs the same stage with the user's notes; **Stop here** ends with the final report.
+Order: intent → design → plan → build → verify → review (each `lbvs-aidlc-<stage>`). Invoke each through the skill route (the [skill route](${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#skill-route) is host-specific; in Oh My Pi read `skill://<stage>` and follow it), passing **only the bare change ID** as arguments — every stage validates `^[a-z0-9]+(-[a-z0-9]+)*$`; appended prose corrupts it. State the request, flow policy, CE selections and decisions as conversation text in the same turn. Each stage then announces an auto-advance under the stated policy or asks with AskUserQuestion: "Proceed to <next stage>", "Revise this stage", "Stop here". Honour that answer: **Proceed** invokes the next stage; **Revise** re-runs the stage with the user's notes; **Stop here** ends with the final report.
 
 Stage-specific handling:
 
@@ -60,4 +60,4 @@ List: worktree/branch used; each artifact under `changes/<change-id>/` with its 
 
 ## Boundaries
 
-No commit, push, PR, merge or deploy without the user's explicit authorisation for that action. No invented approvals, metrics or verification results. If a stage skill is not exposed through the Skill tool, say so and stop instead of imitating it. Plan mode returns proposals, not saves.
+No commit, push, PR, merge or deploy without the user's explicit authorisation for that action. No invented approvals, metrics or verification results. If a stage skill is absent from the host's skill catalogue, say so and stop instead of imitating it. Plan mode returns proposals, not saves.
