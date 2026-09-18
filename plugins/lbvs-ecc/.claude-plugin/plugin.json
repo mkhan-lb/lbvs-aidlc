@@ -1,0 +1,15 @@
+{
+  "name": "lbvs-ecc",
+  "description": "Optional engineering skill library vendored from Everything Claude Code: language, framework, testing, security and operations patterns.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Logicbroker / Virtualstock engineering"
+  },
+  "repository": "https://github.com/mkhan-lb/lbvs-aidlc",
+  "keywords": [
+    "skills",
+    "patterns",
+    "testing",
+    "security"
+  ]
+}

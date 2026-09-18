@@ -45,6 +45,15 @@ Subsequent bounded runs captured complete events in memory. [Sanitised native ev
 
 Both runs exposed only Read/Skill tools and used no configured MCP servers. Use one ID as the slash-command argument and supply intake context in a separate conversation turn. Native discovery and this intake scenario do not prove the other skills, accepted-artifact progression, or the verifier's runtime behaviour.
 
+## Plugin engine under Oh My Pi (2026-09-18, branch `plugin-engine`)
+
+Two native probes on scratch repositories, headless `omp -p`, the Claude marketplace read from this repository (`omp plugin marketplace add <path>`, `omp plugin install --scope project lbvs-aidlc@lbvs-aidlc`):
+
+- Hand-built plugin (spike): the six `lbvs-aidlc-*` agents listed in the task tool description; the fourteen model-invocable skills listed; the guard extension loaded through `package.json` → `omp.extensions` — the `AIDLC project mode:` line appeared in context and a `write` to a path listed in `.aidlc/fix/x-y.json` was refused with the protect message; the file stayed unchanged. With `--plugin-dir` alone the extension did not load; the marketplace install path is required for extension modules.
+- Generated `plugins/lbvs-aidlc` (0.2.0) after `install --apply` scaffolded the repository: a `write` of `See /tmp/notes …` to `changes/demo/intent.md` was refused with `AIDLC: changes/demo/intent.md would carry session or machine-local references:` and the file was never created; `git commit --allow-empty` was refused with the commit-guard reason (no UI, so the confirm became a block); `git log` showed only the two pre-existing commits.
+
+Not exercised: the same hooks under Claude Code (the shell scripts were smoke-tested with hook-shaped JSON on stdin only); `ask` behaviour in an interactive Claude session; `lbvs-ecc` and `lbvs-aidlc-observer` installation; auto-update. Marketplace and plugin were removed after each probe.
+
 ## Earlier unverified full-playbook capabilities
 
 - A real product owner accepting an intent/spec or an engineer accepting a production change plan.

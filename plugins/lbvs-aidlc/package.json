@@ -1,0 +1,10 @@
+{
+  "name": "lbvs-aidlc",
+  "version": "0.2.0",
+  "private": true,
+  "omp": {
+    "extensions": [
+      "./omp/aidlc-guards.ts"
+    ]
+  }
+}

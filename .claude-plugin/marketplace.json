@@ -1,6 +1,6 @@
 {
   "name": "lbvs-aidlc",
-  "description": "Company AIDLC plugins: the Anthropic AI-native SDLC workflow for Claude Code.",
+  "description": "Company AIDLC plugins: the Anthropic AI-native SDLC workflow for Claude Code and Oh My Pi.",
   "owner": {
     "name": "Logicbroker / Virtualstock engineering",
     "url": "https://github.com/mkhan-lb/lbvs-aidlc"
@@ -9,9 +9,42 @@
     {
       "name": "lbvs-aidlc",
       "source": "./plugins/lbvs-aidlc",
-      "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding and project-mode detection.",
+      "description": "Company AIDLC: Anthropic AI-native SDLC stages with confirmation gates, bug-fix evidence loop, brownfield onboarding, project-mode detection and git/artifact guards.",
+      "version": "0.2.0",
       "category": "productivity",
-      "tags": ["aidlc", "sdlc", "workflow", "review"]
+      "tags": [
+        "aidlc",
+        "sdlc",
+        "workflow",
+        "review",
+        "evidence"
+      ]
+    },
+    {
+      "name": "lbvs-ecc",
+      "source": "./plugins/lbvs-ecc",
+      "description": "Optional engineering skill library vendored from Everything Claude Code: language, framework, testing, security and operations patterns.",
+      "version": "0.2.0",
+      "category": "productivity",
+      "tags": [
+        "skills",
+        "patterns",
+        "testing",
+        "security"
+      ]
+    },
+    {
+      "name": "lbvs-aidlc-observer",
+      "source": "./plugins/lbvs-aidlc-observer",
+      "description": "Opt-in continuous-learning observer: records tool use into project-scoped instincts; off by default.",
+      "version": "0.2.0",
+      "category": "productivity",
+      "tags": [
+        "observer",
+        "learning",
+        "hooks"
+      ],
+      "defaultEnabled": false
     }
   ]
 }

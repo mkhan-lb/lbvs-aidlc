@@ -4,7 +4,7 @@ Use this guide for the conversation, command, expected result, and next action a
 
 ## Before you start
 
-- Open the intended repository in Claude Code with the complete project resources available. Copying one skill or using the helper's `--root` does not install the workflow — the SO2-1386 trial ran that way and paid for it with a wrong-root mode line, a hook watching the wrong repository and a lesson in the wrong store. Adopt through [`install`/`sync`](#11-install-into-an-existing-repository-or-export-a-new-one) for an existing repository, `package` for a new one, or the plugin ([distribution](REFERENCE.md#distribution)).
+- Open the intended repository in Claude Code with the complete project resources available. Copying one skill or using the helper's `--root` does not install the workflow — the SO2-1386 trial ran that way and paid for it with a wrong-root mode line, a hook watching the wrong repository and a lesson in the wrong store. Install the `lbvs-aidlc` plugin once, then scaffold the repository with [`install`](#11-install-the-plugin-and-scaffold-a-repository) ([distribution](REFERENCE.md#distribution)).
 - Every ID-taking AIDLC command accepts **at most one ID** matching `^[a-z0-9]+(-[a-z0-9]+)*$`, and a ticket key fits as a lowercase prefix (`vs-1234-order-export`). Omit the argument and the command resolves the change itself — branch name, then `.aidlc/current`, then the only change without `review.md` — and says which source it used. `/lbvs-aidlc-ideate` still takes a topic ID before a change exists and has no such fallback; `/lbvs-aidlc-onboard` takes no ID; `/lbvs-aidlc-ticket` takes the ticket key or issue URL and derives the change ID for you; `/lbvs-aidlc-ship [change-id]` resolves like the rest. Put requests, paths, CE choices, the flow policy, review tiers and review targets in conversation, never after the ID.
 - In the recipes, send the **Say** text as an ordinary conversation message, then invoke the separate **Run** slash command. Adapt the example scope to your application; do not copy its requirements blindly.
 - Use a normal writable session for saving artifacts, handoff creation, and implementation. Enter native plan/read-only mode yourself for `/lbvs-aidlc-plan`; the agent does not change permissions. Confirmation of a proposal does not change the mode or authorise unrelated actions.
@@ -20,7 +20,7 @@ Keep these files with the complete package when adopting it:
 | File | Purpose and boundary |
 | --- | --- |
 | `AGENTS.md` | Canonical shared instructions for every agent host. `CLAUDE.md` is `@AGENTS.md` plus a Claude-specific section; `.omp/AGENTS.md` imports `@../AGENTS.md` for Oh My Pi. No symlink is involved. |
-| [`.claude/settings.json`](../.claude/settings.json) | Official-schema settings registering the five hooks below, plus `skillListingBudgetFraction: 0.03` so the stage skills' descriptions stay in the listing on smaller context windows. No permissions, model/provider selection or telemetry are configured. |
+| [`.claude/settings.json`](../.claude/settings.json) | Official-schema settings registering the nine hooks below, plus `skillListingBudgetFraction: 0.03` so the stage skills' descriptions stay in the listing on smaller context windows. No permissions, model/provider selection or telemetry are configured. |
 | [`.claude/hooks/check-package.sh`](../.claude/hooks/check-package.sh) | `SessionStart` (startup/resume): executes `python3 "${CLAUDE_PROJECT_DIR}/scripts/aidlc.py" check`, read-only; silent on pass, errors become context on failure. |
 | `.claude/hooks/project-mode.sh` | `SessionStart`: runs `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" mode` and injects its one-line result as context. Override detection with `.aidlc/mode` containing `greenfield` or `brownfield`. |
 | `${CLAUDE_PLUGIN_ROOT}/hooks/protect-tests.sh` | `PreToolUse` on `Edit\|Write\|MultiEdit\|NotebookEdit`: denies edits to any path listed under `protected` in `.aidlc/fix/*.json`. Active only while a fix marker exists; `.aidlc/fix/` is ignored by Git. |
@@ -32,7 +32,7 @@ Keep these files with the complete package when adopting it:
 
 `.claude/settings.local.json` was created here as `{}` for local overrides. It is ignored, never exported and not required in an exported tree; create it there only if needed for separately reviewed local choices. Do not put credentials into shared files.
 
-Launch Claude from the adopted package root with `sh` and Python 3 available. When project hooks are allowed, the package check and mode line run on startup/resume, **not every turn or edit**; the test-protection hook runs on every edit tool call but denies only paths in an active fix marker, and the worktree hook runs only when a worktree is created. To investigate a failure, run the helper from that root — its subcommands are `check`, `doctor` (add `--install` to run the `uv`/`pipx`, `npm` or `brew` installer for each missing optional tool: `graphify`, `codegraph`, `gh`), `mode`, `status`, `current`, `conventions` (add `--apply` to copy only the missing default convention files; see [adopt or keep conventions](#adopt-or-keep-conventions)), `profile` (freshness of `docs/repo-profile.md`; see [keep a repository profile](#keep-a-repository-profile)), `worktree`, `package` and `new` (for example `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" check`). `doctor` also lists every server in `.mcp.json` with the authentication it needs and whether the variable is set; it does not test connectivity. The hooks are integrity and guardrail aids, not lifecycle verification, an approval gate or security enforcement; apart from naming a worktree, they do not advance stages.
+Launch Claude from the adopted package root with `sh` and Python 3 available. When project hooks are allowed, the package check, mode line and scaffold check run on startup/resume, **not every turn or edit**; the test-protection and artifact guards run on every edit tool call but act only on paths in an active fix marker or under `changes/`/`docs/solutions/`; the commit guard runs only on `git` commands and asks rather than decides; the argument guard runs only when a `/lbvs-aidlc*` command expands; the worktree hooks run only when a worktree is created or removed. To investigate a failure, run the helper from that root — its subcommands are `check`, `doctor` (add `--install` to run the `uv`/`pipx`, `npm` or `brew` installer for each missing optional tool: `graphify`, `codegraph`, `gh`), `mode`, `status`, `current`, `conventions` (add `--apply` to copy only the missing default convention files; see [adopt or keep conventions](#adopt-or-keep-conventions)), `profile` (freshness of `docs/repo-profile.md`; see [keep a repository profile](#keep-a-repository-profile)), `worktree`, `package` and `new` (for example `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" check`). `doctor` also lists every server in `.mcp.json` with the authentication it needs and whether the variable is set; it does not test connectivity. The hooks are integrity and guardrail aids, not lifecycle verification, an approval gate or security enforcement; apart from naming a worktree, they do not advance stages.
 
 Project MCP declarations and the local settings object do not clear inherited user/managed configuration. Existing settings, hooks, permissions, plugins and MCP connections can still apply, and policy may restrict project customizations or block the declared servers. Review the effective configuration in your own session; this setup adds no tool grants. See [compatibility boundaries](COMPATIBILITY.md); the full project-configuration, MCP-server, host and knowledge-store tables are in [REFERENCE.md](REFERENCE.md), and `/lbvs-aidlc-init` step 3 reports which servers still need authentication in this checkout.
 
@@ -756,56 +756,40 @@ Run `/lbvs-aidlc-learn order-export` again only for the intended capture/update�
 
 If glossary changes are forbidden, choose ordinary capture or stop; do not ask CE to silently omit its required step. In plan/read-only mode, use ordinary eligible draft text labelled **not saved** or defer capture—never invoke CE to bypass the mode.
 
-## 11. Install into an existing repository, or export a new one
+## 11. Install the plugin and scaffold a repository
 
-Three routes, one source of truth ([distribution](REFERENCE.md#distribution)): **install/sync** copies the AIDLC assets into an existing repository and keeps them updatable; **package** exports a brand-new standalone tree; the **plugin** keeps everything out of the repository for Claude Code fleets. Existing repositories take the first route.
+The engine is a plugin; a repository holds only its own state. New or existing repository, the steps are the same ([distribution](REFERENCE.md#distribution)).
 
-### Install
+### The plugin — once per engineer
 
-**Prerequisite:** Python 3; the adopting repository checked out beside this package. Report first, write on `--apply`.
+```sh
+claude plugin marketplace add mkhan-lb/lbvs-aidlc
+claude plugin install lbvs-aidlc@lbvs-aidlc        # skills as /lbvs-aidlc:*, six agents, hooks, `aidlc` on PATH
+claude plugin install lbvs-ecc@lbvs-aidlc          # optional: the 37 reference skills
+```
 
-**Run from the package checkout:**
+Oh My Pi reads the same marketplace: `omp plugin marketplace add mkhan-lb/lbvs-aidlc && omp plugin install --scope project lbvs-aidlc@lbvs-aidlc` — project scope writes `.omp/plugins/installed_plugins.json`, which you commit so the repository declares it. Claude Code does not install an external plugin from a repository's settings by itself; the declaration below makes it tell a teammate what to run. Updates arrive by version: `/plugin marketplace update` then `/reload-plugins` (automatically when the organisation sets `autoUpdate: true` in managed settings), `omp plugin upgrade` on Oh My Pi.
+
+### The scaffold — once per repository
+
+**Prerequisite:** Python 3; the repository checked out beside this package. Report first, write on `--apply`.
 
 ```sh
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" install ../my-service
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" install ../my-service --apply
 ```
 
-**Expect:** the report lists every file it would `write`, every existing file it will `keep` because yours differs, every store seed it will `skip` because you already keep that store (a repository with its own `docs/adr/` is not given our `README.md` index and `template.md`; same for `incidents`, `security`, `references`, `playbooks`, `glossary`, `platform` — reconcile through `/lbvs-aidlc-onboard`), and the eight **repository-owned** files it never creates or overwrites — `AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json`, `.mcp.json`, `.worktreeinclude`, `.omp/AGENTS.md`, `.omp/config.yml` — each with a one-line merge hint and the exact hooks block to add to `.claude/settings.json`. Installed: the 17 AIDLC skills and the ECC library with their templates, the six agents with `.omp/agents/` counterparts, `.omp/RULES.md`, both protect hooks plus project-mode and worktree hooks, `scripts/aidlc.py`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), `${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md` and `${CLAUDE_PLUGIN_ROOT}/docs/ARTIFACTS.md` (the two files skills read at runtime), `${CLAUDE_PLUGIN_ROOT}/docs/USAGE.md` and `${CLAUDE_PLUGIN_ROOT}/docs/PLUGINS.md` (engineer reading), the knowledge-store indexes and templates, glossary, playbooks, platform pointer, `templates/conventions/` and the vendor licences. Not installed: the package's own `GOALS.md`, `FUTURE_WORK.md`, `README.md`, `docs/REFERENCE.md`, verification/coverage docs, the package-integrity hook and rule — links to them from the installed docs point back at this package. `--apply` also writes `.aidlc/manifest.json` (package source and branch, revision, date, one SHA-256 per installed file, the skipped store seeds) — commit it with the files; `.aidlc/current` and `.aidlc/fix/` stay ignored.
+**Expect:** the report lists every file it would `write` — `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`) when absent, the knowledge-store seeds under `docs/adr/`, `incidents/`, `security/`, `references/`, `playbooks/`, `glossary/` and `platform/`, `changes/.gitkeep` — every existing file it will `keep` because yours differs, every seed it will `skip` because you already keep that store (a repository with its own `docs/adr/` is not given our index and template; reconcile through `/lbvs-aidlc-onboard`), and the five **repository-owned** files it never creates or overwrites, each with what to merge: `.claude/settings.json` gets the exact `extraKnownMarketplaces` + `enabledPlugins` block; `.gitignore` the `.aidlc/fix/`, `.aidlc/current`, `.claude/worktrees/`, `.claude/settings.local.json`, `.codegraph/` lines; `AGENTS.md` and `CLAUDE.md` one pointer line; `.worktreeinclude` the ignored files worktrees need. Nothing from the engine lands in the repository — no skills, agents, hooks or helper. `--apply` also writes `.aidlc/manifest.json` (package source and branch, revision, plugin version, one SHA-256 per file, skipped seeds); commit it with the files. `.aidlc/current` and `.aidlc/fix/` stay ignored.
 
-**Next:** merge the eight hints by hand, `git add` and commit in the adopting repository (the helper never commits), then run [`/lbvs-aidlc-init`](#set-up-a-repository-lbvs-aidlc-init) there — it runs `/lbvs-aidlc-onboard` for a brownfield repository, offers the missing `.gitignore` lines and proposes repository-specific agents.
+**Next:** merge the hints, commit in the repository (the helper never commits), then run `/lbvs-aidlc:lbvs-aidlc-init` there — it runs `/lbvs-aidlc-onboard` for a brownfield repository, fills the profile's knowledge-store table, offers the missing `.gitignore` lines, reports the observer plugin's state and proposes repository-specific agents.
 
-### Sync (from the package) or update (from the repository)
+### Refresh the scaffold later
 
-Same comparison, two entry points. From an updated package checkout:
+From inside the repository, `aidlc update` (`--apply` to write) clones the package recorded in the manifest and runs its `sync`; `--from ../the-aidlc` uses a local checkout. From the package checkout, `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" sync ../my-service [--apply]`. Both compare package, manifest and repository three ways: `update` (package changed, you did not touch the file), `add`, `conflict` (changed in both — never written; resolve, then run again), `removed` (gone from the package, or provided by the plugin since the earlier full install — never deleted for you), `local`, `absent`, `guidance` (a repository-owned hint changed). The SessionStart hook says when the manifest's plugin version differs from the running plugin. Exit code 1 while a conflict exists. Neither command commits.
 
-```sh
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" sync ../my-service
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" sync ../my-service --apply
-```
+### The observer (off)
 
-From inside the adopting repository, with no package checkout at hand — `update` shallow-clones the source and branch recorded in `.aidlc/manifest.json` into a temporary directory, runs that clone's `sync` against this repository and removes the clone; `--from <path>` uses a local package checkout instead:
-
-```sh
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" update
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" update --apply
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" update --from ../the-aidlc --apply
-```
-
-**Expect:** a three-way comparison of package, manifest and repository: `update` (package changed, you did not touch the file), `add` (new in the package — a skill added upstream arrives this way), `conflict` (changed in both — never written; resolve by hand, then sync again), `removed` (gone from the package — never deleted for you), `local` (you edited it, package unchanged — kept), `absent` (you deleted it — kept absent), `guidance` when a repository-owned hint changed, and a count of skipped store seeds, which stay skipped. `--apply` writes only `update` and `add` and refreshes the manifest to the new revision; conflicts keep their recorded hash so the next run still shows them. Exit code 1 while a conflict exists. Neither command commits.
-
-### Export a new tree
-
-**Prerequisite:** an existing parent directory and a destination that does not exist.
-
-```sh
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" package /path/to/new-aidlc-copy
-python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
-```
-
-**Expect:** a complete standalone tree — everything `install` writes plus the repository-owned files, the package's own docs and the package-integrity hook — with no `.git`, change artifacts, solution/ideation stores, `.aidlc/` or local settings. Launch Claude in it and establish Git history through your own process; the exporter does not initialise or commit a repository.
-
-Do not use `--add-dir` as a shortcut and assume these repository-root-relative shared docs follow the skills. No plugin namespace relocation, automatic upgrade or cross-harness guarantee is provided. Review exported source/evidence before any separately authorised sharing or publication.
+`lbvs-aidlc-observer@lbvs-aidlc` installs disabled with the marketplace. `/lbvs-aidlc-init` reports its state and prints `claude plugin enable lbvs-aidlc-observer@lbvs-aidlc` when you choose to turn it on; its observations live under `~/.local/share/ecc-homunculus/`, never in a repository. See [§12](#12-use-the-optional-ecc-skill-library).
 
 ## 12. Use the optional ECC skill library
 

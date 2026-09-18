@@ -1,0 +1,1518 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/affaan-m/ECC",
+    "commit": "8321021c54d670126ce3b2969d5deb880b4b0c2a",
+    "source_tree": "skills",
+    "license": "MIT",
+    "license_file": "docs/vendor/ecc/LICENSE"
+  },
+  "notes": [
+    "The requested upstream .agents/skills is a smaller mirror; all selected canonical names are present under upstream skills/. Local imports live in .claude/skills/; no .agents/skills mirror is supplied here.",
+    "Operational guidance is manual-only; the ECC import installs or enables no ECC agents, runners, hooks, settings, plugins or MCP servers. continuous-learning-v2 is vendored complete (hooks, observer agent scripts, instinct CLI, command references) but off by default: nothing registers observe.sh; the engineer enables the separate lbvs-aidlc-observer@lbvs-aidlc plugin (defaultEnabled false) and its data lives under ${XDG_DATA_HOME:-~/.local/share}/ecc-homunculus/, outside every repository.",
+    "AIDLC separately supplies minimal native Claude settings, a read-only startup/resume package-check hook, scoped package-maintenance guidance and a project MCP server map. Root AGENTS.md is the canonical shared instruction file; CLAUDE.md imports it, sharing instructions without claiming native Codex skill/hook parity.",
+    "Shared project configuration is exported explicitly, but ignored local settings are not. Existing repository/global settings are not mutated; inherited user/managed settings, hooks and MCP connections can still apply.",
+    "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating.",
+    "Third-party in-file attributions are retained; Vercel source declares MIT but no standalone Vercel notice was found."
+  ],
+  "skills": [
+    {
+      "name": "api-design",
+      "source": "skills/api-design/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/api-design/SKILL.md",
+          "source": "skills/api-design/SKILL.md",
+          "upstream_sha256": "bfae53167acc91caff0ff9ab73a80ee3fd92caccdfa445c88302c3bf95255156",
+          "imported_sha256": "c7cf7d4395b956c39a41a6b5b2f2f57462977fd05d0da257103bafc82062d9bf"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "backend-patterns",
+      "source": "skills/backend-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/backend-patterns/SKILL.md",
+          "source": "skills/backend-patterns/SKILL.md",
+          "upstream_sha256": "9b983d0297a983110fdfda8dce55d19b750ca3e53ef155d75a3eff740d3874b8",
+          "imported_sha256": "948641eec9183645e5d6ab2f02966e701ae5cefb2a4e172b334bdce261c53746"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Linked the included api-design and security-review skills locally without claiming registered reviewer agents."
+      ],
+      "dependencies": [
+        "Selected local skill: api-design.",
+        "Optional upstream ECC reference: skills/security-review/SKILL.md (pinned link; no runtime dependency)."
+      ],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "canary-watch",
+      "source": "skills/canary-watch",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/canary-watch/SKILL.md",
+          "source": "skills/canary-watch/SKILL.md",
+          "upstream_sha256": "d2cb536f8ccb201266e094542cb20af8a4d6474feb5b16116cfb4497c2b8149f",
+          "imported_sha256": "152cfd5fa85090b62d74dc0afaace15f7cbbcf7b2a3a0a029772764b4ecd0d21"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Replaced unbounded monitoring with one-pass default, explicit bounded sustained scope, capability discovery and honest missing-measurement reporting.",
+        "Removed automatic desktop/webhook/global log effects; required authorization for destinations and local artifacts.",
+        "Pinned optional browser-qa reference and removed automatic hook/CI setup directive."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/browser-qa/SKILL.md",
+          "kind": "optional-upstream-only",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/browser-qa/SKILL.md"
+        }
+      ],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed.",
+        "Guidance only: no CLI, scheduler, browser instrumentation, watcher, notifications or baseline database supplied."
+      ]
+    },
+    {
+      "name": "codebase-onboarding",
+      "source": "skills/codebase-onboarding",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/codebase-onboarding/SKILL.md",
+          "source": "skills/codebase-onboarding/SKILL.md",
+          "upstream_sha256": "ef88873a4b0d0fe155c0a196ffecd5c7b5e28edd00fbbdb5c1fd2ca8fd0eb6f0",
+          "imported_sha256": "48e51a8695fbc31e8081270c7d1fb06f5695e7e9cf2409b786cb9d793f839682"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true for manual selection.",
+        "Added shared AIDLC integration and authority guidance after frontmatter. Added selected manual scope and side-effect boundary.",
+        "Gated artifact generation and CLAUDE.md changes behind explicit user scope.",
+        "Made starter CLAUDE.md generation opt-in.",
+        "Removed automatic instruction-file enhancement directive.",
+        "Aligned onboarding example with read-only default and explicit instruction-write authority."
+      ],
+      "dependencies": [],
+      "limits": []
+    },
+    {
+      "name": "coding-standards",
+      "source": "skills/coding-standards",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/coding-standards/SKILL.md",
+          "source": "skills/coding-standards/SKILL.md",
+          "upstream_sha256": "e80544c3d1eac5b14f22022146bd91a6b0ecc30e099cf5181894853aeb81dee1",
+          "imported_sha256": "87d7aafd166f171faa85525a5b983d31f28a1094423dd4ef690485a6394d2cf4"
+        },
+        {
+          "path": ".claude/skills/coding-standards/references/rules/common/coding-style.md",
+          "source": "rules/common/coding-style.md",
+          "upstream_sha256": "3c069a2460702e1715e6b21408287401f1faa8d343045c98534d59fbd22a0e56",
+          "imported_sha256": "f190ad507345cec7608e069c0592d144a189c1f5d4a9c46b5a339efba517ea68"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Bundled common coding-style rule and replaced upstream-relative pointer.",
+        "references/rules/common/coding-style.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule."
+      ],
+      "dependencies": [
+        {
+          "source": "rules/common/coding-style.md",
+          "resolution": "Bundled advisory reference at references/rules/common/coding-style.md"
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "contract-first",
+      "source": "skills/contract-first",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/contract-first/SKILL.md",
+          "source": "skills/contract-first/SKILL.md",
+          "upstream_sha256": "dc23ee49437e4d914ea9a9e37eec0dfe59dc16b11fcbc3a6e5c72f25dbd3cc5c",
+          "imported_sha256": "5913e57a08d8f77237deebece7336272e86d6d99f28d22d307d928d9272c015f"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Marked ai-regression-testing optional upstream-only rather than assumed installed skill.",
+        "Marked tdd-workflow optional upstream-only rather than assumed installed skill."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/ai-regression-testing/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/ai-regression-testing/SKILL.md"
+        },
+        {
+          "source": "skills/tdd-workflow/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/tdd-workflow/SKILL.md"
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "design-system",
+      "source": "skills/design-system",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/design-system/SKILL.md",
+          "source": "skills/design-system/SKILL.md",
+          "upstream_sha256": "baa6057bec07334f531789d07fbdd656afd725c0540992bd04db7589cac36d26",
+          "imported_sha256": "a092dbe966ff96b862ddcb7cf1c4a6189dcb1dd2bd1357aaa94fed1e63111e33"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Clarified slash-command examples are prompts, not fake implemented CLI APIs."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "django-celery",
+      "source": "skills/django-celery/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/django-celery/SKILL.md",
+          "source": "skills/django-celery/SKILL.md",
+          "upstream_sha256": "1f9189ece910eb90a5d2cd520a9a6238ccb89a3e48629ac1ad9b55ec3eb21f88",
+          "imported_sha256": "133a87d6a076e8b8e0bcdf0f3ec1a29f5d4e3460cc9ec0b3a8712ce5b883973c"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Pinned optional unselected Django skill references and linked selected python-testing locally.",
+        "Added explicit Celery worker, scheduler, broker, installation and remote-side-effect boundaries."
+      ],
+      "dependencies": [
+        "Optional upstream ECC references: skills/django-patterns/SKILL.md and skills/django-tdd/SKILL.md (pinned links).",
+        "Selected local skill: python-testing.",
+        "Examples assume project-provided Django/Celery, broker and optional monitoring dependencies; none installed."
+      ],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified.",
+        "Upstream payment/locking and retry snippets are illustrative, not a complete exactly-once payment implementation; adapt transaction/idempotency boundaries before production use."
+      ]
+    },
+    {
+      "name": "django-security",
+      "source": "skills/django-security/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/django-security/SKILL.md",
+          "source": "skills/django-security/SKILL.md",
+          "upstream_sha256": "e043c9d300695aea5a9bb4c72a6f47e47ba1f2c7ddc1e82b8191acd0ad70c54a",
+          "imported_sha256": "8004713f3bdea34a3b6f90b141b5246ab89355342fd584f499f5b41ba422d86f"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Removed SECURE_BROWSER_XSS_FILTER/X-XSS-Protection legacy guidance; aligned the HttpOnly CSRF AJAX example with a rendered masked token and same-origin requests, using official Django documentation."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Framework examples were not run in a Django application. The CSRF JavaScript token-source behavior was checked separately."
+      ]
+    },
+    {
+      "name": "documentation-lookup",
+      "source": "skills/documentation-lookup",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/documentation-lookup/SKILL.md",
+          "source": "skills/documentation-lookup/SKILL.md",
+          "upstream_sha256": "81ad2b5b4acbe02259f4b6cbfd9111d81d5cfe51025051b6048959c45f6516c1",
+          "imported_sha256": "06c39183ee60056318731344f18797e73b7306444d74cae60f6519afba30b601"
+        }
+      ],
+      "changes": [
+        "Added shared AIDLC integration and authority guidance after frontmatter.",
+        "Added actual tool discovery, schema checks, absent-tool stop, authorized official-docs fallback and data/permission limits.",
+        "Removed directive to forward the full unfiltered user question.",
+        "Aligned query best practice with minimum external data disclosure."
+      ],
+      "dependencies": [
+        {
+          "status": "optional-external-tool",
+          "name": "Context7 MCP resolve-library-id/query-docs",
+          "note": "Discover exposed schemas; stop Context7 path if unavailable. Already-authorized official documentation retrieval is an explicit fallback; no automatic installation."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "name": "dotnet-patterns",
+      "source": "skills/dotnet-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/dotnet-patterns/SKILL.md",
+          "source": "skills/dotnet-patterns/SKILL.md",
+          "upstream_sha256": "61bc21a6c6d6d1230d90f0bbebca55101b1b63de68ece8574152cbad152cef07",
+          "imported_sha256": "e57e5c18fdd37563a84e8be7fe963d22011263eb0746762188e61f55eba07d3e"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "e2e-testing",
+      "source": "skills/e2e-testing",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/e2e-testing/SKILL.md",
+          "source": "skills/e2e-testing/SKILL.md",
+          "upstream_sha256": "b0e00e7e17cb259101139900816c5528aed18dd10bcf5f9cb42cfc35baf8a755",
+          "imported_sha256": "9d4b5007b250751469b0ce2a75af8d2e25208614eb7b9e910deb77f9fafdbafc"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed.",
+        "Upstream illustrative Playwright configuration/API snippets retained; validate against the consuming app’s pinned Playwright version before use. No app test or CI configuration created."
+      ]
+    },
+    {
+      "name": "error-handling",
+      "source": "skills/error-handling/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/error-handling/SKILL.md",
+          "source": "skills/error-handling/SKILL.md",
+          "upstream_sha256": "e8eec6756c950b570486493e64e3bf14c12baf6bf0858bf3928097fe2bfeaf79",
+          "imported_sha256": "7974452b8b8ef7d04b80d59fd26413d9d3b8375cc67786d7eb116ed0c5d8f34c"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "eval-harness",
+      "source": "skills/eval-harness",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/eval-harness/SKILL.md",
+          "source": "skills/eval-harness/SKILL.md",
+          "upstream_sha256": "6a8fae5d958ff9b6bdf97c7d9217fdf0b2ec9196f61d125bac0a71468f7d44d0",
+          "imported_sha256": "78198ca25693e92ca3b49122e3549c41e28343fb7b385072fc325c9b56356a45"
+        }
+      ],
+      "changes": [
+        "Removed tools frontmatter runtime/permission coupling; actual session tools and permissions govern.",
+        "Added disable-model-invocation: true for manual selection.",
+        "Added shared AIDLC integration and authority guidance after frontmatter. Added selected manual scope and side-effect boundary.",
+        "Clarified reference workflow versus implemented/activated evaluation infrastructure.",
+        "Marked /eval as uninstalled legacy upstream syntax and provided manual workflow boundary; illustrative comments/reports are not execution evidence.",
+        "Made eval storage examples subordinate to existing AIDLC artifact lifecycle.",
+        "Reclassified external eval utilities as optional pinned upstream-only resources, avoiding broken assumed local runner paths.",
+        "Replaced non-bundled architecture reference with pinned upstream source link.",
+        "Clarified example artifact layout and sample ship status are not lifecycle/deployment authority."
+      ],
+      "dependencies": [
+        {
+          "source": "legacy-command-shims/commands/eval.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/legacy-command-shims/commands/eval.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled; manual eval guidance does not require the optional ECC command/framework."
+        },
+        {
+          "source": "scripts/lib/eval-harness",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/scripts/lib/eval-harness",
+          "status": "optional-upstream-only",
+          "note": "Not bundled; manual eval guidance does not require the optional ECC command/framework."
+        },
+        {
+          "source": "scripts/eval-harness.js",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/scripts/eval-harness.js",
+          "status": "optional-upstream-only",
+          "note": "Not bundled; manual eval guidance does not require the optional ECC command/framework."
+        },
+        {
+          "source": "docs/architecture/eval-harness-frameworks.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/docs/architecture/eval-harness-frameworks.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled; manual eval guidance does not require the optional ECC command/framework."
+        }
+      ],
+      "limits": [
+        "No /eval command or evaluation infrastructure activated.",
+        "Upstream candidate execution refuses gate.isolation_required because verified OS containment is not implemented; utility receipts/static checks are not containment or promotion proof."
+      ]
+    },
+    {
+      "name": "fastapi-patterns",
+      "source": "skills/fastapi-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/fastapi-patterns/SKILL.md",
+          "source": "skills/fastapi-patterns/SKILL.md",
+          "upstream_sha256": "f54c2bf5a61eeda47c939da265b1431d609c231611e71b688b0b734a064b18f3",
+          "imported_sha256": "bb43026a7aff52a325a3892575eb98b5e3f4c3d1f8f82bcfb0c7487ecee4516c"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "frontend-design-direction",
+      "source": "skills/frontend-design-direction",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/frontend-design-direction/SKILL.md",
+          "source": "skills/frontend-design-direction/SKILL.md",
+          "upstream_sha256": "fa254de821f708e5791c4c80d30309ac7da89c2888301e967becb3b21ac73331",
+          "imported_sha256": "2768716bfddec873f672a74d1af611d2c453c53f49aa0f011a3c7771bb89d27d"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Replaced external installation directive with optional non-installed upstream resource note; preserved community attribution."
+      ],
+      "dependencies": [
+        {
+          "source": "https://github.com/anthropics/skills",
+          "resolution": "Optional external skill source, not copied or installed; preserved linus707 / community PR #1659 attribution."
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "frontend-patterns",
+      "source": "skills/frontend-patterns",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/frontend-patterns/SKILL.md",
+          "source": "skills/frontend-patterns/SKILL.md",
+          "upstream_sha256": "a5b971eb9e74cd763c7e3308bfd888e0d9cf69f8b88477659889d77182479740",
+          "imported_sha256": "aaf6f86546d26a1db54b4928ef69aa5a45a88485197cdc1fa1251e5583155016"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "gan-style-harness",
+      "source": "skills/gan-style-harness",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/gan-style-harness/SKILL.md",
+          "source": "skills/gan-style-harness/SKILL.md",
+          "upstream_sha256": "d91da8ca4a77a797d9ab78bb748aeb16567d75a1b109c894dc07d8815aa19dde",
+          "imported_sha256": "16e8ad47a78052d8ff5ffbefd80425608d47fdc7847b73dc1af674aa2686c000"
+        }
+      ],
+      "changes": [
+        "Removed tools frontmatter runtime/permission coupling; actual session tools and permissions govern.",
+        "Added disable-model-invocation: true for manual selection.",
+        "Added shared AIDLC integration and authority guidance after frontmatter. Added selected manual scope and side-effect boundary.",
+        "Distinguished imported design guidance from a functioning installed harness.",
+        "Gated agent/browser availability and made model settings reference-only.",
+        "Removed automatic expansion of a brief into sixteen features.",
+        "Kept ambitious planning as proposals rather than unsolicited work.",
+        "Removed implicit git changes between generator iterations.",
+        "Removed planner model-change directive.",
+        "Removed generator model-change directive.",
+        "Removed evaluator model-change directive.",
+        "Added actionable bounded manual workflow and pinned optional runner/command/agent dependencies; documented unsafe automatic git side effects upstream.",
+        "Identified absent prompt filenames and CLI/tool assumptions as examples rather than implemented dependencies.",
+        "Removed permission-grant CLI flag from evaluator example.",
+        "Prevented reference environment table from implying configuration support in the imported skill.",
+        "Removed automatic session-context mutation instruction.",
+        "Qualified upstream performance/quality claims as unverified, non-guaranteed attribution."
+      ],
+      "dependencies": [
+        {
+          "source": "commands/gan-build.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/gan-build.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        },
+        {
+          "source": "commands/gan-design.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/gan-design.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        },
+        {
+          "source": "scripts/gan-harness.sh",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/scripts/gan-harness.sh",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        },
+        {
+          "source": "agents/gan-planner.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/gan-planner.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        },
+        {
+          "source": "agents/gan-generator.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/gan-generator.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        },
+        {
+          "source": "agents/gan-evaluator.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/gan-evaluator.md",
+          "status": "optional-upstream-only",
+          "note": "Not bundled or installed; manual guidance uses existing selected AIDLC workflows and actual available roles/tools."
+        }
+      ],
+      "limits": [
+        "No autonomous runner, agent registration, CLI command, provider/model override or permission grant installed.",
+        "Upstream runner requires separate review; automatic git initialization/commit prompts conflict with default AIDLC authority.",
+        "PLANNER_PROMPT.md/EVALUATOR_PROMPT.md are illustrative user-supplied names, not missing bundled files."
+      ]
+    },
+    {
+      "name": "git-workflow",
+      "source": "skills/git-workflow",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/git-workflow/SKILL.md",
+          "source": "skills/git-workflow/SKILL.md",
+          "upstream_sha256": "d34cfc7114b4479cac2b802f2463c39312cbab4a509313128cb83ac12a1b1eb6",
+          "imported_sha256": "e251376c300425c8d7d4c8b84451b6931b005df9294fd35163adb9c4b528ab11"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Added actual Git capability/target discovery, read/write boundary, user-work preservation and explicit destructive/history rewrite gate.",
+        "Qualified deployment, template/config changes, bulk branch cleanup, npx package execution and hook examples as separately authorized/reference-only; preserved branching, commit, merge/rebase, conflict and release guidance."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed.",
+        "Command examples include destructive and global operations for reference only; no commands, hooks, configuration, commits or pushes executed."
+      ]
+    },
+    {
+      "name": "github-ops",
+      "source": "skills/github-ops",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/github-ops/SKILL.md",
+          "source": "skills/github-ops/SKILL.md",
+          "upstream_sha256": "281e19fbf138c8d7ac7379864825721aa6f6efcf4008e976a6ea34b3c96e2b54",
+          "imported_sha256": "051b7f3112fb1c1a49776b43dfc547b25879e60a00b21ad27879d0be2f665329"
+        },
+        {
+          "path": ".claude/skills/github-ops/references/ecc-release-checklist.md",
+          "source": "skills/github-ops/references/ecc-release-checklist.md",
+          "upstream_sha256": "abeda37b5364854c0b3610227d3029706d6f42ec287573397abe795f4af8a463",
+          "imported_sha256": "12f6628e41b55681466fc6e3d55bb33e48cdb6312d09faeabbaeca73b0bc154c"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Replaced assumed gh/login setup with actual integration discovery and exact-target read/write authorization.",
+        "Changed automatic issue mutations to scoped proposals and separately authorized writes.",
+        "Removed automatic stale closures and policy imposition; historical dates explicitly illustrative.",
+        "Scoped bundled ECC release checklist as historical reference rather than inherited project policy.",
+        "Removed recurring security monitoring and expansive quality-gate writes; retained scoped evidence reporting.",
+        "Prepended reference-boundary notice to references/ecc-release-checklist.md; retained full historical ECC checklist and examples without installing its upstream scripts/tests/workflows."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/github-ops/references/ecc-release-checklist.md",
+          "kind": "bundled-historical-reference",
+          "path": ".claude/skills/github-ops/references/ecc-release-checklist.md"
+        }
+      ],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed.",
+        "gh/MCP credentials and remote operations were not exercised; bundled ECC release checklist is not AIDLC release policy or available scripts."
+      ]
+    },
+    {
+      "name": "golang-patterns",
+      "source": "skills/golang-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/golang-patterns/SKILL.md",
+          "source": "skills/golang-patterns/SKILL.md",
+          "upstream_sha256": "d643e354683167727cfeb76934855db988468cd15b3ca01db9a32db43902edf7",
+          "imported_sha256": "360eb9942150aa7aa5f5e336606916a9b78565ec668daf9a6914690a5c9de7b7"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Fixed pooled-buffer result ownership by copying bytes before returning the buffer to sync.Pool."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Only the corrected pooled-buffer ownership example was smoke-tested; the remaining Go examples were not executed."
+      ]
+    },
+    {
+      "name": "golang-testing",
+      "source": "skills/golang-testing/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/golang-testing/SKILL.md",
+          "source": "skills/golang-testing/SKILL.md",
+          "upstream_sha256": "e3399562c58590dfcbd09bfcbf8f401120a2ded0418eb33bbfca6c697ac485ad",
+          "imported_sha256": "7a3e1d02e8a62225f9f2817846167582210452c4458828f6dff8fc6d1aed60a0"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Clarified that upstream TDD/coverage targets are reference practices, not new project-wide gates or installation/CI authority."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "growth-log",
+      "source": "skills/growth-log",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/growth-log/SKILL.md",
+          "source": "skills/growth-log/SKILL.md",
+          "upstream_sha256": "8f90db7c9e84a570f68480a32075026fd98dc4c0dbc7ead0af8357e756274cee",
+          "imported_sha256": "1a9b5c3ec4b62cef5ddeb4bdb3f271a03e57ad2c8be68fc6d5114b8f632407f9"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true for manual selection.",
+        "Added shared AIDLC integration and authority guidance after frontmatter. Added selected manual scope and side-effect boundary.",
+        "Changed activation heading to manual selection.",
+        "Removed automatic learning capture after complex tasks.",
+        "Aligned duplicate/update behavior with canonical AIDLC learning lifecycle.",
+        "Removed implicit mutation of existing learning entries.",
+        "Removed unsupported browser-version attribution and unconditional cross-origin cookie fix while preserving learning example.",
+        "Removed nonexistent pandas read_csv(dropna=False) API from an illustrative lesson; retained root-cause pattern without inventing an API.",
+        "Subordinated generic storage examples to AIDLC solution artifacts and prohibited implicit global/remote writes.",
+        "Separated local learning requests from remote/global data mutation authority.",
+        "Pinned delivery-gate references and explicitly excluded hook installation/enforcement."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/delivery-gate/SKILL.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/delivery-gate/SKILL.md",
+          "status": "optional-upstream-only",
+          "note": "Optional upstream methodology/enforcement reference only; AIDLC learning remains manual."
+        },
+        {
+          "source": "skills/delivery-gate/hooks/quality-gate.py",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/delivery-gate/hooks/quality-gate.py",
+          "status": "optional-upstream-only",
+          "note": "Unbundled hook; never activate from this library."
+        }
+      ],
+      "limits": [
+        "No automatic capture, delivery gate, memory write or parallel learning store activated."
+      ]
+    },
+    {
+      "name": "inherit-legacy-style",
+      "source": "skills/inherit-legacy-style",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/inherit-legacy-style/SKILL.md",
+          "source": "skills/inherit-legacy-style/SKILL.md",
+          "upstream_sha256": "14e7b20424f123b594d3ee3d6ac3e722b21e5a6816fe90bacf8a23e6c3af5b6d",
+          "imported_sha256": "1a5e5f52e51fd0219c07eceb709732c0efd1d29127ee92e2d21f1529d2f1cf76"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Removed permission-grant allowed-tools frontmatter.",
+        "Removed description claim of persistent authority over subsequent tasks.",
+        "Replaced new mandatory root policy artifact with scoped advisory notes.",
+        "Separated read-only discovery from authorized artifact writes and removed host-tool assumptions.",
+        "Reused existing style artifact rather than creating duplicate root authority.",
+        "Gated style-artifact writes on selected scope.",
+        "Removed persistent soft/hard-hook installation workflow; replaced with scoped guidance handoff.",
+        "Removed private-reasoning compliance declaration and persistent per-turn enforcement.",
+        "Aligned workflow summary with no-hook boundary.",
+        "Removed duplicate persistent enforcement summary.",
+        "Aligned output contract with canonical artifacts and scope.",
+        "Removed remaining hard-hook authorization suggestion.",
+        "Removed soft/hard-hook best-practice directive.",
+        "Clarified nonbundled host suggestions and pinned optional code-review command.",
+        "Aligned onboarding example with scoped output and no hooks.",
+        "Reframed persistent enforcement example as scoped application.",
+        "Removed example that auto-loaded rules in every session."
+      ],
+      "dependencies": [
+        {
+          "source": "commands/code-review.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/code-review.md"
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "jira-integration",
+      "source": "skills/jira-integration",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/jira-integration/SKILL.md",
+          "source": "skills/jira-integration/SKILL.md",
+          "upstream_sha256": "ce0a0c815e3112a1e80d4dbd1d2d0c804c2af0371628d325e04d7ffbddf4247e",
+          "imported_sha256": "8c8349ae9a8ebf5fd8ec31f72f755c8244b6f88fc619222ca82a91a593ce27d2"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Replaced unconditional mcp-atlassian installation with existing connected MCP discovery, trusted site selection and explicit read/write authority; retained optional upstream configuration example.",
+        "Replaced assumed jira_* tool API with discovered connected Atlassian capability hints and schema/transition/link-direction discovery.",
+        "Updated legacy Jira Cloud search example to documented /rest/api/3/search/jql and noted pagination, HTTP errors and credentials constraints.",
+        "Qualified lifecycle comments, mentions and secret exclusions; removed uvx/shell configuration repair directive; kept ticket analysis, REST/comment templates and untrusted-content protections."
+      ],
+      "dependencies": [
+        {
+          "kind": "external-documentation",
+          "url": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/#api-rest-api-3-search-jql-get",
+          "purpose": "Enhanced Jira Cloud JQL search replacement verified from official reference."
+        }
+      ],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed.",
+        "Existing MCP is preferred; exact names/schemas/permissions must be discovered at use time. No Jira server, credentials, site, issue writes or REST calls configured/executed."
+      ]
+    },
+    {
+      "name": "kubernetes-patterns",
+      "source": "skills/kubernetes-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/kubernetes-patterns/SKILL.md",
+          "source": "skills/kubernetes-patterns/SKILL.md",
+          "upstream_sha256": "808b2ec032224e251f1bef9f6e9879e88e2e7abd0feb393632fb6042d8ac5ecc",
+          "imported_sha256": "c6260aecafa1d44515d4f6a516c456953305ad2ffb37fdf3ea9e5df9ebf3176f"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Separated cluster reads from mutation, execution, forwarding and server-contact authority; required explicit target and actual tool discovery; warned about illustrative secrets.",
+        "Pinned optional upstream skill references and linked selected manual git-workflow without claiming GitOps tools are installed."
+      ],
+      "dependencies": [
+        "Optional upstream ECC references: skills/docker-patterns/SKILL.md, skills/deployment-patterns/SKILL.md, skills/security-review/SKILL.md.",
+        "Selected local manual skill: git-workflow.",
+        "Kubernetes, kubectl, optional ingress/cert-manager, external-secret and GitOps controllers remain external prerequisites; none installed."
+      ],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "mcp-server-patterns",
+      "source": "skills/mcp-server-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/mcp-server-patterns/SKILL.md",
+          "source": "skills/mcp-server-patterns/SKILL.md",
+          "upstream_sha256": "eacb07c953e0440c758e3ee7d92984d2c9128e3444005ea7ad5da7bc0201d43d",
+          "imported_sha256": "86b230f35606d3678551e0bd3007026d5a04b10fddaf26f1e9a9e1bd41c82669"
+        },
+        {
+          "path": ".claude/skills/mcp-server-patterns/references/capability-surface-selection.md",
+          "source": "docs/capability-surface-selection.md",
+          "upstream_sha256": "1eedb96a9b406cf08397b113f5a77cf5c7fd0d64acabaaf29b3fdd3b334c2db8",
+          "imported_sha256": "8e01f2ceede96ff54646c40cc896eba669d4a5e6fa48fe16cdd970ee3ee59c49"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Bundled the actual relative documentation dependency under references and rewired its link.",
+        "Made Context7 optional and required actual-tool/SDK discovery; separated read access from server setup and write authority.",
+        "Removed speculative interchangeable SDK overload signatures while preserving registration guidance and requiring version-matched authoritative APIs.",
+        "Added an AIDLC scope note to bundled capability-surface-selection.md; its ECC policy remains upstream context, not an AIDLC framework change."
+      ],
+      "dependencies": [
+        "Bundled docs/capability-surface-selection.md as references/capability-surface-selection.md.",
+        "Context7 is optional; accessible version-matched official MCP documentation is an alternative. SDK and Zod remain project prerequisites; none installed."
+      ],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "parallel-execution-optimizer",
+      "source": "skills/parallel-execution-optimizer",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/parallel-execution-optimizer/SKILL.md",
+          "source": "skills/parallel-execution-optimizer/SKILL.md",
+          "upstream_sha256": "b44def0f7c24ab2505bd2eee10ceb777d591724dbe32dfdf5220354385e1e3ab",
+          "imported_sha256": "03b247d38c928e492a4656677107d3bffcafd7e698686cf7d4dd37d419582384"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Removed tools frontmatter runtime coupling; preserved MIT license metadata.",
+        "Added host capability discovery, blocked/serial fallback and inherited authority boundary without introducing an orchestrator.",
+        "Qualified worktree creation/cleanup, process ownership and independently authorized backfill/deploy effects."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed.",
+        "No orchestration/runtime supplied; concurrency and process supervision depend on discovered host capabilities."
+      ]
+    },
+    {
+      "name": "postgres-patterns",
+      "source": "skills/postgres-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/postgres-patterns/SKILL.md",
+          "source": "skills/postgres-patterns/SKILL.md",
+          "upstream_sha256": "9c8c391ae9e9aa87faa7ca091e1d395c97766df14080d0bfbea8a97721776163",
+          "imported_sha256": "2257c571454b9bfb6e61b6b8b230383834f7f6dcc8dc6ed92f5eb0b94b65d443"
+        },
+        {
+          "path": ".claude/skills/postgres-patterns/SUPABASE-LICENSE",
+          "source": "https://raw.githubusercontent.com/supabase/agent-skills/8331f910845103c08d51f6ca1d86ebb7d1f745e3/LICENSE",
+          "upstream_sha256": "b65e575eb4f04a13c187d64e958321298e2ab84d67aa8428819f362056ba292c",
+          "imported_sha256": "b65e575eb4f04a13c187d64e958321298e2ab84d67aa8428819f362056ba292c"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Replaced mandatory unavailable database-reviewer invocation with an optional pinned upstream reference.",
+        "Added explicit database mutation versus read-only authority, cluster-setting impact and actual-tool prerequisites; identified Supabase-specific auth.uid().",
+        "Pinned unselected agent/ClickHouse references and linked selected backend-patterns locally; retained Supabase MIT attribution.",
+        "Retained supplementary Supabase MIT notice at pinned secondary source revision and linked it from the skill."
+      ],
+      "dependencies": [
+        "Optional upstream ECC references: agents/database-reviewer.md and skills/clickhouse-io/SKILL.md.",
+        "Selected local skill: backend-patterns.",
+        "Examples require PostgreSQL and, where shown, Supabase auth schema or pg_stat_statements extension; none installed."
+      ],
+      "limits": [
+        "Reference examples were not run against a PostgreSQL server.",
+        "ECC does not identify the original Supabase derivation revision; the supplementary license revision is recorded separately."
+      ]
+    },
+    {
+      "name": "production-audit",
+      "source": "skills/production-audit",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/production-audit/SKILL.md",
+          "source": "skills/production-audit/SKILL.md",
+          "upstream_sha256": "3ab3dd8a364ee17566e9361f0ebed2aec3b3146ede44e1db0a72c5ceae1ca0a4",
+          "imported_sha256": "cdf17752aadfa2862d20ec2506608f28dbbf5c2399399e98ac63fcf84af17fbf"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true for manual selection.",
+        "Added shared AIDLC integration and authority guidance after frontmatter. Added selected manual scope and side-effect boundary.",
+        "Added tool discovery/unavailable-path stop and explicit local/remote read versus mutation boundaries.",
+        "Separated authorized production observations from credentials, active probes and data mutations.",
+        "Linked bundled security checklist without assuming agent availability.",
+        "Made deployment-patterns a pinned optional upstream reference, not assumed local skill/command.",
+        "Made e2e-testing a pinned optional upstream reference, not assumed local skill/command.",
+        "Made tdd-workflow a pinned optional upstream reference, not assumed local skill/command.",
+        "Made verification-loop a pinned optional upstream reference, not assumed local skill/command."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/deployment-patterns/SKILL.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/deployment-patterns/SKILL.md",
+          "status": "optional-upstream-only",
+          "note": "Optional further guidance; not required or activated by this audit."
+        },
+        {
+          "source": "skills/e2e-testing/SKILL.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/e2e-testing/SKILL.md",
+          "status": "optional-upstream-only",
+          "note": "Optional further guidance; not required or activated by this audit."
+        },
+        {
+          "source": "skills/tdd-workflow/SKILL.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/tdd-workflow/SKILL.md",
+          "status": "optional-upstream-only",
+          "note": "Optional further guidance; not required or activated by this audit."
+        },
+        {
+          "source": "skills/verification-loop/SKILL.md",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/verification-loop/SKILL.md",
+          "status": "optional-upstream-only",
+          "note": "Optional further guidance; not required or activated by this audit."
+        }
+      ],
+      "limits": [
+        "Read-only local evidence by default; production reads and all mutation/probing are separately scoped. Readiness scores are triage, not certification or deployment approval."
+      ]
+    },
+    {
+      "name": "python-patterns",
+      "source": "skills/python-patterns/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/python-patterns/SKILL.md",
+          "source": "skills/python-patterns/SKILL.md",
+          "upstream_sha256": "103e0130dac33a49d26705fc5a2df804980fcab6a0138d65bc7f370a987d49f6",
+          "imported_sha256": "8e6b3c228ec9e61a49a2a8b8cc39bd8f7d449d31aa82440896e015c4146b53bb"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "python-testing",
+      "source": "skills/python-testing/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/python-testing/SKILL.md",
+          "source": "skills/python-testing/SKILL.md",
+          "upstream_sha256": "b9f7a158dae3b6c06c9c75ffe84e27a1edc86092d2afdcb39e96fc2569902eb7",
+          "imported_sha256": "90f41a65b97e3364eebc7d6a6300230adbc2391091d8fb59af0c31b3791bb86d"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph and usage link; retained name, description, metadata and auto-discovery behavior. No permission-grant or runtime-coupled frontmatter fields were present.",
+        "Clarified that upstream TDD/coverage targets are reference practices, not new project-wide gates or installation/CI authority."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Imported as reference content; examples were not executed or runtime-verified."
+      ]
+    },
+    {
+      "name": "react-patterns",
+      "source": "skills/react-patterns",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/react-patterns/SKILL.md",
+          "source": "skills/react-patterns/SKILL.md",
+          "upstream_sha256": "f3208d44a5d553038c42e046cec4dc16e4a3d90a9dbf931f883a2e21919a64a9",
+          "imported_sha256": "a976100e8cb4878b220c5bc42a133b67a7e2627955dbb00532e0f98a738703d7"
+        },
+        {
+          "path": ".claude/skills/react-patterns/references/rules/react/hooks.md",
+          "source": "rules/react/hooks.md",
+          "upstream_sha256": "64154bbbc881d4b6660376581babae009351ef38f7602ca2d26a640ed253d774",
+          "imported_sha256": "21f1b895db511f1f6f2139b7ad94d76c9438f562cb7e2eef8eaa6aa152018763"
+        },
+        {
+          "path": ".claude/skills/react-patterns/references/rules/typescript/patterns.md",
+          "source": "rules/typescript/patterns.md",
+          "upstream_sha256": "20870f78aa32429fe13f35b415e9f6f8f7809e39c460cf8146d181b7306159fd",
+          "imported_sha256": "7dc8316f258f2e1fe696a46089fb506681f13324a72f1aa97fab0623fa99f9c4"
+        },
+        {
+          "path": ".claude/skills/react-patterns/references/rules/common/patterns.md",
+          "source": "rules/common/patterns.md",
+          "upstream_sha256": "8a32c0552c8b309e961ef3f68a56ae84b0b1d411c17f23675ec26b685dea5e9a",
+          "imported_sha256": "a0a19174e1aa104eb429c18f3abb629368dc0732571175ab40a4d148a1e73736"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Replaced missing accessibility local links with optional pinned upstream reference.",
+        "Replaced missing angular-developer local links with optional pinned upstream reference.",
+        "Converted wider React rule-directory reference to optional pinned upstream link.",
+        "Marked react-reviewer as optional upstream-only agent; no assumed runtime availability.",
+        "Marked react-build-resolver as optional upstream-only agent; no assumed runtime availability.",
+        "Marked /react-review as optional upstream-only command; no assumed command availability.",
+        "Marked /react-build as optional upstream-only command; no assumed command availability.",
+        "Marked /react-test as optional upstream-only command; no assumed command availability.",
+        "Bundled React hooks rules with local parent-rule dependencies.",
+        "references/rules/react/hooks.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/react/hooks.md: Kept hooks guidance while removing implicit permission to install lint tooling or impose CI settings.",
+        "references/rules/typescript/patterns.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/common/patterns.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/common/patterns.md: Scoped skeleton/clone workflow to explicitly requested scaffolding; reuse existing app and discover agent availability."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/accessibility/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/accessibility/SKILL.md"
+        },
+        {
+          "source": "skills/angular-developer/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/angular-developer/SKILL.md"
+        },
+        {
+          "source": "agents/react-reviewer.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/react-reviewer.md"
+        },
+        {
+          "source": "agents/react-build-resolver.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/react-build-resolver.md"
+        },
+        {
+          "source": "commands/react-review.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-review.md"
+        },
+        {
+          "source": "commands/react-build.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-build.md"
+        },
+        {
+          "source": "commands/react-test.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-test.md"
+        },
+        {
+          "source": "rules/react/hooks.md",
+          "resolution": "Bundled advisory reference at references/rules/react/hooks.md"
+        },
+        {
+          "source": "rules/typescript/patterns.md",
+          "resolution": "Bundled advisory reference at references/rules/typescript/patterns.md"
+        },
+        {
+          "source": "rules/common/patterns.md",
+          "resolution": "Bundled advisory reference at references/rules/common/patterns.md"
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "react-performance",
+      "source": "skills/react-performance",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/react-performance/SKILL.md",
+          "source": "skills/react-performance/SKILL.md",
+          "upstream_sha256": "ac76e8694d4f802a7bccc3c07a73ac68ace6d82a65ea10f10d8b7384dda61a8f",
+          "imported_sha256": "c156d72a18bf6e1ccbaf32593ab2dd124d12c1be5ef6dcab70567256ed7bd2c9"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Replaced missing accessibility local links with optional pinned upstream reference.",
+        "Replaced missing nextjs-turbopack local links with optional pinned upstream reference.",
+        "Converted wider React rule-directory reference to optional pinned upstream link.",
+        "Marked react-reviewer as optional upstream-only agent; no assumed runtime availability.",
+        "Marked react-build-resolver as optional upstream-only agent; no assumed runtime availability.",
+        "Marked /react-review as optional upstream-only command; no assumed command availability.",
+        "Marked /react-build as optional upstream-only command; no assumed command availability.",
+        "Marked /react-test as optional upstream-only command; no assumed command availability."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/accessibility/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/accessibility/SKILL.md"
+        },
+        {
+          "source": "skills/nextjs-turbopack/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/nextjs-turbopack/SKILL.md"
+        },
+        {
+          "source": "agents/react-reviewer.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/react-reviewer.md"
+        },
+        {
+          "source": "agents/react-build-resolver.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/react-build-resolver.md"
+        },
+        {
+          "source": "commands/react-review.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-review.md"
+        },
+        {
+          "source": "commands/react-build.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-build.md"
+        },
+        {
+          "source": "commands/react-test.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-test.md"
+        },
+        {
+          "source": "https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices",
+          "resolution": "Optional external original ruleset; existing ECC attribution retained. Not copied or installed."
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed.",
+        "Retained Vercel Engineering attribution from ECC. Vercel react-best-practices SKILL.md independently declares MIT (author vercel, version 1.0.0); current root/skill API listings contain no separate LICENSE and root LICENSE returns 404. No fabricated Vercel license file or unrequested third-party bundle added."
+      ]
+    },
+    {
+      "name": "react-testing",
+      "source": "skills/react-testing",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/react-testing/SKILL.md",
+          "source": "skills/react-testing/SKILL.md",
+          "upstream_sha256": "51c18b4e28285bb876ef469e47c6f53108b5a9f900950a60e897c3c24826a65e",
+          "imported_sha256": "34b72625c99664fa20419617c5b6d2f8fd31b89d2ad099aede8280c28d93d820"
+        },
+        {
+          "path": ".claude/skills/react-testing/references/rules/react/testing.md",
+          "source": "rules/react/testing.md",
+          "upstream_sha256": "ae5d05b9e4f706f73f741c3591e880b873da49a7efd02253a381960245bf655f",
+          "imported_sha256": "31cb91d8a3093c75c4c55bb28eb6e0e4e1ddb93e978fc00f5d6172d789d81dae"
+        },
+        {
+          "path": ".claude/skills/react-testing/references/rules/typescript/testing.md",
+          "source": "rules/typescript/testing.md",
+          "upstream_sha256": "92e3d02b4fff30899bc1a2af043d74941adbf3b2c0e972d2fcd2c68c9c2ea70b",
+          "imported_sha256": "c0bcbc833d4484d106cea33074a6a128090a2292738b08319d7b014b077dfba1"
+        },
+        {
+          "path": ".claude/skills/react-testing/references/rules/common/testing.md",
+          "source": "rules/common/testing.md",
+          "upstream_sha256": "09314a247342c12698deb308c2d0ffcf80b58341274bb8f9bba63fa03ce33323",
+          "imported_sha256": "b1b4a2a509d75fda4a701a46c37e8c3d88e27ebe8543d7b42e15e4a925f491ae"
+        }
+      ],
+      "changes": [
+        "Added AIDLC integration paragraph with project/artifact precedence, explicit authority boundaries and skill-specific scope/tooling guidance.",
+        "Replaced missing accessibility local links with optional pinned upstream reference.",
+        "Replaced missing tdd-workflow local links with optional pinned upstream reference.",
+        "Marked react-reviewer as optional upstream-only agent; no assumed runtime availability.",
+        "Marked tdd-guide as optional upstream-only agent; no assumed runtime availability.",
+        "Marked /react-review as optional upstream-only command; no assumed command availability.",
+        "Marked /react-test as optional upstream-only command; no assumed command availability.",
+        "Bundled React testing rules with local parent-rule dependencies.",
+        "references/rules/react/testing.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/react/testing.md: Resolved bundled rule links to imported e2e-testing and owning react-testing skill.",
+        "references/rules/react/testing.md: Preserved existing test framework lanes and made coverage targets illustrative.",
+        "references/rules/typescript/testing.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/typescript/testing.md: Preserved existing E2E framework rather than mandating Playwright migration.",
+        "references/rules/typescript/testing.md: Marked e2e-runner optional upstream-only with pinned source.",
+        "references/rules/common/testing.md: Added advisory-reference notice; file is a bundled reference, not an installed ECC rule.",
+        "references/rules/common/testing.md: Made coverage, test-layer and TDD mandates subordinate to existing project policy.",
+        "references/rules/common/testing.md: Removed proactive unavailable-agent directive; linked optional upstream tdd-guide."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/accessibility/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/accessibility/SKILL.md"
+        },
+        {
+          "source": "skills/tdd-workflow/SKILL.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/tdd-workflow/SKILL.md"
+        },
+        {
+          "source": "agents/react-reviewer.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/react-reviewer.md"
+        },
+        {
+          "source": "agents/tdd-guide.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/tdd-guide.md"
+        },
+        {
+          "source": "commands/react-review.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-review.md"
+        },
+        {
+          "source": "commands/react-test.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/commands/react-test.md"
+        },
+        {
+          "source": "rules/react/testing.md",
+          "resolution": "Bundled advisory reference at references/rules/react/testing.md"
+        },
+        {
+          "source": "agents/e2e-runner.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/e2e-runner.md"
+        },
+        {
+          "source": "rules/typescript/testing.md",
+          "resolution": "Bundled advisory reference at references/rules/typescript/testing.md"
+        },
+        {
+          "source": "agents/tdd-guide.md",
+          "resolution": "Optional upstream-only; not installed by this import.",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/agents/tdd-guide.md"
+        },
+        {
+          "source": "rules/common/testing.md",
+          "resolution": "Bundled advisory reference at references/rules/common/testing.md"
+        }
+      ],
+      "limits": [
+        "Reference import only: no runtime verification or commands, tests, builds, linters or formatters executed."
+      ]
+    },
+    {
+      "name": "security-review",
+      "source": "skills/security-review",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/security-review/SKILL.md",
+          "source": "skills/security-review/SKILL.md",
+          "upstream_sha256": "fe6f9151fb15c1dffd47a55080c3ad147af7c95dd0ad3714735dec6824b060b7",
+          "imported_sha256": "2725f95dc97a79424227310ff09cd4eb2f9a8ee2a6c6edd99bec578308db86b0"
+        },
+        {
+          "path": ".claude/skills/security-review/cloud-infrastructure-security.md",
+          "source": "skills/security-review/cloud-infrastructure-security.md",
+          "upstream_sha256": "7d9a83852475a9396e04c59c73df84ac24ee0f41322016de7c11c62138c2a8ca",
+          "imported_sha256": "589e09576e69564e8d22d7dbeee12f4fdf50e6cb37118b97a9aafce96a655215"
+        }
+      ],
+      "changes": [
+        "Added shared AIDLC integration and authority guidance after frontmatter.",
+        "Added reviewer authority, actual capability discovery, security-evidence limits, read/write separation and bundled cloud-resource link.",
+        "Replaced invalid Solana verify import/base64 public-key assumption with explicitly conceptual wallet-verification guidance, not a fake API.",
+        "Separated dependency report retrieval/network exposure from installation and automatic mutation examples.",
+        "cloud-infrastructure-security.md: added AIDLC authority, cloud read/write boundaries, actual capability discovery and explicit illustrative/pseudocode limits; removed compliance guarantee.",
+        "cloud-infrastructure-security.md: marked mutable CI action references as unsafe for direct adoption and required reviewed immutable pins before any authorized activation.",
+        "cloud-infrastructure-security.md: renamed recursive package install lifecycle example to an explicit ci:install script."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/security-review/cloud-infrastructure-security.md",
+          "path": ".claude/skills/security-review/cloud-infrastructure-security.md",
+          "status": "bundled-reference",
+          "note": "Full canonical supporting resource; read-only review guidance, no cloud authority."
+        }
+      ],
+      "limits": [
+        "Security and cloud examples remain illustrative; actual versions/project interfaces require documentation checks before use.",
+        "Bundled checklist does not activate security agents, CI, cloud configuration or automatic dependency remediation."
+      ]
+    },
+    {
+      "name": "terminal-ops",
+      "source": "skills/terminal-ops",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/terminal-ops/SKILL.md",
+          "source": "skills/terminal-ops/SKILL.md",
+          "upstream_sha256": "f26e518e6922fe0796f5b6a55349a409f5b03745c4eeed9be80b4c66d890d852",
+          "imported_sha256": "91f56b8cdc31f1203050be055be7f0536f0711468f967b30a7de6b04574324d4"
+        }
+      ],
+      "changes": [
+        "Added disable-model-invocation: true and AIDLC integration scope/authority paragraph; retained upstream name, description and origin metadata.",
+        "Converted optional skill stack into pinned upstream references and a selected local github-ops companion; no assumed extra commands.",
+        "Added terminal capability discovery, command side-effect inspection and explicit no permission bypass/global changes."
+      ],
+      "dependencies": [
+        {
+          "source": "skills/verification-loop/SKILL.md",
+          "kind": "optional-upstream-reference",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/verification-loop/SKILL.md"
+        },
+        {
+          "source": "skills/tdd-workflow/SKILL.md",
+          "kind": "optional-upstream-reference",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/tdd-workflow/SKILL.md"
+        },
+        {
+          "source": "skills/security-review/SKILL.md",
+          "kind": "optional-upstream-reference",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/security-review/SKILL.md"
+        },
+        {
+          "source": "skills/knowledge-ops/SKILL.md",
+          "kind": "optional-upstream-reference",
+          "url": "https://github.com/affaan-m/everything-claude-code/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/knowledge-ops/SKILL.md"
+        },
+        {
+          "source": "skills/github-ops/SKILL.md",
+          "kind": "optional-selected-companion",
+          "path": ".claude/skills/github-ops/SKILL.md"
+        }
+      ],
+      "limits": [
+        "Documentation imported only; no operational instructions, scripts, setup, validation commands or runtime integrations executed."
+      ]
+    },
+    {
+      "name": "architecture-decision-records",
+      "source": "skills/architecture-decision-records/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/architecture-decision-records/SKILL.md",
+          "source": "skills/architecture-decision-records/SKILL.md",
+          "upstream_sha256": "525e51b4ed98222cd49ea7d2e42b51a010ecab391b25022a86164258c14b8bb0",
+          "imported_sha256": "047a20d36eb6d761598c103bb4ec0f7564f11c870b9c12847812d28230551c67"
+        }
+      ],
+      "changes": [
+        "Added when_to_use frontmatter and one AIDLC integration paragraph after the frontmatter; retained name, description, origin metadata and auto-discovery behavior. Upstream body retained byte-for-byte.",
+        "Integration paragraph points the skill at the existing docs/adr/ store (template.md, README.md index; supersede, never renumber), requires confirmation-before-write (AskUserQuestion) and a Read-back, forbids invented context/alternatives/deciders/dates, and maps the upstream 'Planner agent' and 'Code reviewer agent' references to lbvs-aidlc-design/lbvs-aidlc-plan (offer an ADR) and lbvs-aidlc-review (finding, not blocker)."
+      ],
+      "dependencies": [
+        "Local knowledge store: docs/adr/README.md and docs/adr/template.md (present; the skill's first-time initialisation step does not apply).",
+        "Selected local stage skills that invoke it: lbvs-aidlc-design, lbvs-aidlc-review (offer/flag only; no ECC planner or code-reviewer agents are installed)."
+      ],
+      "limits": [
+        "Imported as reference content; ADR detection and writing were not executed or runtime-verified.",
+        "Upstream 'auto-detects decision moments' is advisory only: no ADR is written without explicit confirmation."
+      ]
+    },
+    {
+      "name": "continuous-learning-v2",
+      "source": "skills/continuous-learning-v2",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/continuous-learning-v2/SKILL.md",
+          "source": "skills/continuous-learning-v2/SKILL.md",
+          "upstream_sha256": "ddad12451a0d582c6ef1b197b7be193bef613cbc74eba4117fcb74fc7a4ecd00",
+          "imported_sha256": "de79b169c334a89bd11b4bbbcea10ee9691fe233a320fad56f6189ebf4b389c5"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/config.json",
+          "source": "skills/continuous-learning-v2/config.json",
+          "upstream_sha256": "6f17e7a99aafe252ecd0b9212fb5f606be50b8ce1685f5a6435e46e87ffeb970",
+          "imported_sha256": "6f17e7a99aafe252ecd0b9212fb5f606be50b8ce1685f5a6435e46e87ffeb970"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/hooks/observe.sh",
+          "source": "skills/continuous-learning-v2/hooks/observe.sh",
+          "upstream_sha256": "90575005307d1df31166a2da239cf8c362608524f6aeaa849df3d0b4e3e35f79",
+          "imported_sha256": "90575005307d1df31166a2da239cf8c362608524f6aeaa849df3d0b4e3e35f79"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/detect-project.sh",
+          "source": "skills/continuous-learning-v2/scripts/detect-project.sh",
+          "upstream_sha256": "43215ad15ce0c6585c13b1c45cbba6bf8df0dc459b663ddca77c0b86c459c283",
+          "imported_sha256": "43215ad15ce0c6585c13b1c45cbba6bf8df0dc459b663ddca77c0b86c459c283"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/instinct-cli.py",
+          "source": "skills/continuous-learning-v2/scripts/instinct-cli.py",
+          "upstream_sha256": "a2e90e34ee589827592248dbc801bee90f1d5db6d2330e2d5004e4694b8e06f9",
+          "imported_sha256": "a2e90e34ee589827592248dbc801bee90f1d5db6d2330e2d5004e4694b8e06f9"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/migrate-homunculus.sh",
+          "source": "skills/continuous-learning-v2/scripts/migrate-homunculus.sh",
+          "upstream_sha256": "34f121c143a676d330f06209618aae8cb08f8155298cb5fa70c893314bf9b303",
+          "imported_sha256": "34f121c143a676d330f06209618aae8cb08f8155298cb5fa70c893314bf9b303"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/test_parse_instinct.py",
+          "source": "skills/continuous-learning-v2/scripts/test_parse_instinct.py",
+          "upstream_sha256": "acf556e8a8023347b35988bb490927a4e9f65f2579b03f26cad610687656605b",
+          "imported_sha256": "acf556e8a8023347b35988bb490927a4e9f65f2579b03f26cad610687656605b"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/lib/homunculus-dir.sh",
+          "source": "skills/continuous-learning-v2/scripts/lib/homunculus-dir.sh",
+          "upstream_sha256": "99dfa99ae0f7c6e2e15ed5b5bf3c46e91a5f089f4060ba93d5da5e85e04fd308",
+          "imported_sha256": "99dfa99ae0f7c6e2e15ed5b5bf3c46e91a5f089f4060ba93d5da5e85e04fd308"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/observer-loop.sh",
+          "source": "skills/continuous-learning-v2/agents/observer-loop.sh",
+          "upstream_sha256": "a6d119252c8ff2eda7aa7b345c2254fd6bdaf14056f6b5bf54835a2738ff310d",
+          "imported_sha256": "a6d119252c8ff2eda7aa7b345c2254fd6bdaf14056f6b5bf54835a2738ff310d"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/observer.md",
+          "source": "skills/continuous-learning-v2/agents/observer.md",
+          "upstream_sha256": "320d50ff2965efeabd6f07c2be134e11da160293e958c1bc27c309d613839ad2",
+          "imported_sha256": "320d50ff2965efeabd6f07c2be134e11da160293e958c1bc27c309d613839ad2"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/session-guardian.sh",
+          "source": "skills/continuous-learning-v2/agents/session-guardian.sh",
+          "upstream_sha256": "ee6e4c0990f8d538cae1c85aa194e01e9ca2336e5d993ef68eb608b96cb0d82c",
+          "imported_sha256": "ee6e4c0990f8d538cae1c85aa194e01e9ca2336e5d993ef68eb608b96cb0d82c"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/start-observer.sh",
+          "source": "skills/continuous-learning-v2/agents/start-observer.sh",
+          "upstream_sha256": "1f9a22da11e23d3551b8f8d0951a656150a532b326818627d9914ffd484a86e6",
+          "imported_sha256": "1f9a22da11e23d3551b8f8d0951a656150a532b326818627d9914ffd484a86e6"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-status.md",
+          "source": "commands/instinct-status.md",
+          "upstream_sha256": "4c6dfbea0a0a9105121410391b05983f71f4317ccf166a52955fc5972600fcce",
+          "imported_sha256": "4c6dfbea0a0a9105121410391b05983f71f4317ccf166a52955fc5972600fcce"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/evolve.md",
+          "source": "commands/evolve.md",
+          "upstream_sha256": "c8f94e2d2517539fd3e3cf05edb5a7187a887d76f2c936798e93e546f8b30ebb",
+          "imported_sha256": "c8f94e2d2517539fd3e3cf05edb5a7187a887d76f2c936798e93e546f8b30ebb"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-export.md",
+          "source": "commands/instinct-export.md",
+          "upstream_sha256": "cd2052ae1b9c49f75ad81aae6e236be959cc6656d32e3b8f3e6e13d2d3bd2d3c",
+          "imported_sha256": "cd2052ae1b9c49f75ad81aae6e236be959cc6656d32e3b8f3e6e13d2d3bd2d3c"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-import.md",
+          "source": "commands/instinct-import.md",
+          "upstream_sha256": "30514ada563953a1eafa46a09644831969aaae7672068777267e0b801814e7d9",
+          "imported_sha256": "30514ada563953a1eafa46a09644831969aaae7672068777267e0b801814e7d9"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/promote.md",
+          "source": "commands/promote.md",
+          "upstream_sha256": "8d2faf47b1322c24a1dfa221b2f5e85b9e766fcd1d460c157c472246a3b86846",
+          "imported_sha256": "8d2faf47b1322c24a1dfa221b2f5e85b9e766fcd1d460c157c472246a3b86846"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/projects.md",
+          "source": "commands/projects.md",
+          "upstream_sha256": "dc939242028d24119b985e6ad4fee3d6c8185f6bd19c716535384149bc9876f3",
+          "imported_sha256": "dc939242028d24119b985e6ad4fee3d6c8185f6bd19c716535384149bc9876f3"
+        }
+      ],
+      "changes": [
+        "SKILL.md: added disable-model-invocation: true to the frontmatter.",
+        "SKILL.md: added the AIDLC integration paragraph after the frontmatter (no hooks registered or written by this package; enabled only through the separate lbvs-aidlc-observer@lbvs-aidlc plugin, defaultEnabled false, whose enable command /lbvs-aidlc-init prints; data under ${XDG_DATA_HOME:-~/.local/share}/ecc-homunculus/; /lbvs-aidlc-learn remains the per-change lesson; commands/ are reference copies). Upstream body retained byte-for-byte.",
+        "Nothing else edited: config.json, hooks/, scripts/, agents/ and commands/ are verbatim upstream with executable bits preserved on the shell scripts."
+      ],
+      "dependencies": [
+        "Upstream commands/{instinct-status,evolve,instinct-export,instinct-import,promote,projects}.md are bundled under commands/ as reference copies only; they are not registered as project commands. scripts/instinct-cli.py is the executable path.",
+        "hooks/observe.sh requires python3 and git; agents/start-observer.sh requires the claude CLI (Haiku observer). Neither is registered or started by this package."
+      ],
+      "limits": [
+        "Off by default: this package registers no PreToolUse/PostToolUse hook and /lbvs-aidlc-init writes no settings.json. Enablement is the engineer's own `claude plugin enable lbvs-aidlc-observer@lbvs-aidlc` (or `omp plugin enable`); observer.enabled stays false in config.json.",
+        "Observations include tool inputs and outputs (truncated to 5000 characters each) and are stored outside every repository; nothing is written into the repository.",
+        "Imported as reference content; hooks, observer and instinct CLI were not executed or runtime-verified."
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "path": "docs/vendor/ecc/LICENSE",
+      "source": "LICENSE",
+      "upstream_sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+      "imported_sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2"
+    },
+    {
+      "path": "mcp-configs/ecc.mcp-servers.example.json",
+      "source": "mcp-configs/mcp-servers.json",
+      "upstream_sha256": "1424c0de0ee3efd13ebbb8e9724c26e6b7dc604b7edeff6616b2c71cb4c6bd46",
+      "imported_sha256": "1424c0de0ee3efd13ebbb8e9724c26e6b7dc604b7edeff6616b2c71cb4c6bd46",
+      "mode": "inactive-verbatim-upstream-catalog"
+    }
+  ],
+  "additional_candidates": [
+    {
+      "name": "frontend-a11y",
+      "imported": false,
+      "source": "https://github.com/affaan-m/ECC/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/frontend-a11y/SKILL.md"
+    },
+    {
+      "name": "django-patterns",
+      "imported": false,
+      "source": "https://github.com/affaan-m/ECC/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/django-patterns/SKILL.md"
+    },
+    {
+      "name": "docker-patterns",
+      "imported": false,
+      "source": "https://github.com/affaan-m/ECC/blob/8321021c54d670126ce3b2969d5deb880b4b0c2a/skills/docker-patterns/SKILL.md"
+    }
+  ]
+}
