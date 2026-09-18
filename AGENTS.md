@@ -28,6 +28,7 @@ Company AIDLC package from Anthropic's AI-native SDLC playbook, exported as a re
 - Read `.compound-engineering/config.yaml` for `docs_root` before touching `solutions/` or `ideation/` stores; never probe the defaults speculatively.
 - `Logicbroker/app-template` and `Logicbroker/app-delivery-kit` are internal repositories: fetch files with an authenticated `gh api repos/<owner>/<repo>/contents/<path>`; raw links 404.
 - `.mcp.json` holds no credentials: `context7` is anonymous or `CONTEXT7_API_KEY` = `Bearer <key>` (literal prefix), `github` needs `GITHUB_PERSONAL_ACCESS_TOKEN`, `atlassian` authenticates by OAuth via `/mcp`. `mcp-configs/` is an inactive upstream snapshot — never load it with `--mcp-config`.
+- Write prose to the `unslop` rules (`.claude/skills/unslop/SKILL.md`, rules cited by number): plain words, whole sentences, no filler, no em dashes, facts over feeling. Applies to docs, skills, templates, artifacts, PR bodies and lessons; commands, EARS lines and quoted labels stay verbatim.
 - Report actual commands, results and limits. Keep this file short; add a rule only when a verified mistake recurs.
 
 ## Things Claude gets wrong here

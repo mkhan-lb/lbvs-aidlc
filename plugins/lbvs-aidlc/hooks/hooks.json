@@ -38,8 +38,14 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git *)",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/commit-guard.sh\"",
+            "if": "Bash(gh *)",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/pr-guard.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/pr-guard.sh\"",
             "timeout": 10
           }
         ]

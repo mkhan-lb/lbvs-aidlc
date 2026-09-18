@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/cursor/plugins",
+    "commit": "e8d856f0273b42ebafe0ec3546bd645709e7c1b0",
+    "source_tree": "pstack/skills",
+    "license": "MIT (pstack/LICENSE, Copyright (c) 2026 Lauren Tan)",
+    "license_file": "docs/vendor/cursor-plugins/LICENSE"
+  },
+  "notes": [
+    "Copied on 2026-09-18 at the engineer's request as a writing rule set, not as a pstack plugin install; no pstack agents, automations or other skills were imported.",
+    "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating."
+  ],
+  "skills": [
+    {
+      "name": "unslop",
+      "source": "pstack/skills/unslop/SKILL.md",
+      "manual": false,
+      "files": [
+        {
+          "path": ".claude/skills/unslop/SKILL.md",
+          "source": "pstack/skills/unslop/SKILL.md",
+          "upstream_sha256": "c6d2572294d933a428211921069e9a248490e9b466ca59437cb4d9de248600ca",
+          "imported_sha256": "dd3537657d0a88ffaaf8ebffe29fcd3fad7ea219b9790136df85255987d0513f"
+        }
+      ],
+      "changes": [
+        "Frontmatter: kept name and description; replaced upstream `disable-model-invocation: true` with a when_to_use line so the skill loads when prose is written (the package applies it to all its documents); added metadata.origin. Added one AIDLC integration paragraph after the frontmatter; the upstream body (Process, rules 3–33) is retained byte-for-byte."
+      ],
+      "dependencies": [],
+      "limits": [
+        "Rules are applied by the model when writing; nothing lints prose mechanically. Existing package documents predate the import and are rewritten in a separate pass."
+      ]
+    }
+  ]
+}
