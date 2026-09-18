@@ -34,7 +34,7 @@ claude plugin install lbvs-aidlc@lbvs-aidlc
 # then, inside the repository:  /lbvs-aidlc:lbvs-aidlc-init
 ```
 
-The plugin carries the skills, all six agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library, the package-integrity hook or the worktree hook. To merge the full template into an existing repository instead, follow the [adoption recipe](docs/USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
+The plugin carries the skills, all six agents, the project-mode and test-protection hooks, the helper and the shared docs. It does not carry a `CLAUDE.md`, the ECC library, the package-integrity hook, the worktree hook or `.omp/` (so Oh My Pi gets skills only). To put the assets into an existing repository instead — which every host then reads on checkout — run `python3 scripts/aidlc.py install ../<repo>` and, after the report, `--apply`; `sync` updates later ([recipe](docs/USAGE.md#11-install-into-an-existing-repository-or-export-a-new-one)).
 
 Before the first session, `python3 scripts/aidlc.py doctor` tells you which optional tools and MCP credentials are present and how to get the missing ones.
 

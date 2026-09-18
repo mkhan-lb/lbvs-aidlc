@@ -2,12 +2,15 @@
 """Local AIDLC artifact operations. This tool never grants approvals or deploys."""
 
 import argparse
+import datetime
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -529,13 +532,8 @@ def remove_worktree():
     return 0
 
 
-def package(destination):
-    """Export declared resources and their local links; never overlay a repository."""
-    destination = destination.absolute()
-    if destination.exists() or destination.is_symlink():
-        raise FileExistsError("package destination already exists: {}".format(destination))
-    if not destination.parent.is_dir():
-        raise ValueError("package destination parent must be an existing directory")
+def distributable():
+    """Every declared package resource plus what its Markdown links to, as (files, directories) relative to PACKAGE_ROOT."""
     check_instruction_files()
     ecc_files, ecc_modes = ecc_inventory()
     seeds = set(REQUIRED_ASSETS + ecc_files) | {"scripts/aidlc.py", ".gitignore"}
@@ -580,6 +578,17 @@ def package(destination):
         files.add(relative)
         if source.suffix == ".md":
             pending.extend(source.parent / path for _, path in local_links(source.read_text(encoding="utf-8")))
+    return files, directories
+
+
+def package(destination):
+    """Export declared resources and their local links; never overlay a repository."""
+    destination = destination.absolute()
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError("package destination already exists: {}".format(destination))
+    if not destination.parent.is_dir():
+        raise ValueError("package destination parent must be an existing directory")
+    files, directories = distributable()
     # Reserve the new destination exclusively, including against dangling symlinks.
     destination.mkdir()
     try:
@@ -596,6 +605,256 @@ def package(destination):
     print("Created standalone package: {} ({} files)".format(destination, len(files)))
     print("Existing repositories are never overlaid. Review and merge adoption changes explicitly.")
     print("Shared project configuration is included. No existing/local/global settings, permissions, plugins, or remote records were changed.")
+
+
+MANIFEST_PATH = Path(".aidlc/manifest.json")
+# Files that describe this package repository itself; an adopting repository has its own or needs none.
+PACKAGE_ONLY = frozenset((
+    "GOALS.md", "IMPLEMENTATION_PLAN.md", "FUTURE_WORK.md", "README.md", "LICENSE",
+    "docs/COVERAGE.md", "docs/DEPENDENCIES.md", "docs/MEASURES.md", "docs/PREREQUISITES.md",
+    "docs/VERIFICATION.md", "docs/COMPATIBILITY.md", "docs/REFERENCE.md",
+    ".claude/rules/package-maintenance.md", ".claude/hooks/check-package.sh",
+    ".vscode/settings.json", ".vscode/extensions.json", "mcp-configs/ecc.mcp-servers.example.json",
+))
+PACKAGE_ONLY_PREFIXES = ("docs/sources/", "docs/evidence/")
+# Knowledge stores: a repository that already keeps one is not seeded with our index and template.
+STORE_DIRS = ("docs/adr", "docs/incidents", "docs/security", "docs/references", "docs/playbooks",
+              "docs/glossary", "docs/platform")
+# Files the adopting repository owns: install never creates or overwrites them, it prints what to merge.
+REPO_OWNED = {
+    "AGENTS.md": "add one line pointing at docs/WORKFLOW.md and `/lbvs-aidlc` (Codex and Copilot read this file)",
+    "CLAUDE.md": "add `@AGENTS.md` or one line pointing at docs/WORKFLOW.md; do not create it where the repository forbids a root CLAUDE.md",
+    ".gitignore": "append: **/.aidlc/fix/  **/.aidlc/current  **/.claude/worktrees/  **/.claude/settings.local.json  .codegraph/",
+    ".claude/settings.json": "merge the hooks block below (project-mode, protect-tests, worktree-create, worktree-remove)",
+    ".mcp.json": "declare context7, github and atlassian as in the package (no credentials)",
+    ".worktreeinclude": "list the ignored files worktrees need (.env, .claude/settings.local.json)",
+    ".omp/AGENTS.md": "`@../AGENTS.md` (or your instruction file) plus the Oh My Pi section from the package",
+    ".omp/config.yml": "skills.enableSkillCommands: true so /skill:lbvs-aidlc* commands appear in Oh My Pi",
+}
+
+
+def installable():
+    files, directories = distributable()
+    keep = lambda relative: (relative.as_posix() not in PACKAGE_ONLY
+                             and not relative.as_posix().startswith(PACKAGE_ONLY_PREFIXES))
+    return ({f for f in files if keep(f) and f.as_posix() not in REPO_OWNED},
+            {d for d in directories if keep(d)},
+            {f for f in files if f.as_posix() in REPO_OWNED})
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def package_revision():
+    revision = git_out(PACKAGE_ROOT, "rev-parse", "HEAD") or "unknown"
+    dirty = bool(git_out(PACKAGE_ROOT, "status", "--porcelain")) if revision != "unknown" else False
+    return revision + ("+dirty" if dirty else "")
+
+
+def store_of(relative):
+    for store in STORE_DIRS:
+        if relative.as_posix().startswith(store + "/"):
+            return store
+    return None
+
+
+def foreign_stores(repo, recorded=()):
+    """Stores the repository already keeps and we never seeded: skip our index/template there."""
+    seeded = {store_of(Path(name)) for name in recorded}
+    return {store for store in STORE_DIRS
+            if store not in seeded and (repo / store).is_dir() and any((repo / store).iterdir())}
+
+
+def hook_hints():
+    settings = json.loads((PACKAGE_ROOT / ".claude/settings.json").read_text(encoding="utf-8"))
+    hooks = settings["hooks"]
+    for group in hooks["SessionStart"]:
+        group["hooks"] = [hook for hook in group["hooks"] if "check-package" not in hook["command"]]
+    return json.dumps({"hooks": hooks}, indent=2)
+
+
+def print_owned_hints(owned):
+    print("Repository-owned files (never written; merge by hand):")
+    for relative in sorted(owned):
+        print("  {:<24} {}".format(relative.as_posix(), REPO_OWNED[relative.as_posix()]))
+    print(hook_hints())
+
+
+def adoption_root(repo):
+    repo = repo.resolve()
+    if not repo.is_dir():
+        raise ValueError("not a directory: {}".format(repo))
+    if repo == PACKAGE_ROOT:
+        raise ValueError("refusing to install the package into itself")
+    return repo
+
+
+def write_manifest(repo, files, owned, skipped=()):
+    manifest = {
+        "package": "lbvs-aidlc",
+        "source": git_out(PACKAGE_ROOT, "remote", "get-url", "origin") or "unknown",
+        "branch": git_out(PACKAGE_ROOT, "rev-parse", "--abbrev-ref", "HEAD") or "unknown",
+        "revision": package_revision(),
+        "installed": datetime.date.today().isoformat(),
+        "files": {f.as_posix(): digest(PACKAGE_ROOT / f) for f in sorted(files)},
+        "owned": {f.as_posix(): digest(PACKAGE_ROOT / f) for f in sorted(owned)},
+        "skipped": sorted(f.as_posix() for f in skipped),
+    }
+    target = repo / MANIFEST_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+
+def install(repo, apply=False):
+    """Copy the AIDLC assets into an existing repository; never overwrite, never touch repository-owned files."""
+    repo = adoption_root(repo)
+    if (repo / MANIFEST_PATH).exists():
+        raise ValueError("{} exists: already installed; use `sync`".format(MANIFEST_PATH))
+    files, directories, owned = installable()
+    stores = foreign_stores(repo)
+    plan = {"write": [], "identical": [], "keep": [], "skip": []}
+    for relative in sorted(files):
+        target = repo / relative
+        if store_of(relative) in stores:
+            plan["skip"].append(relative)
+        elif not target.exists():
+            plan["write"].append(relative)
+        elif digest(target) == digest(PACKAGE_ROOT / relative):
+            plan["identical"].append(relative)
+        else:
+            plan["keep"].append(relative)
+    print("install {} <- lbvs-aidlc @ {}".format(repo, package_revision()))
+    for relative in plan["write"]:
+        print("  write     {}".format(relative.as_posix()))
+    for relative in plan["keep"]:
+        print("  keep      {}  (exists and differs; yours kept)".format(relative.as_posix()))
+    for relative in plan["skip"]:
+        print("  skip      {}  (you already keep {}/; reconcile via /lbvs-aidlc-onboard)".format(
+            relative.as_posix(), store_of(relative)))
+    print("{} to write, {} identical, {} kept, {} skipped, {} repository-owned.".format(
+        len(plan["write"]), len(plan["identical"]), len(plan["keep"]), len(plan["skip"]), len(owned)))
+    print_owned_hints(owned)
+    if not apply:
+        print("Report only; add --apply to write.")
+        return 0
+    for relative in sorted(directories):
+        (repo / relative).mkdir(parents=True, exist_ok=True)
+    for relative in plan["write"]:
+        target = repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(PACKAGE_ROOT / relative, target)
+    write_manifest(repo, files - set(plan["skip"]), owned, plan["skip"])
+    print("Wrote {} files and {}. Review with `git status`, then commit; nothing was committed.".format(
+        len(plan["write"]), MANIFEST_PATH))
+    return 0
+
+
+def sync(repo, apply=False):
+    """Three-way compare package, manifest and repository; update untouched files, report the rest."""
+    repo = adoption_root(repo)
+    manifest_file = repo / MANIFEST_PATH
+    if not manifest_file.is_file():
+        raise ValueError("{} missing: not installed; use `install`".format(MANIFEST_PATH))
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    files, directories, owned = installable()
+    recorded = manifest.get("files", {})
+    skipped = set(manifest.get("skipped", []))
+    stores = foreign_stores(repo, recorded)
+    plan = {"update": [], "add": [], "conflict": [], "removed": [], "local": [], "absent": []}
+    current = 0
+    for name in sorted(set(recorded) | {f.as_posix() for f in files}):
+        relative = Path(name)
+        if name in skipped or (name not in recorded and store_of(relative) in stores):
+            skipped.add(name)
+            continue
+        source, target = PACKAGE_ROOT / relative, repo / relative
+        pkg = digest(source) if relative in files else None
+        old = recorded.get(name)
+        local = digest(target) if target.is_file() else None
+        if pkg is None:
+            plan["removed"].append(relative)
+        elif pkg == old:
+            if local == old:
+                current += 1
+            else:
+                plan["local" if local else "absent"].append(relative)
+        elif local == pkg:
+            current += 1
+        elif old is None and local is None:
+            plan["add"].append(relative)
+        elif local == old:
+            plan["update"].append(relative)
+        else:
+            plan["conflict"].append(relative)
+    owned_changed = [f for f in sorted(owned)
+                     if manifest.get("owned", {}).get(f.as_posix()) not in (None, digest(PACKAGE_ROOT / f))]
+    print("sync {} <- lbvs-aidlc @ {} (installed {} @ {})".format(
+        repo, package_revision(), manifest.get("installed", "?"), manifest.get("revision", "?")))
+    labels = {
+        "update": "package changed, yours untouched",
+        "add": "new in package",
+        "conflict": "changed in both; resolve by hand",
+        "removed": "removed from package; delete by hand",
+        "local": "edited locally, package unchanged; kept",
+        "absent": "deleted locally, package unchanged; kept absent",
+    }
+    for kind in ("update", "add", "conflict", "removed", "local", "absent"):
+        for relative in plan[kind]:
+            print("  {:<9} {}  ({})".format(kind, relative.as_posix(), labels[kind]))
+    for relative in owned_changed:
+        print("  guidance  {}  (repository-owned; package hint changed)".format(relative.as_posix()))
+    print("{} current, {} to update, {} to add, {} conflicts, {} removed upstream, {} local edits, {} absent, {} skipped stores.".format(
+        current, len(plan["update"]), len(plan["add"]), len(plan["conflict"]),
+        len(plan["removed"]), len(plan["local"]), len(plan["absent"]), len(skipped)))
+    if owned_changed:
+        print_owned_hints(owned_changed)
+    if not apply:
+        print("Report only; add --apply to write the updates and additions.")
+        return 1 if plan["conflict"] else 0
+    for relative in sorted(directories):
+        (repo / relative).mkdir(parents=True, exist_ok=True)
+    for relative in plan["update"] + plan["add"]:
+        (repo / relative).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(PACKAGE_ROOT / relative, repo / relative)
+    # Conflicts keep their recorded hash so the next sync still sees them; everything else moves to the package's.
+    write_manifest(repo, {f for f in files if f.as_posix() not in skipped}, owned, (Path(name) for name in skipped))
+    refreshed = json.loads(manifest_file.read_text(encoding="utf-8"))
+    for relative in plan["conflict"]:
+        refreshed["files"][relative.as_posix()] = recorded[relative.as_posix()]
+    manifest_file.write_text(json.dumps(refreshed, indent=2) + "\n", encoding="utf-8")
+    print("Wrote {} updates and {} additions; {} conflicts left for you. Nothing was committed.".format(
+        len(plan["update"]), len(plan["add"]), len(plan["conflict"])))
+    return 1 if plan["conflict"] else 0
+
+
+def update(repo, source=None, apply=False):
+    """Run from the adopting repository: fetch the package it was installed from and sync against it."""
+    manifest_file = repo / MANIFEST_PATH
+    if not manifest_file.is_file():
+        raise ValueError("{} missing: not installed; run `install` from the package checkout".format(MANIFEST_PATH))
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if source is not None:
+        checkout = source.resolve()
+        if not (checkout / "scripts" / "aidlc.py").is_file():
+            raise ValueError("{} is not a package checkout (no scripts/aidlc.py)".format(checkout))
+        return run_sync(checkout, repo, apply)
+    url, branch = manifest.get("source"), manifest.get("branch")
+    if not url or url == "unknown":
+        raise ValueError("manifest records no package source; pass --from <package checkout>")
+    with tempfile.TemporaryDirectory(prefix="lbvs-aidlc-update-") as temporary:
+        checkout = Path(temporary) / "package"
+        clone = ["git", "clone", "--quiet", "--depth", "1"] + (["--branch", branch] if branch and branch != "unknown" else [])
+        result = subprocess.run(clone + [url, str(checkout)], capture_output=True, text=True, timeout=300, check=False)
+        if result.returncode:
+            raise ValueError("clone of {} failed: {}".format(url, result.stderr.strip()))
+        print("update from {} ({})".format(url, branch or "default branch"))
+        return run_sync(checkout, repo, apply)
+
+
+def run_sync(checkout, repo, apply):
+    command = [sys.executable, str(checkout / "scripts" / "aidlc.py"), "sync", str(repo)] + (["--apply"] if apply else [])
+    return subprocess.run(command, check=False).returncode
 
 
 def check_package():
@@ -847,6 +1106,14 @@ def main():
     lint.add_argument("change_id", nargs="?", help="limit the scan to changes/<change_id>/")
     export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
     export.add_argument("destination", type=Path)
+    for name, text in (("install", "copy the AIDLC assets into an existing repository (report only; --apply writes new files, never overwrites)"),
+                       ("sync", "compare an installed repository with this package (report only; --apply updates files you have not edited)")):
+        adopt = commands.add_parser(name, help=text)
+        adopt.add_argument("repo", type=Path, help="root of the adopting repository")
+        adopt.add_argument("--apply", action="store_true", help="write; without it only report")
+    upd = commands.add_parser("update", help="from an installed repository: fetch the package recorded in .aidlc/manifest.json and sync against it (report only; --apply writes)")
+    upd.add_argument("--from", dest="source", type=Path, metavar="PACKAGE", help="use this local package checkout instead of cloning the recorded source")
+    upd.add_argument("--apply", action="store_true", help="write; without it only report")
     args = parser.parse_args()
     root = (args.root or Path.cwd()).resolve()
     try:
@@ -860,6 +1127,12 @@ def main():
         if args.command == "package":
             package(args.destination)
             return 0
+        if args.command == "install":
+            return install(args.repo, apply=args.apply)
+        if args.command == "sync":
+            return sync(args.repo, apply=args.apply)
+        if args.command == "update":
+            return update((args.root or repository_root(Path.cwd())).resolve(), source=args.source, apply=args.apply)
         if args.command == "mode":
             print_mode(root)
             return 0

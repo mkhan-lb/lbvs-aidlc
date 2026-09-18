@@ -57,7 +57,7 @@ python3 /path/to/new-aidlc-copy/scripts/aidlc.py check
 
 The destination must not exist and its parent must exist. Export includes the declared skills, agents, templates, shared guidance, the helper, settings, hooks, rules, `.worktreeinclude`, `.mcp.json`, the `docs/adr/`, `docs/incidents/`, `docs/security/`, `docs/references/` and `docs/platform/` indexes and templates (plus any record they link), `templates/conventions/`, the vendor manifests and locally linked reference/evidence files. It does not copy Git history, `changes/` artifacts, solution/ideation stores, `.aidlc/`, local settings, credentials or plugin installations. Content is copied verbatim, **not secret-scanned**; inspect it before sharing.
 
-Launch Claude in the exported tree to use it. For an **existing codebase**, adoption is an explicit reviewed merge: compare and merge the package files with the repository's existing `AGENTS.md`/`CLAUDE.md`, `REVIEW.md`, settings, hooks and safeguards; the exporter never overlays a repository or mutates global settings. `--add-dir` alone is not a supported installation. See the [adoption recipe](USAGE.md#11-export-and-adopt-without-overwriting-a-repository).
+Launch Claude in the exported tree to use it. For an **existing codebase**, use `python3 scripts/aidlc.py install <repo>` (report) then `install <repo> --apply`: it writes the AIDLC assets that are absent, keeps any existing file that differs, never creates or overwrites the eight repository-owned files (`AGENTS.md`, `CLAUDE.md`, `.gitignore`, `.claude/settings.json`, `.mcp.json`, `.worktreeinclude`, `.omp/AGENTS.md`, `.omp/config.yml`) — it prints a merge hint and the hooks block for each — and leaves the package's own docs and integrity hook behind. `.aidlc/manifest.json` records the package revision and a hash per installed file; a knowledge store the repository already keeps (`docs/adr/` with content, say) is not seeded with our index and template and stays skipped. `sync <repo> [--apply]` later compares package, manifest and repository three ways and updates only files you have not edited, reporting conflicts, upstream removals and local edits without touching them; `update [--from <pkg>] [--apply]`, run inside the adopting repository, clones the source recorded in the manifest and runs that clone's `sync`. None of them commits; `--add-dir` alone is not a supported installation. See the [adoption recipe](USAGE.md#11-install-into-an-existing-repository-or-export-a-new-one).
 
 ## Commands
 
@@ -181,7 +181,7 @@ Prefer an existing reviewer over a custom engine. [Review options](../.claude/sk
 
 | Branch | Form | Use |
 | --- | --- | --- |
-| `main` | Repo template — `python3 scripts/aidlc.py package <new-dir>` exports a standalone tree | Primary. New services start from the export; existing repositories merge the relevant files explicitly. |
+| `main` | Repo template — `python3 scripts/aidlc.py install <repo> [--apply]` / `sync <repo> [--apply]` / `update` (from the adopter) copy and update the AIDLC assets inside an existing repository; `package <new-dir>` exports a standalone tree | Primary. Existing services install and commit the assets (works on every host that reads `.claude/skills/` and `.omp/`); new services start from the export. |
 | `plugin-marketplace` | Claude Code plugin marketplace — `.claude-plugin/marketplace.json` + generated `plugins/lbvs-aidlc/` | Teams that want namespaced, versioned skills (`/lbvs-aidlc:lbvs-aidlc <id>`) installed per repository via `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json`, or fleet-wide via managed settings. |
 
 ```sh
@@ -190,7 +190,7 @@ claude plugin marketplace add mkhan-lb/lbvs-aidlc#plugin-marketplace
 claude plugin install lbvs-aidlc@lbvs-aidlc
 ```
 
-The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.py`), the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md`, the package-integrity hook or the worktree hook. Regenerate it on that branch with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc.
+The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.py`), the project-mode and test-protection hooks and the shared workflow docs (reached via `${CLAUDE_PLUGIN_ROOT}`); it does not carry the ECC library, a `CLAUDE.md`, the package-integrity hook, the worktree hook or `.omp/` — so under Oh My Pi a plugin-only repository has the skills but not the agents or the protect hook; use `install` there. Regenerate it on that branch with `python3 scripts/build_plugin.py` after changing any AIDLC skill, agent, hook or shared doc.
 
 ## Repository layout
 
@@ -219,7 +219,7 @@ The plugin carries the AIDLC skills, all six agents, the helper (`scripts/aidlc.
 │   │   ├── architecture-decision-records/, doc-coauthoring/   # imported, AIDLC-integrated
 │   │   └── <ECC skill>/         # 37 selected bundles
 │   └── agents/                  # lbvs-aidlc-verifier, lbvs-aidlc-repo-scout, lbvs-aidlc-design-reviewer, lbvs-aidlc-threat-modeler, lbvs-aidlc-test-critic, lbvs-aidlc-conventions-checker
-├── scripts/aidlc.py             # check, doctor [--install], mode, status, current, profile, conventions [--apply], lint-artifacts [--root], worktree, worktree-remove, package, new
+├── scripts/aidlc.py             # check, doctor [--install], mode, status, current, profile, conventions [--apply], lint-artifacts [--root], install/sync <repo> [--apply], update [--from], worktree, worktree-remove, package, new
 ├── templates/conventions/       # default .editorconfig, .pre-commit-config.yaml, ruff.toml, biome.json, CONVENTIONS.md
 ├── mcp-configs/                 # inactive upstream example catalog (reference only)
 ├── docs/                        # USAGE, REFERENCE, WORKFLOW, ARTIFACTS, PLUGINS, VERIFICATION, sources/, evidence/
