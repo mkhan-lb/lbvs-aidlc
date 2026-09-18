@@ -391,6 +391,48 @@ def print_current(root):
     return 0
 
 
+ARTIFACT_RULES = (
+    ("session-uri", re.compile(r"(?:artifact|agent|history|local|xd)://")),
+    ("machine-path", re.compile(r"/Users/|/home/|/tmp/|/var/folders/|/private/|[A-Za-z]:\\")),
+)
+
+
+def repository_root(start):
+    top = git_out(start, "rev-parse", "--show-toplevel")
+    return Path(top) if top else start
+
+
+def artifact_files(root, change_id=None):
+    changes = root / "changes"
+    scopes = [changes / change_id] if change_id else [changes]
+    scopes.append(root / "docs" / "solutions")
+    for scope in scopes:
+        if scope.is_dir():
+            yield from sorted(p for p in scope.rglob("*.md") if p.is_file())
+
+
+def lint_artifacts(root, change_id=None):
+    """Content boundary (docs/ARTIFACTS.md#content-boundary): change artifacts and lessons carry no session or machine-local references."""
+    if change_id and not CHANGE_ID.fullmatch(change_id):
+        raise ValueError("invalid change ID: {}".format(change_id))
+    if change_id and not (root / "changes" / change_id).is_dir():
+        raise ValueError("no such change: changes/{}".format(change_id))
+    hits = 0
+    count = 0
+    for file in artifact_files(root, change_id):
+        count += 1
+        relative = file.relative_to(root)
+        for number, line in enumerate(file.read_text(encoding="utf-8").splitlines(), 1):
+            for rule, pattern in ARTIFACT_RULES:
+                for match in pattern.finditer(line):
+                    print("{}:{}: {} {}".format(relative, number, rule, match.group(0)))
+                    hits += 1
+    if hits:
+        return 1
+    print("lint-artifacts: clean ({} files)".format(count))
+    return 0
+
+
 def worktree_path(root, name):
     """Create or reuse a descriptive worktree; replaces Claude Code's default naming."""
     slug = re.sub(r"[^A-Za-z0-9._+/-]", "-", name).strip("-/")
@@ -785,7 +827,7 @@ def doctor(root, install=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=Path.cwd(), help="target project for new/doctor/mode/status/current (default: current directory)")
+    parser.add_argument("--root", type=Path, help="target project for new/doctor/mode/status/current/lint-artifacts (default: current directory; its repository for lint-artifacts)")
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="create only a draft intent; refuse to overwrite work")
     new.add_argument("change_id")
@@ -800,12 +842,18 @@ def main():
     conv = commands.add_parser("conventions", help="compare repository conventions with the package defaults; --apply copies only missing defaults")
     conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
     commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
+    lint = commands.add_parser("lint-artifacts", help="scan changes/<id>/**/*.md (all changes without an ID) and docs/solutions/**/*.md for session references and machine paths; exit 1 on any hit")
+    lint.add_argument("--root", dest="lint_root", type=Path, metavar="PATH", help="repository to scan (default: the repository containing the current directory)")
+    lint.add_argument("change_id", nargs="?", help="limit the scan to changes/<change_id>/")
     export = commands.add_parser("package", help="export a complete standalone tree to a new directory; never overwrite")
     export.add_argument("destination", type=Path)
     args = parser.parse_args()
+    root = (args.root or Path.cwd()).resolve()
     try:
+        if args.command == "lint-artifacts":
+            return lint_artifacts((args.lint_root or args.root or repository_root(Path.cwd())).resolve(), args.change_id)
         if args.command == "new":
-            new_change(args.root.resolve(), args.change_id)
+            new_change(root, args.change_id)
             return 0
         if args.command == "check":
             return check_package()
@@ -813,21 +861,21 @@ def main():
             package(args.destination)
             return 0
         if args.command == "mode":
-            print_mode(args.root.resolve())
+            print_mode(root)
             return 0
         if args.command == "status":
-            return print_status(args.root.resolve())
+            return print_status(root)
         if args.command == "current":
-            return print_current(args.root.resolve())
+            return print_current(root)
         if args.command == "worktree":
             return create_worktree()
         if args.command == "worktree-remove":
             return remove_worktree()
         if args.command == "conventions":
-            return conventions(args.root.resolve(), apply=args.apply)
+            return conventions(root, apply=args.apply)
         if args.command == "profile":
-            return profile(args.root.resolve())
-        return doctor(args.root.resolve(), install=getattr(args, "install", False))
+            return profile(root)
+        return doctor(root, install=getattr(args, "install", False))
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("ERROR: {}".format(error), file=sys.stderr)
         return 1

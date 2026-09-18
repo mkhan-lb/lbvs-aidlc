@@ -36,7 +36,7 @@ Use the AskUserQuestion tool with exactly these options:
 
 Record the answer for step 5. Do not proceed on an assumed answer.
 
-**Stay legacy** → invoke the `inherit-legacy-style` skill via the Skill tool. Its style note is advisory; pass it the scout's Conventions and Hotspots for exemplar files, then return here.
+**Stay legacy** → invoke the `inherit-legacy-style` skill via the skill route. Its style note is advisory; pass it the scout's Conventions and Hotspots for exemplar files and return here.
 
 **Modernize** → recommend the official `code-modernization` plugin (do not install it; the user installs via `/plugin`). Then list only the bundled pattern skills that match the detected stack (e.g. `coding-standards`, `error-handling`, `api-design`, `python-patterns`, `react-patterns`, `golang-patterns`, `dotnet-patterns`, `postgres-patterns`, `kubernetes-patterns`, `security-review`), confirming each exists under `.claude/skills/`; one line each on why it applies; do not invoke them now.
 

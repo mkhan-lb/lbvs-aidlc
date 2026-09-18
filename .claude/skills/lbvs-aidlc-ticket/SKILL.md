@@ -39,7 +39,7 @@ In plan/read-only mode return the proposed text labelled **not saved** and hand 
 
 ## 4. Handover
 
-Summarise: ticket reference and fetch tool, change ID and its source, intent path (or **proposed — not saved**), open questions. Then AskUserQuestion with exactly: "Continue with /lbvs-aidlc (worktree, stages)", "Stop here". On the first, invoke `lbvs-aidlc` via the Skill tool with the bare change ID; it will detect `intent.md` and resume at design. Otherwise end.
+Summarise: ticket reference and fetch tool, change ID and its source, intent path (or **proposed — not saved**), open questions. Then AskUserQuestion with exactly: "Continue with /lbvs-aidlc (worktree, stages)", "Stop here". On the first, invoke `lbvs-aidlc` via the skill route with the bare change ID; it will detect `intent.md` and resume at design. Otherwise end.
 
 ## Boundaries
 
