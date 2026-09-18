@@ -12,7 +12,7 @@ Based on [Anthropic's AI-native SDLC playbook](https://claude.com/blog/the-ai-na
 - **Repository context that is read, not re-derived**: a committed repository profile (`docs/repo-profile.md`), the company glossary (`docs/glossary/` — Logicbroker and Virtualstock), playbooks for repeatable procedures, and platform facts. Stages read these first and scout only what is missing or stale.
 - **Knowledge stores** that fill up as you work: ADRs, incidents, threat models, library references, lessons, playbooks — all Markdown, all written only after you confirm.
 - **A Python helper**, `scripts/aidlc.py`, with no dependencies: `doctor`, `check`, `mode`, `status`, `profile`, `conventions`, `package` and friends.
-- Optional extras: 37 vendored [ECC](https://github.com/affaan-m/ECC) pattern skills, ADR and doc-coauthoring skills, Compound Engineering brainstorming for non-engineers, MCP declarations for Context7, GitHub and Jira.
+- Optional extras: 38 vendored [ECC](https://github.com/affaan-m/ECC) pattern skills, ADR and doc-coauthoring skills, Compound Engineering brainstorming for non-engineers, MCP declarations for Context7, GitHub and Jira.
 
 Everything Claude does here is advisory instruction plus your confirmation. The skills are not security controls; your repository's permissions, branch protection and CI still apply.
 

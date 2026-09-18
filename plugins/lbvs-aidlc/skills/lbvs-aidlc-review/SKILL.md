@@ -13,7 +13,7 @@ Change ID: `$ARGUMENTS`. A single token matching `^[a-z0-9]+(-[a-z0-9]+)*$` is t
 
 ## Boundaries
 
-The review pass is **report-only**: read files and local VCS state only; never run the app, tests, builds or formatters, fix files, post comments, approve, commit, push, merge, deploy, install a reviewer, launch sessions or change settings. No external providers; cloud `ultra` only as the chosen `cloud` tier. The only write is `changes/<change-id>/review.md`, after results return and when requested. If a mechanism cannot respect this, hand off.
+The review pass is **report-only**: read files and local VCS state only; never run the app, tests, builds or formatters, fix files, post comments, approve, commit, push, merge, deploy, install a reviewer, launch sessions or change settings. No external providers; cloud `ultra` only as the chosen `cloud` tier. The only write is `changes/<change-id>/review.md`, after results return and when requested. Cannot respect this → hand off.
 
 ## Tiers
 
@@ -26,22 +26,22 @@ Record tier and command each pass; a route with no effort argument (OMP task-age
 
 ## 1. Prepare one same-change packet
 
-1. Read `CLAUDE.md`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), the [report template](templates/review.md), any `changes/<change-id>/intent.md`, `spec.md`, `plan.md`, prior `review.md` and verification record; read each [review options](references/review-options.md) section where linked. Report missing context; never invent approvals, requirements or evidence. Repository context: per ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#repository-context; scout only what is missing or stale.
+1. Read `CLAUDE.md`, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`), the [report template](templates/review.md), any `changes/<change-id>/intent.md`, `spec.md`, `plan.md`, prior `review.md` and verification record; read each linked [review options](references/review-options.md) section. Report missing context; never invent approvals, requirements or evidence. Repository context: per ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#repository-context; scout only what is missing or stale.
 2. Capture scope per the [scope recipe](references/review-options.md#capture-the-actual-scope): checkout and either resolved base/head/merge-base with comparison semantics, or HEAD plus staged, unstaged **and untracked** content. An empty tracked diff is not "no change". Never invent a PR, assume `main`, stage files or include unrelated work.
-3. Fill the [context packet](references/review-options.md#complete-context-packet): acceptance criteria (spec `R<n>.<m>` IDs), artifacts, code/callers/tests, check results and revision, test-critic findings (`C<n>`), prior finding IDs, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`) policy. Compliance includes **architectural change without ADR**: a new/changed boundary, technology or contract with no matching `docs/adr/NNNN-*.md`. A path alone is not delivered content.
+3. Fill the [context packet](references/review-options.md#complete-context-packet): acceptance criteria (spec `R<n>.<m>` IDs), artifacts, code/callers/tests, check results and revision, test-critic findings (`C<n>`), prior finding IDs, `REVIEW.md` (the repository's own file, else `${CLAUDE_PLUGIN_ROOT}/REVIEW.md`) policy. Compliance includes **architectural change without ADR**: a new/changed boundary, technology or contract with no matching ADR (store row in `docs/repo-profile.md#knowledge-stores` when present, else `docs/adr/NNNN-*.md`). A path alone is not delivered content.
 4. Snapshot scope (revisions, inventory, time); recheck before dispatch and after return, naming stale files, not claiming coverage.
 
 ## 2. Select and invoke, or hand off honestly
 
-Default to **Claude Code's bundled `/code-review` when in the catalogue**, with the tier's effort argument; on Oh My Pi, the catalogued `reviewer` agent through the task mechanism or the engineer's interactive `/review`. Follow the [provider recipes](references/review-options.md#provider-recipes); pass the packet and report-only boundaries through a supported context channel. Trailing arguments are a **target**, not a brief; never invent flags.
+Default to **Claude Code's bundled `/code-review` when in the catalogue**, with the tier's effort argument; on Oh My Pi, the catalogued `reviewer` agent via the task mechanism or the engineer's interactive `/review`. Follow the [provider recipes](references/review-options.md#provider-recipes); pass the packet and report-only boundaries through a supported context channel. Trailing arguments are a **target**, not a brief; never invent flags.
 
 Reviewer or context channel unavailable: return `prepared — not run` with the limitation, the packet and documented command separately, and the engineer's remaining step. Never substitute your own review or fake a run.
 
 ## 3. Preserve and reconcile the result
 
-Copy each native finding **verbatim** per the [return rules](references/review-options.md#return-fixes-and-re-review): location, severity, evidence, caveats. Finding IDs `R1, R2 …` persist across passes: same finding, same ID; append new ones; never renumber. Policy mapping (Important/nit), disposition (`open`/`fixed`/`accepted`) and wrapper observations go in separate labelled fields. Record status, scope freshness and skipped scope. Partial or unavailable review is never a clean bill; a "correct" verdict is bounded, not approval. An ADR gap never blocks; `architecture-decision-records` fixes it later.
+Copy each native finding **verbatim** per the [return rules](references/review-options.md#return-fixes-and-re-review): location, severity, evidence, caveats. Finding IDs `R1, R2 …` persist across passes: same finding, same ID; append new ones; never renumber. Policy mapping (Important/nit), disposition (`open`/`fixed`/`accepted`) and wrapper observations: separate labelled fields. Record status, scope freshness and skipped scope. Partial or unavailable review is never a clean bill; a "correct" verdict is bounded, not approval. An ADR gap never blocks; `architecture-decision-records` fixes it later.
 
-On a save request: keep every prior pass, append this one as a new `## Pass N` section per the template, write only `changes/<change-id>/review.md`, run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" lint-artifacts --root <repo> <change-id>` (read-only helper) and remove every hit, then **Read that file** and compare with the native return; correct within this save and Read again.
+On a save request: keep every prior pass, append this one as `## Pass N` per the template, write only `changes/<change-id>/review.md`, run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" lint-artifacts --root <repo> <change-id>` and remove every hit, then **Read that file** and compare with the native return; correct within this save and Read again.
 
 ## 4. Loop
 
@@ -49,6 +49,6 @@ review → Important findings open → fix (`lbvs-aidlc-build`, agreed IDs) → 
 
 ## Stage gate
 
-Summarise: pass and tier, status and reviewer, findings by ID with severity and disposition, coverage limits, `review.md` saved or not, fix cycles used of 3, open questions, checks not run. Then AskUserQuestion with exactly: "Fix findings (build)", "Re-review at higher effort", "Open PR (lbvs-aidlc-ship)", "Capture lesson (lbvs-aidlc-learn)", "Done". Fix findings invokes `lbvs-aidlc-build` via the skill route with the same change ID and agreed finding IDs; verify and re-review follow. Re-review reruns this skill one tier up (escalated → maximum → cloud) on the same scope. Open PR invokes `lbvs-aidlc-ship`, which refuses while an Important finding is open. Capture lesson invokes `lbvs-aidlc-learn` (may skip), then re-asks this gate without that option. Done: final report.
+Summarise: pass and tier, status and reviewer, findings by ID with severity and disposition, coverage limits, `review.md` saved or not, fix cycles used of 3, open questions, checks not run. Then AskUserQuestion with exactly: "Fix findings (build)", "Re-review at higher effort", "Open PR (lbvs-aidlc-ship)", "Capture lesson (lbvs-aidlc-learn)", "Done". Fix findings invokes `lbvs-aidlc-build` via the skill route with the same change ID and agreed finding IDs; verify and re-review follow. Re-review reruns this skill one tier up (escalated → maximum → cloud), same scope. Open PR invokes `lbvs-aidlc-ship`, which refuses while an Important finding is open. Capture lesson invokes `lbvs-aidlc-learn` (may skip), then re-asks this gate without it. Done: final report.
 
 **Flow policy.** Under `Flow policy: auto-advance when clear, including build`, fix → verify → re-review cycles may auto-continue to the cap, announcing each hop. Every policy presents findings and asks this gate; never answer for the engineer.

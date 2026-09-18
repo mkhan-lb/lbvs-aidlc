@@ -36,4 +36,4 @@ Runs: <count> (<change IDs, comma-separated; none for a new playbook>)
 
 ## Promotion
 
-Runs at least 3 and Status Verified → propose a repository skill `.claude/skills/<repo>-<playbook>/SKILL.md` via `/lbvs-aidlc-init` step 5; proposed to the engineer, never auto-written. Skill proposed: <no | yes — path or date>.
+Runs at least 3 and Status Verified → propose a repository skill `.claude/skills/<repo>-<playbook>/SKILL.md` via `/lbvs-aidlc-init` step 6; proposed to the engineer, never auto-written. Skill proposed: <no | yes — path or date>.

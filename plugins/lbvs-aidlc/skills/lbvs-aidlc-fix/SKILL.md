@@ -13,17 +13,17 @@ Change ID: `$ARGUMENTS`. A single token matching `^[a-z0-9]+(-[a-z0-9]+)*$` is t
 
 ## 0. Worktree
 
-Unless the checkout is already a branch/worktree for this change, propose `aidlc/<change-id>`: EnterWorktree when available, else `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask first; continue in place if the user declines.
+Unless the checkout is already a branch/worktree for this change, propose `aidlc/<change-id>`: EnterWorktree when available, else `git worktree add ../<repo>-<change-id> -b aidlc/<change-id>`. Ask first; declined → continue in place.
 
 ## 1. Reproduce first
 
 Collect the symptom: report, stack trace, failing command, alert or incident. Repository context: read per ${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#repository-context; scout only what is missing or stale. Find the defining code with Grep/Read before theorising; with graphify present (`graphify-out/graph.json` or CLI), trace callers via `graphify query`/`path` and cite returned `source_location`s. Run the smallest command or interaction showing the defect; keep its verbatim output as pre-fix evidence. Cannot reproduce: say so and ask for more; never guess a fix.
 
-EARS triad for `evidence.md`: **Current** `WHEN <event> THE <system> <incorrect behaviour>`; **Expected** `WHEN <event> THE <system> SHALL <response>`; **Unchanged** `THE <system> SHALL CONTINUE TO <behaviour>`. The failing test maps to Expected; Unchanged lines are the regression checks.
+EARS triad for `evidence.md`: **Current** `WHEN <event> THE <system> <incorrect behaviour>`; **Expected** `WHEN <event> THE <system> SHALL <response>`; **Unchanged** `THE <system> SHALL CONTINUE TO <behaviour>`. The failing test maps to Expected; Unchanged lines are regression checks.
 
 ## 2. Failing test
 
-Write one test, in the repository's conventions, that fails for the reported reason (not a syntax error or missing fixture); run it and record the failing output. Then use AskUserQuestion — "Commit now", "Stage only", "Skip commit" — and act only on the choice. "Commit now" uses message `test(<change-id>): reproduce <summary>` and only the test file(s). "Stage only" runs `git add` on those files. "Skip commit" leaves the tree as is. No other commit before ship ([reproduction commit](${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#reproduction-commit)).
+Write one test, in the repository's conventions, that fails for the reported reason (not a syntax error or missing fixture); run it and record the failing output. Then use AskUserQuestion — "Commit now", "Stage only", "Skip commit" — and act only on the choice. "Commit now" uses message `test(<change-id>): reproduce <summary>` and only the test file(s). "Stage only" runs `git add` on them. "Skip commit" leaves the tree as is. No other commit before ship ([reproduction commit](${CLAUDE_PLUGIN_ROOT}/docs/WORKFLOW.md#reproduction-commit)).
 
 ## 3. Protect the test
 
@@ -44,7 +44,7 @@ Fix the cause, not the symptom: no suppressed exceptions, special-cased inputs o
 ## 5. Verify with real output
 
 - Run the protected test and the nearest suite/lint commands; keep exit status and relevant output verbatim; separate proposed from run commands.
-- Application runtime: the bundled `/verify` skill if the host exposes it, else the repository's documented runtime checks, recorded as such; a container or shared service rather than the worktree: record the executed source path (e.g. imported module) before crediting a result to the change.
+- Application runtime: the bundled `/verify` skill if the host exposes it, else the repository's documented runtime checks, recorded as such; a container or shared service rather than the worktree: record the executed source path before crediting a result to the change.
 - UI change: screenshots/recording of the real surface under `changes/<change-id>/` or note the path; tests are not visual proof.
 - A fresh-context `lbvs-aidlc-verifier` pass may be delegated; delegation adds no permissions.
 - Anything not run stays "not run" with a reason.
@@ -57,8 +57,8 @@ Ask for the Jira key, PR URL and incident/alert link, or read them from authoris
 
 Write `changes/<change-id>/evidence.md` from the bundled [evidence template](templates/evidence.md), substituting only `{{change_id}}` and filling every section with observed facts (Verification mapped to Expected/Unchanged lines; Lesson link `none` until one exists). In plan/read-only mode return the draft labelled **not saved; draft only**. After the final Write, **Read the file back** against what was run; a Write acknowledgement is not readback.
 
-**Knowledge records.** Symptom from an alert or incident link: use AskUserQuestion to offer an incident record at `docs/incidents/YYYY-MM-DD-<slug>.md` from `docs/incidents/template.md` plus a row in `docs/incidents/README.md`; security defect: also a finding at `docs/security/findings/YYYY-MM-DD-<source>.md` plus a row in `docs/security/README.md`. Write only on explicit confirmation, only observed facts; Read each back; link from `evidence.md` References.
+**Knowledge records** (store rows from `docs/repo-profile.md#knowledge-stores` when present, else these defaults). Symptom from an alert or incident link: use AskUserQuestion to offer an incident record at `docs/incidents/YYYY-MM-DD-<slug>.md` from `docs/incidents/template.md` plus a row in `docs/incidents/README.md`; security defect: also a finding at `docs/security/findings/YYYY-MM-DD-<source>.md` plus a row in `docs/security/README.md`. Write only on explicit confirmation, only observed facts; Read each back; link from `evidence.md` References.
 
 ## 8. Release protection and close
 
-Delete `.aidlc/fix/<change-id>.json` (the test stays as regression protection). Summarise: evidence path, files changed, tests/checks with results, references, open limits. Then use AskUserQuestion with options exactly "Capture lesson (lbvs-aidlc-learn)", "Review (lbvs-aidlc-review)", "Done". On the first two invoke that skill via the skill route with the same change ID; after a lesson re-ask this gate without that option, listing the stages still ahead (review → ship); on "Done" end. A flow policy changes nothing here: the step 2 commit choice and this gate are always asked, never auto-advanced or answered for the engineer. Never mark the change approved, merged or deployed.
+Delete `.aidlc/fix/<change-id>.json` (the test stays). Summarise: evidence path, files changed, tests/checks with results, references, open limits. Then use AskUserQuestion with options exactly "Capture lesson (lbvs-aidlc-learn)", "Review (lbvs-aidlc-review)", "Done". On the first two invoke that skill via the skill route with the same change ID; after a lesson re-ask this gate without that option, listing the stages ahead (review → ship); on "Done" end. A flow policy changes nothing here: the step 2 commit choice and this gate are always asked, never answered for the engineer. Never mark the change approved, merged or deployed.

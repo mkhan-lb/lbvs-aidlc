@@ -9,7 +9,7 @@
   },
   "notes": [
     "The requested upstream .agents/skills is a smaller mirror; all selected canonical names are present under upstream skills/. Local imports live in .claude/skills/; no .agents/skills mirror is supplied here.",
-    "Operational guidance is manual-only; the ECC import installs or enables no ECC agents, runners, hooks, settings, plugins or MCP servers.",
+    "Operational guidance is manual-only; the ECC import installs or enables no ECC agents, runners, hooks, settings, plugins or MCP servers. continuous-learning-v2 is vendored complete (hooks, observer agent scripts, instinct CLI, command references) but off by default: nothing registers observe.sh; the engineer enables the separate lbvs-aidlc-observer@lbvs-aidlc plugin (defaultEnabled false) and its data lives under ${XDG_DATA_HOME:-~/.local/share}/ecc-homunculus/, outside every repository.",
     "AIDLC separately supplies minimal native Claude settings, a read-only startup/resume package-check hook, scoped package-maintenance guidance and a project MCP server map. Root AGENTS.md is the canonical shared instruction file; CLAUDE.md imports it, sharing instructions without claiming native Codex skill/hook parity.",
     "Shared project configuration is exported explicitly, but ignored local settings are not. Existing repository/global settings are not mutated; inherited user/managed settings, hooks and MCP connections can still apply.",
     "Hashes record the import baseline, not a signature or runtime certification. Local adaptations must be preserved when updating.",
@@ -1337,7 +1337,7 @@
           "path": ".claude/skills/architecture-decision-records/SKILL.md",
           "source": "skills/architecture-decision-records/SKILL.md",
           "upstream_sha256": "525e51b4ed98222cd49ea7d2e42b51a010ecab391b25022a86164258c14b8bb0",
-          "imported_sha256": "7bf6a8903d906aa161137ed8fcd0b8b9ea21183754b226aa3db8827dc0881aa1"
+          "imported_sha256": "047a20d36eb6d761598c103bb4ec0f7564f11c870b9c12847812d28230551c67"
         }
       ],
       "changes": [
@@ -1351,6 +1351,135 @@
       "limits": [
         "Imported as reference content; ADR detection and writing were not executed or runtime-verified.",
         "Upstream 'auto-detects decision moments' is advisory only: no ADR is written without explicit confirmation."
+      ]
+    },
+    {
+      "name": "continuous-learning-v2",
+      "source": "skills/continuous-learning-v2",
+      "manual": true,
+      "files": [
+        {
+          "path": ".claude/skills/continuous-learning-v2/SKILL.md",
+          "source": "skills/continuous-learning-v2/SKILL.md",
+          "upstream_sha256": "ddad12451a0d582c6ef1b197b7be193bef613cbc74eba4117fcb74fc7a4ecd00",
+          "imported_sha256": "de79b169c334a89bd11b4bbbcea10ee9691fe233a320fad56f6189ebf4b389c5"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/config.json",
+          "source": "skills/continuous-learning-v2/config.json",
+          "upstream_sha256": "6f17e7a99aafe252ecd0b9212fb5f606be50b8ce1685f5a6435e46e87ffeb970",
+          "imported_sha256": "6f17e7a99aafe252ecd0b9212fb5f606be50b8ce1685f5a6435e46e87ffeb970"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/hooks/observe.sh",
+          "source": "skills/continuous-learning-v2/hooks/observe.sh",
+          "upstream_sha256": "90575005307d1df31166a2da239cf8c362608524f6aeaa849df3d0b4e3e35f79",
+          "imported_sha256": "90575005307d1df31166a2da239cf8c362608524f6aeaa849df3d0b4e3e35f79"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/detect-project.sh",
+          "source": "skills/continuous-learning-v2/scripts/detect-project.sh",
+          "upstream_sha256": "43215ad15ce0c6585c13b1c45cbba6bf8df0dc459b663ddca77c0b86c459c283",
+          "imported_sha256": "43215ad15ce0c6585c13b1c45cbba6bf8df0dc459b663ddca77c0b86c459c283"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/instinct-cli.py",
+          "source": "skills/continuous-learning-v2/scripts/instinct-cli.py",
+          "upstream_sha256": "a2e90e34ee589827592248dbc801bee90f1d5db6d2330e2d5004e4694b8e06f9",
+          "imported_sha256": "a2e90e34ee589827592248dbc801bee90f1d5db6d2330e2d5004e4694b8e06f9"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/migrate-homunculus.sh",
+          "source": "skills/continuous-learning-v2/scripts/migrate-homunculus.sh",
+          "upstream_sha256": "34f121c143a676d330f06209618aae8cb08f8155298cb5fa70c893314bf9b303",
+          "imported_sha256": "34f121c143a676d330f06209618aae8cb08f8155298cb5fa70c893314bf9b303"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/test_parse_instinct.py",
+          "source": "skills/continuous-learning-v2/scripts/test_parse_instinct.py",
+          "upstream_sha256": "acf556e8a8023347b35988bb490927a4e9f65f2579b03f26cad610687656605b",
+          "imported_sha256": "acf556e8a8023347b35988bb490927a4e9f65f2579b03f26cad610687656605b"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/scripts/lib/homunculus-dir.sh",
+          "source": "skills/continuous-learning-v2/scripts/lib/homunculus-dir.sh",
+          "upstream_sha256": "99dfa99ae0f7c6e2e15ed5b5bf3c46e91a5f089f4060ba93d5da5e85e04fd308",
+          "imported_sha256": "99dfa99ae0f7c6e2e15ed5b5bf3c46e91a5f089f4060ba93d5da5e85e04fd308"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/observer-loop.sh",
+          "source": "skills/continuous-learning-v2/agents/observer-loop.sh",
+          "upstream_sha256": "a6d119252c8ff2eda7aa7b345c2254fd6bdaf14056f6b5bf54835a2738ff310d",
+          "imported_sha256": "a6d119252c8ff2eda7aa7b345c2254fd6bdaf14056f6b5bf54835a2738ff310d"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/observer.md",
+          "source": "skills/continuous-learning-v2/agents/observer.md",
+          "upstream_sha256": "320d50ff2965efeabd6f07c2be134e11da160293e958c1bc27c309d613839ad2",
+          "imported_sha256": "320d50ff2965efeabd6f07c2be134e11da160293e958c1bc27c309d613839ad2"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/session-guardian.sh",
+          "source": "skills/continuous-learning-v2/agents/session-guardian.sh",
+          "upstream_sha256": "ee6e4c0990f8d538cae1c85aa194e01e9ca2336e5d993ef68eb608b96cb0d82c",
+          "imported_sha256": "ee6e4c0990f8d538cae1c85aa194e01e9ca2336e5d993ef68eb608b96cb0d82c"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/agents/start-observer.sh",
+          "source": "skills/continuous-learning-v2/agents/start-observer.sh",
+          "upstream_sha256": "1f9a22da11e23d3551b8f8d0951a656150a532b326818627d9914ffd484a86e6",
+          "imported_sha256": "1f9a22da11e23d3551b8f8d0951a656150a532b326818627d9914ffd484a86e6"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-status.md",
+          "source": "commands/instinct-status.md",
+          "upstream_sha256": "4c6dfbea0a0a9105121410391b05983f71f4317ccf166a52955fc5972600fcce",
+          "imported_sha256": "4c6dfbea0a0a9105121410391b05983f71f4317ccf166a52955fc5972600fcce"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/evolve.md",
+          "source": "commands/evolve.md",
+          "upstream_sha256": "c8f94e2d2517539fd3e3cf05edb5a7187a887d76f2c936798e93e546f8b30ebb",
+          "imported_sha256": "c8f94e2d2517539fd3e3cf05edb5a7187a887d76f2c936798e93e546f8b30ebb"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-export.md",
+          "source": "commands/instinct-export.md",
+          "upstream_sha256": "cd2052ae1b9c49f75ad81aae6e236be959cc6656d32e3b8f3e6e13d2d3bd2d3c",
+          "imported_sha256": "cd2052ae1b9c49f75ad81aae6e236be959cc6656d32e3b8f3e6e13d2d3bd2d3c"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/instinct-import.md",
+          "source": "commands/instinct-import.md",
+          "upstream_sha256": "30514ada563953a1eafa46a09644831969aaae7672068777267e0b801814e7d9",
+          "imported_sha256": "30514ada563953a1eafa46a09644831969aaae7672068777267e0b801814e7d9"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/promote.md",
+          "source": "commands/promote.md",
+          "upstream_sha256": "8d2faf47b1322c24a1dfa221b2f5e85b9e766fcd1d460c157c472246a3b86846",
+          "imported_sha256": "8d2faf47b1322c24a1dfa221b2f5e85b9e766fcd1d460c157c472246a3b86846"
+        },
+        {
+          "path": ".claude/skills/continuous-learning-v2/commands/projects.md",
+          "source": "commands/projects.md",
+          "upstream_sha256": "dc939242028d24119b985e6ad4fee3d6c8185f6bd19c716535384149bc9876f3",
+          "imported_sha256": "dc939242028d24119b985e6ad4fee3d6c8185f6bd19c716535384149bc9876f3"
+        }
+      ],
+      "changes": [
+        "SKILL.md: added disable-model-invocation: true to the frontmatter.",
+        "SKILL.md: added the AIDLC integration paragraph after the frontmatter (no hooks registered or written by this package; enabled only through the separate lbvs-aidlc-observer@lbvs-aidlc plugin, defaultEnabled false, whose enable command /lbvs-aidlc-init prints; data under ${XDG_DATA_HOME:-~/.local/share}/ecc-homunculus/; /lbvs-aidlc-learn remains the per-change lesson; commands/ are reference copies). Upstream body retained byte-for-byte.",
+        "Nothing else edited: config.json, hooks/, scripts/, agents/ and commands/ are verbatim upstream with executable bits preserved on the shell scripts."
+      ],
+      "dependencies": [
+        "Upstream commands/{instinct-status,evolve,instinct-export,instinct-import,promote,projects}.md are bundled under commands/ as reference copies only; they are not registered as project commands. scripts/instinct-cli.py is the executable path.",
+        "hooks/observe.sh requires python3 and git; agents/start-observer.sh requires the claude CLI (Haiku observer). Neither is registered or started by this package."
+      ],
+      "limits": [
+        "Off by default: this package registers no PreToolUse/PostToolUse hook and /lbvs-aidlc-init writes no settings.json. Enablement is the engineer's own `claude plugin enable lbvs-aidlc-observer@lbvs-aidlc` (or `omp plugin enable`); observer.enabled stays false in config.json.",
+        "Observations include tool inputs and outputs (truncated to 5000 characters each) and are stored outside every repository; nothing is written into the repository.",
+        "Imported as reference content; hooks, observer and instinct CLI were not executed or runtime-verified."
       ]
     }
   ],

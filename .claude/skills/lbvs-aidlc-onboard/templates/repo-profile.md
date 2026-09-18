@@ -65,6 +65,19 @@ Profiled by: lbvs-aidlc-repo-scout via /lbvs-aidlc-onboard | /lbvs-aidlc-init
 
 <Each of CLAUDE.md, AGENTS.md, .claude/rules/**, .cursorrules, .github/copilot-instructions.md found: path, scope, anything it forbids or mandates. `None found` otherwise. These files remain authoritative over this profile.>
 
+## Knowledge stores
+
+| Store | Path | Template | Index | Naming |
+|-------|------|----------|-------|--------|
+| ADR | docs/adr/ | docs/adr/template.md | docs/adr/README.md | NNNN-kebab-title.md |
+| Incidents | docs/incidents/ | docs/incidents/template.md | docs/incidents/README.md | YYYY-MM-DD-slug.md |
+| Security | docs/security/ | docs/security/threat-model-template.md | docs/security/README.md | threat-models/<name>.md, findings/YYYY-MM-DD-<source>.md |
+| References | docs/references/ | none | docs/references/libraries.md (one row per library) | — |
+| Playbooks | docs/playbooks/ | docs/playbooks/template.md | docs/playbooks/README.md | kebab-title.md |
+| Lessons | docs/solutions/ | .claude/skills/lbvs-aidlc-learn/templates/learning.md | none | <category>/<topic>.md |
+
+<!-- Rows above are the package defaults. Where the repository keeps a store elsewhere or in another form, edit its row to the real path, template, index and naming (e.g. `| ADR | docs/adr/ | docs/adr/0000-template.md | none — directory listing | NNNN-kebab-title.md |`, `| Lessons | .claude/knowledge/ | none — prose sections per domain | none | <domain>.md |`). `Index: none` = append no row; `Template: none — <form>` = follow that form. Skills read their store's row from this table; a missing row means the package default. -->
+
 ## Playbooks
 
 <Links to docs/playbooks/<name>.md entries that apply to this repository, or `None yet`.>
