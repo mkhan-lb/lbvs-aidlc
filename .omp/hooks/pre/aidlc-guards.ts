@@ -85,6 +85,15 @@ function scaffoldLine(root: string): string | undefined {
   return `AIDLC scaffold: installed with plugin ${installed}, running ${running} — run \`aidlc update\` to refresh repository seeds.`;
 }
 
+/** Output of the shared style-mode.sh for `root`, so both hosts inject identical reply-style text; empty when off or unavailable. */
+function styleText(root: string): string {
+  const script = PLUGIN_LAYOUT ? join(PLUGIN_ROOT, "hooks", "style-mode.sh") : join(root, ".claude", "hooks", "style-mode.sh");
+  if (!existsSync(script)) return "";
+  try {
+    return execFileSync("sh", [script], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"], env: { ...process.env, CLAUDE_PROJECT_DIR: root } }).trim();
+  } catch { return ""; }
+}
+
 /** New text per target of a write (`content`) or hashline edit (`+` body rows under each `[path#TAG]` section). */
 function newTextByTarget(toolName: string, input: Record<string, unknown>): Map<string, string> {
   const texts = new Map<string, string>();
@@ -169,6 +178,8 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     }
     const scaffold = scaffoldLine(root);
     if (scaffold) modeLine = `${modeLine}\n${scaffold}`;
+    const style = styleText(root);
+    if (style) modeLine = `${modeLine}\n${style}`;
     return modeLine;
   }
 

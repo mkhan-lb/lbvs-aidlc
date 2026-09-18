@@ -20,8 +20,8 @@ REPOSITORY = "https://github.com/mkhan-lb/lbvs-aidlc"
 AUTHOR = {"name": "Logicbroker / Virtualstock engineering"}
 DOCS = ("WORKFLOW.md", "USAGE.md", "ARTIFACTS.md", "PLUGINS.md")
 AGENTS = tuple(sorted(p.name for p in (PACKAGE_ROOT / ".claude/agents").glob("*.md")))
-HOOK_SCRIPTS = ("protect-tests.sh", "pr-guard.sh", "artifact-guard.sh", "argument-guard.sh", "scaffold-check.sh")
-SHARED_SKILLS = ("architecture-decision-records", "doc-coauthoring", "unslop")
+HOOK_SCRIPTS = ("protect-tests.sh", "pr-guard.sh", "artifact-guard.sh", "argument-guard.sh", "scaffold-check.sh", "style-mode.sh")
+SHARED_SKILLS = ("architecture-decision-records", "doc-coauthoring", "unslop", "caveman")
 OBSERVER_SKILL = "continuous-learning-v2"
 OBSERVE_HOOK = "skills/" + OBSERVER_SKILL + "/hooks/observe.sh"
 ROOT = "${CLAUDE_PLUGIN_ROOT}"
@@ -50,9 +50,9 @@ REWRITES = (
     # Repository-layout paths to files the plugin ships elsewhere.
     (re.compile(r"(?<!\w)(?:\.\./)*\.claude/skills/"), ROOT + "/skills/"),
     (re.compile(r"(?<!\w)(?:\.\./)*\.claude/agents/"), ROOT + "/agents/"),
-    (re.compile(r"(?<![\w/])\.claude/hooks/(protect-tests|pr-guard|artifact-guard|argument-guard|scaffold-check)\.sh"), ROOT + r"/hooks/\1.sh"),
+    (re.compile(r"(?<![\w/])\.claude/hooks/(protect-tests|pr-guard|artifact-guard|argument-guard|scaffold-check|style-mode)\.sh"), ROOT + r"/hooks/\1.sh"),
     (re.compile(r"(?<![\w/])\.claude/hooks/worktree-(create|remove)\.sh"), ROOT + r"/hooks/worktree-\1.sh"),
-    (re.compile(r"(?<![\w/])docs/vendor/(aws-aidlc/NOTICE\.md|anthropic-skills/NOTICE\.md|ecc/LICENSE|cursor-plugins/(?:LICENSE|manifest\.json))"), ROOT + r"/docs/vendor/\1"),
+    (re.compile(r"(?<![\w/])docs/vendor/(aws-aidlc/NOTICE\.md|anthropic-skills/NOTICE\.md|ecc/LICENSE|cursor-plugins/(?:LICENSE|manifest\.json)|caveman/(?:LICENSE|manifest\.json))"), ROOT + r"/docs/vendor/\1"),
 )
 
 
@@ -113,7 +113,7 @@ def aidlc_hooks():
     return {"hooks": {
         "SessionStart": [{
             "matcher": "startup|resume",
-            "hooks": [helper_hook('--root "${CLAUDE_PROJECT_DIR}" mode', 10), script_hook("scaffold-check.sh")],
+            "hooks": [helper_hook('--root "${CLAUDE_PROJECT_DIR}" mode', 10), script_hook("scaffold-check.sh"), script_hook("style-mode.sh")],
         }],
         "PreToolUse": [
             {"matcher": "Edit|Write|MultiEdit|NotebookEdit", "hooks": [script_hook("protect-tests.sh"), script_hook("artifact-guard.sh")]},
@@ -174,7 +174,7 @@ def build_aidlc(plugin_root, vendored):
             copy_rewritten(source, plugin_root / "templates/conventions" / source.name)
     for name in HOOK_SCRIPTS:
         copy_verbatim(PACKAGE_ROOT / ".claude/hooks" / name, plugin_root / "hooks" / name)
-    for notice in ("docs/vendor/aws-aidlc/NOTICE.md", "docs/vendor/anthropic-skills/NOTICE.md", "docs/vendor/ecc/LICENSE", "docs/vendor/cursor-plugins/LICENSE", "docs/vendor/cursor-plugins/manifest.json"):
+    for notice in ("docs/vendor/aws-aidlc/NOTICE.md", "docs/vendor/anthropic-skills/NOTICE.md", "docs/vendor/ecc/LICENSE", "docs/vendor/cursor-plugins/LICENSE", "docs/vendor/cursor-plugins/manifest.json", "docs/vendor/caveman/LICENSE", "docs/vendor/caveman/manifest.json"):
         copy_verbatim(PACKAGE_ROOT / notice, plugin_root / notice)
     copy_verbatim(PACKAGE_ROOT / ".mcp.json", plugin_root / ".mcp.json")
     copy_verbatim(PACKAGE_ROOT / ".omp/hooks/pre/aidlc-guards.ts", plugin_root / "omp/aidlc-guards.ts")
