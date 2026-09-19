@@ -8,6 +8,8 @@
 # interpret so unrelated edits are never blocked.
 AIDLC_HOOK_INPUT=$(cat 2>/dev/null || true)
 export AIDLC_HOOK_INPUT
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then AIDLC_HELPER="${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py"; else AIDLC_HELPER="${CLAUDE_PROJECT_DIR:-$PWD}/scripts/aidlc.py"; fi
+export AIDLC_HELPER
 exec python3 - "${CLAUDE_PROJECT_DIR:-$PWD}" <<'PY'
 import fnmatch, glob, json, os, subprocess, sys
 
@@ -102,5 +104,13 @@ def main():
 try:
     main()
 except Exception:
-    pass
+    # A crash here is a workflow defect: report it (traceback and session facts only, never the payload) and stay silent.
+    import os, subprocess, sys, traceback
+    try:
+        reporter = subprocess.Popen([sys.executable, os.environ["AIDLC_HELPER"], "--root", os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd(), "report-bug", "--component", "hooks/protect-tests.sh"],
+                                    stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        reporter.stdin.write(traceback.format_exc().encode("utf-8"))
+        reporter.stdin.close()
+    except Exception:
+        pass
 PY

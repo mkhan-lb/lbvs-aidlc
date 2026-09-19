@@ -584,7 +584,7 @@ GENERATED = {"changes/.gitkeep": b""}
 REPO_OWNED = {
     "AGENTS.md": "add one line pointing at `/lbvs-aidlc` and the plugin's docs/WORKFLOW.md (Codex and Copilot read this file)",
     "CLAUDE.md": "add `@AGENTS.md` or one line pointing at `/lbvs-aidlc`; do not create it where the repository forbids a root CLAUDE.md",
-    ".gitignore": "append: **/.aidlc/fix/  **/.aidlc/current  **/.claude/worktrees/  **/.claude/settings.local.json  .codegraph/",
+    ".gitignore": "append: **/.aidlc/fix/  **/.aidlc/current  **/.aidlc/reports/  **/.claude/worktrees/  **/.claude/settings.local.json  .codegraph/",
     ".worktreeinclude": "list the ignored files worktrees need (.env, .claude/settings.local.json)",
     ".claude/settings.json": "merge the plugin declaration below; the plugin carries the skills, agents, hooks and helper",
 }
@@ -632,15 +632,34 @@ def plugin_version():
     return plugin_manifest().get("version", "unknown")
 
 
-def redact_home(text):
+TEMP_PATH = re.compile(r"(?:/private)?/(?:var/folders|tmp)/\S+")
+
+
+def redact(text):
+    """Home directories become ~ and temporary paths <tmp-path>: the content boundary's machine-local rules for text that leaves the workstation."""
     home = str(Path.home())
-    return text.replace(home, "~") if home and home != "/" else text
+    if home and home != "/":
+        text = text.replace(home, "~")
+    return TEMP_PATH.sub("<tmp-path>", text)
 
 
-def report_context(root):
-    """Facts /lbvs-aidlc-report puts in a process-bug or workflow-request issue; the project appears as name and remote, never a path; nothing filed."""
-    manifest = plugin_manifest()
-    repository = manifest.get("repository") or "https://github.com/" + origin_repo()
+def package_repo_slug():
+    """owner/repo of the package repository: the plugin manifest's repository URL, else this checkout's origin."""
+    url = plugin_manifest().get("repository", "")
+    if url:
+        return re.sub(r"\.git\Z", "", urlsplit(url).path.strip("/"))
+    return origin_repo()
+
+
+def gh_state():
+    if not shutil.which("gh"):
+        return "not installed"
+    result = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=15, check=False)
+    return "authenticated" if result.returncode == 0 else "not authenticated (`gh auth login`)"
+
+
+def context_lines(root):
+    """Facts /lbvs-aidlc-report puts in a process-bug or workflow-request issue; the project appears as name and remote, never a path."""
     layout = "plugin" if os.environ.get("CLAUDE_PLUGIN_ROOT") or (PACKAGE_ROOT / ".claude-plugin/plugin.json").is_file() else "package checkout"
     installed = {}
     if (root / MANIFEST_PATH).is_file():
@@ -649,19 +668,135 @@ def report_context(root):
         except ValueError:
             installed = {"error": "unreadable"}
     change_id, source = current_change(root)
-    mode, reasons = project_mode(root)
-    gh = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=15, check=False) if shutil.which("gh") else None
-    lines = [
-        "Package repository: {}".format(repository),
-        "Helper: {} ({}), plugin version {}, helper revision {}".format(redact_home(str(PACKAGE_ROOT)), layout, plugin_version(), package_revision() if layout == "package checkout" else "n/a"),
+    mode, _ = project_mode(root)
+    return [
+        "Package repository: https://github.com/{}".format(package_repo_slug()),
+        "Helper: {} ({}), plugin version {}, helper revision {}".format(redact(str(PACKAGE_ROOT)), layout, plugin_version(), package_revision() if layout == "package checkout" else "n/a"),
         "Host: {}".format("Oh My Pi" if os.environ.get("OMPCODE") else "Claude Code" if os.environ.get("CLAUDECODE") or os.environ.get("CLAUDE_PROJECT_DIR") else "unknown (run from a shell)"),
         "Workstation: {} {} on {}, Python {}".format(platform.system(), platform.release(), platform.machine(), platform.python_version()),
         "Project: {} ({}; {}), scaffold manifest {}".format(root.name, git_out(root, "remote", "get-url", "origin") or "no remote", mode, "absent" if not installed else "plugin {} installed {}".format(installed.get("plugin_version", "?"), installed.get("installed", "?"))),
         "Change in play: {}".format("{} (from {})".format(change_id, source) if change_id else "none resolved"),
-        "gh: {}".format("not installed" if gh is None else ("authenticated" if gh.returncode == 0 else "not authenticated (`gh auth login`)")),
+        "gh: {}".format(gh_state()),
     ]
-    print("\n".join(lines))
+
+
+def report_context(root):
+    print("\n".join(context_lines(root)))
     return 0
+
+
+REPORTS_DIR = Path(".aidlc/reports")
+BUG_LABEL = "process-bug"
+
+
+def bug_fingerprint(component, detail):
+    """Stable id for one defect: component, plugin version, exception type and call chain; digits and paths take no part."""
+    frames = re.findall(r'File "[^"]*", line \d+, in (\w+)', detail)
+    last = detail.strip().splitlines()[-1] if detail.strip() else ""
+    kind = last.split(":", 1)[0] if frames else re.sub(r"\d+", "", last)[:120]
+    return hashlib.sha256("|".join((component, plugin_version(), kind, ">".join(frames))).encode("utf-8")).hexdigest()[:12]
+
+
+def hook_names():
+    """Event, tool and command names from the hook payload in AIDLC_HOOK_INPUT; never its contents."""
+    try:
+        payload = json.loads(os.environ.get("AIDLC_HOOK_INPUT", ""))
+    except ValueError:
+        return ""
+    if not isinstance(payload, dict):
+        return ""
+    return " ".join(str(payload[key]) for key in ("hook_event_name", "tool_name", "command_name") if isinstance(payload.get(key), str))
+
+
+def render_bug(component, detail, names, fingerprint, root):
+    if component.startswith("hooks/"):
+        contract = "Hook scripts exit 0 silently on anything they cannot interpret (each script's header); an exception is a defect."
+    elif component.startswith("aidlc.py"):
+        contract = "Helper subcommands print `ERROR: <reason>` and exit 1 on expected failures; an uncaught exception is a defect."
+    else:
+        contract = "The Oh My Pi adapter runs the shell hooks and maps their decisions; an exception in the adapter is a defect."
+    return "\n".join((
+        "## What happened", "",
+        "`{}` raised during `{}` (automatic report).".format(component, names or "not observed"), "",
+        "```text", detail.strip(), "```", "",
+        "## What the contract says", "", contract, "",
+        "## Reproduction", "", "not observed (automatic report); the call chain and environment are the evidence.", "",
+        "## Environment", "", "```text", *context_lines(root), "```", "",
+        "## Skill and step in play", "", names or "not observed", "",
+        "## Workaround used", "", "not observed", "",
+        "fp:{}".format(fingerprint), "",
+    ))
+
+
+def gh_json(*args):
+    result = subprocess.run(["gh", *args], capture_output=True, text=True, timeout=60, check=False)
+    if result.returncode != 0:
+        raise ValueError(result.stderr.strip() or result.stdout.strip() or "gh failed")
+    return json.loads(result.stdout) if result.stdout.strip().startswith(("[", "{")) else result.stdout.strip()
+
+
+def file_bug(report):
+    """Comment on the open issue carrying the same fingerprint, else create one; returns the issue URL."""
+    repo = package_repo_slug()
+    marker = "fp:" + report["fingerprint"]
+    existing = [issue for issue in gh_json("issue", "list", "--repo", repo, "--state", "open", "--search", marker, "--json", "number,url,body", "--limit", "20")
+                if marker in issue.get("body", "")]
+    if existing:
+        host = report["body"].split("Host: ", 1)[-1].split("\n", 1)[0]
+        gh_json("issue", "comment", str(existing[0]["number"]), "--repo", repo, "--body", "Seen again: `{}` under {}. {}".format(report["component"], host, marker))
+        return existing[0]["url"]
+    with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as handle:
+        handle.write(report["body"])
+        body_file = handle.name
+    try:
+        try:
+            return gh_json("issue", "create", "--repo", repo, "--title", report["title"], "--label", BUG_LABEL, "--body-file", body_file)
+        except ValueError as error:
+            if "label" not in str(error).lower():
+                raise
+            return gh_json("issue", "create", "--repo", repo, "--title", report["title"], "--body-file", body_file)
+    finally:
+        os.unlink(body_file)
+
+
+def report_bug(root, component, pending=False):
+    """Automatic process-bug report: fingerprinted, once per project, filed with gh or parked under .aidlc/reports/ until gh can."""
+    reports = root / REPORTS_DIR
+    reports.mkdir(parents=True, exist_ok=True)
+    if pending:
+        queue = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(reports.glob("*.pending.json"))]
+    else:
+        detail = redact(sys.stdin.read())
+        fingerprint = bug_fingerprint(component, detail)
+        if (reports / (fingerprint + ".json")).is_file():
+            return 0
+        last = detail.strip().splitlines()[-1] if detail.strip() else "failure"
+        queue = [{"component": component, "fingerprint": fingerprint,
+                  "title": redact("{}: {}: {}".format(BUG_LABEL, component, last))[:80],
+                  "body": render_bug(component, detail, hook_names(), fingerprint, root)}]
+    for report in queue:
+        parked = reports / (report["fingerprint"] + ".pending.json")
+        if gh_state() != "authenticated":
+            parked.write_text(json.dumps(report, indent=2), encoding="utf-8")
+            print("AIDLC: bug report parked at {} (gh not authenticated); `aidlc report-bug --pending` files it.".format((REPORTS_DIR / parked.name).as_posix()), file=sys.stderr)
+            continue
+        url = file_bug(report)
+        (reports / (report["fingerprint"] + ".json")).write_text(json.dumps({"url": url, "component": report["component"], "filed": datetime.date.today().isoformat()}, indent=2), encoding="utf-8")
+        if parked.is_file():
+            parked.unlink()
+        print(url)
+    return 0
+
+
+def report_bug_detached(component, detail, root=None):
+    """Start `report-bug` for `detail` and return at once; callers are hooks with a ten-second budget."""
+    try:
+        process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--root", str(root or Path.cwd()), "report-bug", "--component", component],
+                                   stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        process.stdin.write(detail.encode("utf-8"))
+        process.stdin.close()
+    except Exception:
+        pass
 
 
 def origin_repo():
@@ -1182,6 +1317,9 @@ def main():
     conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
     commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
     commands.add_parser("report-context", help="print the session facts /lbvs-aidlc-report puts in a process-bug or workflow-request issue (home paths redacted; files nothing)")
+    bug = commands.add_parser("report-bug", help="automatic process-bug issue on the package repository from a traceback on stdin: fingerprinted, once per project, parked under .aidlc/reports/ when gh is not authenticated")
+    bug.add_argument("--component", default="unknown", help="what failed, e.g. hooks/protect-tests.sh or aidlc.py install")
+    bug.add_argument("--pending", action="store_true", help="file the reports parked under .aidlc/reports/ instead of reading stdin")
     lint = commands.add_parser("lint-artifacts", help="scan changes/<id>/**/*.md (all changes without an ID) and docs/solutions/**/*.md for session references and machine paths; exit 1 on any hit")
     lint.add_argument("--root", dest="lint_root", type=Path, metavar="PATH", help="repository to scan (default: the repository containing the current directory)")
     lint.add_argument("--stdin", metavar="PATH", help="lint text read from stdin as if it were repository file PATH (the artifact-guard hooks use this); no scan")
@@ -1229,6 +1367,8 @@ def main():
             return profile(root)
         if args.command == "report-context":
             return report_context(root)
+        if args.command == "report-bug":
+            return report_bug(root, args.component, pending=args.pending)
         return doctor(root, install=getattr(args, "install", False))
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("ERROR: {}".format(error), file=sys.stderr)
@@ -1236,4 +1376,17 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except Exception:
+        import traceback
+        detail = traceback.format_exc()
+        if "report-bug" not in sys.argv:
+            words = sys.argv[1:]
+            root = Path(words[words.index("--root") + 1]) if "--root" in words and words.index("--root") + 1 < len(words) else Path.cwd()
+            positional = [word for index, word in enumerate(words) if not word.startswith("-") and (index == 0 or words[index - 1] != "--root")]
+            report_bug_detached("aidlc.py " + (positional[0] if positional else "?"), detail, root=root)
+        sys.stderr.write(detail)
+        sys.exit(1)

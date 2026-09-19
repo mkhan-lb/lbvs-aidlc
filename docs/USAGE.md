@@ -26,6 +26,16 @@ python3 scripts/aidlc.py check
 
 **Next.** When a hook reports a failure, run the [helper](REFERENCE.md#helper) subcommand it names from the same root. Project declarations do not clear inherited user or managed configuration, so review your effective settings ([host compliance](COMPATIBILITY.md#host-compliance)).
 
+### Report a workflow problem
+
+**Prerequisite.** `gh auth status` passes; the package repository is public, so a report names your repository and the failing component and nothing else.
+
+**Say.** "/lbvs-aidlc-report bug the protect-tests hook denied an edit to a file that is not in the fix marker" or "/lbvs-aidlc-report request we need a same-day hotfix flow without a spec".
+
+**Expect.** For a bug: the draft and the issue URL in the same turn (`gh issue close <n>` withdraws it). For a request: the draft, then **File it**, **Edit first** or **Stop here**. Crashes of a hook, the helper or the Oh My Pi adapter file themselves without this command; a session-start line `AIDLC: <n> automatic bug report(s) parked` means `gh` was not authenticated when one was captured, and `python3 scripts/aidlc.py report-bug --pending` files them ([hooks](WORKFLOW.md#skills-agents-and-hooks)).
+
+**Next.** Continue the interrupted work; a report changes nothing about the change in play.
+
 ### CE availability
 
 **Prerequisite.** Compound Engineering **3.26.3** is declared at project scope in `.claude/settings.json` (`extraKnownMarketplaces` and `enabledPlugins`). The declaration pins the marketplace and plugin; it does not install them.

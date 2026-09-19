@@ -12,7 +12,7 @@
  * Worktree naming stays with the Claude hook; omp sessions use `git worktree add` per the skill fallback.
  */
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
@@ -50,6 +50,24 @@ function helperPath(root: string): string {
 
 function scriptPath(root: string, name: string): string {
   return PLUGIN_LAYOUT ? join(PLUGIN_ROOT, "hooks", name) : join(root, ".claude", "hooks", name);
+}
+
+/** A defect in this adapter is a workflow bug: hand the error to `aidlc.py report-bug` (detached, deduped there) and let it propagate. */
+function reportBug(root: string, component: string, error: unknown): void {
+  const helper = helperPath(root);
+  if (!existsSync(helper)) return;
+  try {
+    const detail = error instanceof Error ? `${error.stack ?? error.message}` : String(error);
+    const reporter = spawn("python3", [helper, "--root", root, "report-bug", "--component", component], { detached: true, stdio: ["pipe", "ignore", "ignore"] });
+    reporter.stdin.end(`${detail}\n${component}: ${error instanceof Error ? error.name : "Error"}`);
+    reporter.unref();
+  } catch { /* reporting must never mask the original failure */ }
+}
+
+function guarded<E, C extends { cwd: string }, R>(component: string, handler: (event: E, ctx: C) => Promise<R>): (event: E, ctx: C) => Promise<R> {
+  return async (event, ctx) => {
+    try { return await handler(event, ctx); } catch (error) { reportBug(projectRoot(ctx.cwd), component, error); throw error; }
+  };
 }
 
 /** Run one hook script with a Claude-shaped payload on stdin; empty string when absent, silent or failing. */
@@ -118,7 +136,7 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     return sessionText || undefined;
   }
 
-  pi.on("tool_call", async (event, ctx) => {
+  pi.on("tool_call", guarded("omp/aidlc-guards.ts tool_call", async (event, ctx) => {
     const scripts = event.toolName === "bash" ? BASH_SCRIPTS : event.toolName === "write" || event.toolName === "edit" ? EDIT_SCRIPTS : [];
     if (!scripts.length) return;
     const root = projectRoot(ctx.cwd);
@@ -135,20 +153,20 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
         }
       }
     }
-  });
+  }));
 
   let announced = false;
 
   // Shown in the transcript for the engineer.
-  pi.on("before_agent_start", async (_event, ctx) => {
+  pi.on("before_agent_start", guarded("omp/aidlc-guards.ts before_agent_start", async (_event, ctx) => {
     const text = sessionContext(ctx.cwd);
     if (!text || announced) return;
     announced = true;
     return { message: { customType: "aidlc-project-mode", content: text, display: true, details: { root: projectRoot(ctx.cwd) } } };
-  });
+  }));
 
   // Custom transcript messages are not part of the model's context, so attach the text to the first user turn.
-  pi.on("context", async (event, ctx) => {
+  pi.on("context", guarded("omp/aidlc-guards.ts context", async (event, ctx) => {
     const text = sessionContext(ctx.cwd);
     if (!text) return;
     const messages = event.messages;
@@ -159,5 +177,5 @@ export default function aidlcGuards(pi: ExtensionAPI): void {
     const updated = messages.slice();
     updated[first] = { ...messages[first], content: [...blocks, { type: "text", text: `[aidlc-project-mode]\n${text}` }] } as typeof messages[number];
     return { messages: updated };
-  });
+  }));
 }
