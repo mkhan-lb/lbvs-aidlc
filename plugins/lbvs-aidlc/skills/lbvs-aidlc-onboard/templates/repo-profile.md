@@ -8,7 +8,7 @@ Profiled by: lbvs-aidlc-repo-scout via /lbvs-aidlc-onboard | /lbvs-aidlc-init
 
 ## Identity
 
-- Company: <Logicbroker | Virtualstock>
+- Company: <Logicbroker | Virtualstock> (the `glossary-context.sh` hook reads this word to pick the glossary index it injects at session start)
 - Glossary: docs/glossary/<logicbroker-glossary.md | virtualstock-glossary.md>
 - Platform: docs/platform/platform.md (<filled | bracketed items remain | absent>)
 - Service / catalog name: <name from catalog-info.yaml or manifest, with path>

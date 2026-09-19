@@ -501,3 +501,17 @@ Guidance read on 2026-09-17: code.claude.com/docs `best-practices`, `skills`, `s
 
 Split the optional-CE contracts out of `docs/WORKFLOW.md` (≈120 of 296 lines) into a file read only when CE is selected; move the five source-research docs (`COMPATIBILITY`, `PREREQUISITES`, `COVERAGE`, `DEPENDENCIES`, `MEASURES`) under `docs/research/`; consider `omitClaudeMd: true` for the four read-only critics once the trial shows what they actually need; `.omp/agents` mirrors duplicate the Claude definitions and could be dropped if omp's `claude` provider maps tool names.
 
+
+## Glossary injection, docs consolidation and `aidlc` under Oh My Pi (2026-09-18)
+
+### Measured
+
+- Shared docs (`WORKFLOW`, `USAGE`, `ARTIFACTS`, `PLUGINS`, `REFERENCE`, `COMPATIBILITY`) went from 1,734 lines / 310 KB to 1,615 lines / 223 KB. Normative facts now have one home in `WORKFLOW.md`; the remaining hits elsewhere are Say-line labels, file-content descriptions, helper internals or path mentions next to a link. Package check after the rewrite: 188 required assets, 581 local links resolve (up from 475, restatements became links). No em dash, curly quote, arrow or bold-label-colon header remains in the six files outside code spans.
+- `aidlc.py check` validates link anchors against the target's headings (GitHub slug rules). Its first run found one stale anchor, `PLUGINS.md#caveman-opt-in-engineers-only` in `REFERENCE.md`, which the target-only check had passed.
+- `glossary-context.sh` on a scratch project: no source prints nothing; `.aidlc/glossary` set to `Virtualstock` prints the 51-term Virtualstock index from the plugin's `docs/glossary/` when `CLAUDE_PLUGIN_ROOT` is set; a profile line `- Company: Logicbroker (the-edge)` selects the 58-term Logicbroker index; `AIDLC_GLOSSARY` wins over the profile; `off`, an unknown value and the template placeholder `<Logicbroker | Virtualstock>` print nothing. `build_plugin.py --check` exits 0 after regeneration and the indexes contain no em dashes.
+- Oh My Pi, generated plugin installed from this marketplace into a scratch repository with `.aidlc/glossary` = `logicbroker`: the model reported `GLOSSARY: logicbroker`, `TERMS: 58` and the ASN first sentence byte-equal to `docs/glossary/logicbroker-index.md`. The first-turn context carried the `[aidlc-project-mode]`, `[aidlc-reply-style]` and `[aidlc-glossary]` blocks (10,680 bytes with the Virtualstock index in the package layout).
+- Oh My Pi, same install: `command -v aidlc` in the bash tool resolved to the plugin cache's `bin/aidlc` because the guard extension prepends the plugin `bin/` to PATH; the compliance row is adapter-backed.
+
+### Limits
+
+The glossary block is 9 to 11 KB per session; it has not been measured against a real change for whether stages use the terms or flag new ones (the `Glossary terms:` template line is untested in a run). Claude Code SessionStart execution of `glossary-context.sh` is inferred from `style-mode.sh`, which uses the same registration; it was not observed in a Claude Code session today.

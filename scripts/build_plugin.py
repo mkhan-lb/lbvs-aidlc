@@ -21,8 +21,10 @@ OMP_AGENTS = PACKAGE_ROOT / ".omp/agents"
 REPOSITORY = "https://github.com/mkhan-lb/lbvs-aidlc"
 AUTHOR = {"name": "Logicbroker / Virtualstock engineering"}
 DOCS = ("WORKFLOW.md", "USAGE.md", "ARTIFACTS.md", "PLUGINS.md")
+GLOSSARY_DIR = PACKAGE_ROOT / "docs/glossary"
+GLOSSARIES = ("virtualstock", "logicbroker")
 AGENTS = tuple(sorted(p.name for p in (PACKAGE_ROOT / ".claude/agents").glob("*.md")))
-HOOK_SCRIPTS = ("protect-tests.sh", "pr-guard.sh", "artifact-guard.sh", "argument-guard.sh", "scaffold-check.sh", "style-mode.sh")
+HOOK_SCRIPTS = ("protect-tests.sh", "pr-guard.sh", "artifact-guard.sh", "argument-guard.sh", "scaffold-check.sh", "style-mode.sh", "glossary-context.sh")
 SHARED_SKILLS = ("architecture-decision-records", "doc-coauthoring", "unslop", "caveman")
 OBSERVER_SKILL = "continuous-learning-v2"
 OBSERVE_HOOK = "skills/" + OBSERVER_SKILL + "/hooks/observe.sh"
@@ -52,7 +54,7 @@ REWRITES = (
     # Repository-layout paths to files the plugin ships elsewhere.
     (re.compile(r"(?<!\w)(?:\.\./)*\.claude/skills/"), ROOT + "/skills/"),
     (re.compile(r"(?<!\w)(?:\.\./)*\.claude/agents/"), ROOT + "/agents/"),
-    (re.compile(r"(?<![\w/])\.claude/hooks/(protect-tests|pr-guard|artifact-guard|argument-guard|scaffold-check|style-mode)\.sh"), ROOT + r"/hooks/\1.sh"),
+    (re.compile(r"(?<![\w/])\.claude/hooks/(protect-tests|pr-guard|artifact-guard|argument-guard|scaffold-check|style-mode|glossary-context)\.sh"), ROOT + r"/hooks/\1.sh"),
     (re.compile(r"(?<![\w/])\.claude/hooks/worktree-(create|remove)\.sh"), ROOT + r"/hooks/worktree-\1.sh"),
     (re.compile(r"(?<![\w/])docs/vendor/(aws-aidlc/NOTICE\.md|anthropic-skills/NOTICE\.md|ecc/LICENSE|cursor-plugins/(?:LICENSE|manifest\.json)|caveman/(?:LICENSE|manifest\.json))"), ROOT + r"/docs/vendor/\1"),
 )
@@ -155,7 +157,7 @@ def aidlc_hooks():
     return {"hooks": {
         "SessionStart": [{
             "matcher": "startup|resume",
-            "hooks": [helper_hook('--root "${CLAUDE_PROJECT_DIR}" mode', 10), script_hook("scaffold-check.sh"), script_hook("style-mode.sh")],
+            "hooks": [helper_hook('--root "${CLAUDE_PROJECT_DIR}" mode', 10), script_hook("scaffold-check.sh"), script_hook("style-mode.sh"), script_hook("glossary-context.sh")],
         }],
         "PreToolUse": [
             {"matcher": "Edit|Write|MultiEdit|NotebookEdit", "hooks": [script_hook("protect-tests.sh"), script_hook("artifact-guard.sh")]},
@@ -185,7 +187,7 @@ def aidlc_readme():
         "Skills are namespaced `/lbvs-aidlc:<skill>` (`/lbvs-aidlc:lbvs-aidlc <change-id>` starts a change; "
         "`/lbvs-aidlc:lbvs-aidlc-init` sets a repository up). Agents: "
         + ", ".join("`lbvs-aidlc:{}`".format(name[:-3]) for name in AGENTS)
-        + ". Hooks: project-mode and scaffold-version lines at session start, reproduction-test protection while "
+        + ". Hooks: project-mode, scaffold-version, reply-style and glossary-index lines at session start, reproduction-test protection while "
         "`.aidlc/fix/*.json` exists in the project, artifact content-boundary lint on `changes/**` and `docs/solutions/**`, "
         "a confirmation gate on `git commit`/`git push`, and one-bare-ID argument checking on `/lbvs-aidlc*` commands. "
         'The helper is reachable as `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/aidlc.py" <subcommand>` or `bin/aidlc`; '
@@ -217,6 +219,9 @@ def build_aidlc(plugin_root, vendored):
             copy_rewritten(source, plugin_root / "templates/conventions" / source.name)
     for name in HOOK_SCRIPTS:
         copy_verbatim(PACKAGE_ROOT / ".claude/hooks" / name, plugin_root / "hooks" / name)
+    for source in GLOSSARY_DIR.iterdir():
+        if source.is_file():
+            copy_verbatim(source, plugin_root / "docs/glossary" / source.name)
     for notice in ("docs/vendor/aws-aidlc/NOTICE.md", "docs/vendor/anthropic-skills/NOTICE.md", "docs/vendor/ecc/LICENSE", "docs/vendor/cursor-plugins/LICENSE", "docs/vendor/cursor-plugins/manifest.json", "docs/vendor/caveman/LICENSE", "docs/vendor/caveman/manifest.json"):
         copy_verbatim(PACKAGE_ROOT / notice, plugin_root / notice)
     copy_verbatim(PACKAGE_ROOT / ".mcp.json", plugin_root / ".mcp.json")
@@ -287,12 +292,42 @@ def marketplace():
     }
 
 
+def glossary_index(company):
+    """One line per term (term, aliases, domain, first sentence) plus the naming-trap bullets of docs/glossary/<company>-glossary.md."""
+    text = (GLOSSARY_DIR / (company + "-glossary.md")).read_text(encoding="utf-8")
+    terms, traps, section = [], [], None
+    for line in text.splitlines():
+        if line.startswith("## "):
+            section = line[3:].strip()
+        elif line.startswith("| **") and section == "Glossary":
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            head = cells[0].split("<br>")
+            term = head[0].strip("*")
+            domain = re.sub(r"</?em>", "", head[-1]).strip()
+            aliases = "; ".join(part.strip() for part in head[1:-1] if part.strip())
+            first = re.split(r"(?<=[.!?])\s", cells[1].split("<br>")[0].strip())[0]
+            terms.append("- {} ({}): {}".format(term, "; ".join(filter(None, (aliases, domain))), first))
+        elif line.startswith("- ") and section in ("Naming traps", "Words to use carefully"):
+            traps.append(line)
+    if not terms:
+        raise ValueError("no glossary rows found in docs/glossary/{}-glossary.md".format(company))
+    return (
+        "# {} glossary index\n\n".format(company.capitalize())
+        + "Generated by `scripts/build_plugin.py` from `{0}-glossary.md` in this directory; do not edit. One line per term: term (aliases; domain): first sentence of the definition. "
+        "The full entry, its usage note and its evidence are in `{0}-glossary.md`.\n\n## Terms\n\n".format(company)
+        + "\n".join(terms) + "\n\n## Naming traps\n\n" + "\n".join(traps) + "\n"
+    )
+
+
 def root_files():
-    """{generated repository-root file: wanted bytes}."""
-    return {
+    """{generated repository file outside plugins/: wanted bytes}."""
+    files = {
         MARKETPLACE: render_json(marketplace()),
         CODEX_MANIFEST: render_json(codex_manifest("./plugins/lbvs-aidlc/skills/", "./plugins/lbvs-aidlc/.mcp.json")),
     }
+    for company in GLOSSARIES:
+        files[GLOSSARY_DIR / (company + "-index.md")] = glossary_index(company).encode("utf-8")
+    return files
 
 
 def tree(root):
@@ -331,13 +366,14 @@ def main():
     if sys.argv[1:]:
         print("usage: build_plugin.py [--check]", file=sys.stderr)
         return 2
-    print("Generated {} ({} agent twins)".format(OMP_AGENTS.relative_to(PACKAGE_ROOT), build_omp_agents(OMP_AGENTS)))
-    for name, count in build(PLUGINS_ROOT).items():
-        print("Generated {}/{} ({} files)".format(PLUGINS_ROOT.relative_to(PACKAGE_ROOT), name, count))
+    # Root files first: the plugin build copies the generated glossary indexes.
     for path, content in root_files().items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
         print("Generated {}".format(path.relative_to(PACKAGE_ROOT)))
+    print("Generated {} ({} agent twins)".format(OMP_AGENTS.relative_to(PACKAGE_ROOT), build_omp_agents(OMP_AGENTS)))
+    for name, count in build(PLUGINS_ROOT).items():
+        print("Generated {}/{} ({} files)".format(PLUGINS_ROOT.relative_to(PACKAGE_ROOT), name, count))
     return 0
 
 
