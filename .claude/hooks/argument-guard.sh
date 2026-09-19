@@ -1,7 +1,7 @@
 #!/bin/sh
 # UserPromptExpansion hook (matcher lbvs-aidlc): AIDLC skills take at most one bare change ID.
-# /lbvs-aidlc-ticket keeps its ticket reference; /lbvs-aidlc-init and /lbvs-aidlc-onboard take
-# nothing. Any other argument shape blocks the expansion so the ID is not misread as context.
+# /lbvs-aidlc-ticket keeps its ticket reference and /lbvs-aidlc-report its kind and summary;
+# /lbvs-aidlc-init and /lbvs-aidlc-onboard take nothing. Any other argument shape blocks the expansion so the ID is not misread as context.
 # Exits 0 silently on anything it cannot parse.
 AIDLC_HOOK_INPUT=$(cat 2>/dev/null || true)
 export AIDLC_HOOK_INPUT
@@ -10,7 +10,7 @@ import json, os, re, sys
 
 CHANGE_ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NO_ARGUMENTS = {"lbvs-aidlc-init", "lbvs-aidlc-onboard"}
-EXEMPT = {"lbvs-aidlc-ticket"}
+EXEMPT = {"lbvs-aidlc-ticket", "lbvs-aidlc-report"}
 
 def rejected(name, arguments):
     if name in EXEMPT:

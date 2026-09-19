@@ -515,3 +515,16 @@ Split the optional-CE contracts out of `docs/WORKFLOW.md` (≈120 of 296 lines) 
 ### Limits
 
 The glossary block is 9 to 11 KB per session; it has not been measured against a real change for whether stages use the terms or flag new ones (the `Glossary terms:` template line is untested in a run). Claude Code SessionStart execution of `glossary-context.sh` is inferred from `style-mode.sh`, which uses the same registration; it was not observed in a Claude Code session today.
+
+## `/lbvs-aidlc-report` (2026-09-18)
+
+### Measured
+
+- `python3 scripts/aidlc.py report-context` from this checkout: package repository from the plugin manifest, `plugin version 0.2.0`, host `Oh My Pi` (from `OMPCODE`), project as name and remote, `gh: authenticated`. From the generated plugin with `CLAUDECODE` and `CLAUDE_PLUGIN_ROOT` set against a scratch project carrying a `0.1.0` scaffold manifest: layout `plugin`, host `Claude Code`, `scaffold manifest plugin 0.1.0 installed 2026-09-01`. Before this change `plugin_version()` returned `unknown` inside the plugin because it looked only under `plugins/lbvs-aidlc/`; `aidlc install` run from the plugin cache therefore recorded `plugin_version: unknown` and the scaffold check could never fire. Fixed by reading `.claude-plugin/plugin.json` beside `scripts/` first.
+- `argument-guard.sh`: `/lbvs-aidlc-report bug protect-tests blocked an unrelated file` and the namespaced form pass; `/lbvs-aidlc-intent some words here` still blocks.
+- Headless Oh My Pi run from the generated plugin on a scratch repository, skill read through `skill://`, one real request from the SO2-1386 trial (board URLs with `selectedIssue=KEY`): the run gathered `report-context`, searched `gh issue list --label workflow-request`, found no duplicate, drafted from `templates/workflow-request.md`, filed on the "File it" answer and printed the URL: [issue #3](https://github.com/mkhan-lb/lbvs-aidlc/issues/3), label applied. The body quoted the command and the URL shape, marked the helper revision `n/a` and error text as not observed, and excluded ticket contents.
+- Redaction gap found by reading the issue back: the scratch project's `/private/var/folders/...` path appeared in the `Project:` line, because only the home directory was redacted. `report-context` now prints the project's name and remote, never its path; the filed issue was edited to match.
+
+### Limits
+
+The interactive gates (kind, duplicate choice, "Edit first") were answered by instruction in a headless run, not by an engineer. Filing through the `github` MCP when `gh` is absent, and the `gh issue comment` duplicate path, were not exercised. The skill has not been run in Claude Code.

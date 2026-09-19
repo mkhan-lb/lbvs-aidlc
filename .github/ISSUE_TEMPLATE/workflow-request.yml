@@ -1,0 +1,47 @@
+name: Workflow request
+description: A use case the AIDLC lifecycle does not cover, or a stage that needs a different gate or artifact for a named case. Filed by /lbvs-aidlc-report or by hand.
+title: "workflow-request: "
+labels: ["workflow-request"]
+body:
+  - type: input
+    id: use-case
+    attributes:
+      label: Use case
+      description: One sentence, "when <situation>, an engineer must <outcome>".
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How it is done today
+      description: Steps taken now, stages used or skipped, where the lifecycle gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: needs
+    attributes:
+      label: What the workflow should provide
+      description: Artifacts, gates and checks the case needs; existing ones that do not fit and why.
+    validations:
+      required: true
+  - type: dropdown
+    id: shape
+    attributes:
+      label: Playbook or package workflow
+      options:
+        - A repository playbook (docs/playbooks/) would cover it
+        - Needs a package skill (new gates, artifacts or hooks)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Output of `python3 scripts/aidlc.py report-context`.
+      render: text
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: One real occurrence without customer data or ticket contents.

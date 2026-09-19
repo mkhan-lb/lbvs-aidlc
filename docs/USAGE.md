@@ -38,7 +38,7 @@ claude plugin install compound-engineering@compound-engineering-plugin --scope p
 
 **Expect.** After `/reload-plugins` or a new session, `/skills` lists `compound-engineering:ce-brainstorm`. When the plugin is missing, `lbvs-aidlc-intent` says so and offers reload, install or ordinary clarification; every skill decides availability from the session catalog, never the filesystem, and reports `prepared — not run` rather than pretend CE ran.
 
-**Next.** Declaring the plugin selects nothing; ask for each CE step in conversation. Run `/ce-setup` once per repository for a non-default `docs_root`. The 17 `lbvs-aidlc*` commands are in [REFERENCE.md](REFERENCE.md#commands) and the bundled skills and plugins per stage in [PLUGINS.md](PLUGINS.md#stage-table). The integration contracts were reviewed at CE 3.26.3, commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`.
+**Next.** Declaring the plugin selects nothing; ask for each CE step in conversation. Run `/ce-setup` once per repository for a non-default `docs_root`. The 18 `lbvs-aidlc*` commands are in [REFERENCE.md](REFERENCE.md#commands) and the bundled skills and plugins per stage in [PLUGINS.md](PLUGINS.md#stage-table). The integration contracts were reviewed at CE 3.26.3, commit `082c83e0537c803ac1d927daafc2e6eb6962dedf`.
 
 ## Run a whole change with `/lbvs-aidlc`
 
