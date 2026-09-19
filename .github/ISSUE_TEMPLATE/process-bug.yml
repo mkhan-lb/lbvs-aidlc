@@ -1,0 +1,45 @@
+name: Process bug
+description: A skill, hook, helper, template, agent or shared doc of the AIDLC workflow did something other than what its contract says. Filed by /lbvs-aidlc-report or by hand.
+title: "process-bug: "
+labels: ["process-bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The component and what it did. Quote the exact text it printed.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: What the contract says
+      description: The sentence in docs/WORKFLOW.md, the skill text or the helper help that describes the expected behaviour, with its anchor.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Shortest ordered steps that show the defect.
+      value: "1. "
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Output of `python3 scripts/aidlc.py report-context` (home paths redacted).
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: skill-step
+    attributes:
+      label: Skill and step in play
+      placeholder: "/lbvs-aidlc-fix step 2, hook protect-tests.sh, change so2-1386-product-patch-500"
+  - type: input
+    id: workaround
+    attributes:
+      label: Workaround used
+      placeholder: none

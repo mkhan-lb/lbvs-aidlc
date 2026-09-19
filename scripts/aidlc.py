@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -21,8 +22,8 @@ STAGE_FILES = (("intent", "intent.md"), ("spec", "spec.md"), ("plan", "plan.md")
 NEXT_STAGE = {"": "intent", "intent": "design", "spec": "plan", "plan": "build",
               "evidence": "review", "review": "done"}
 SKILLS = ("init", "intent", "design", "plan", "build", "verify", "review", "fix", "onboard", "learn",
-          "ticket", "spike", "ship", "handoff", "resume", "ideate")
-MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))
+          "ticket", "spike", "ship", "handoff", "resume", "ideate", "report")
+MANUAL_SKILLS = frozenset(("handoff", "resume", "ideate"))  # report stays model-invocable: a hook or gate failure is when it is needed
 SKILL_DIRECTORIES = ("lbvs-aidlc",) + tuple("lbvs-aidlc-" + name for name in SKILLS)
 CODE_SUFFIXES = frozenset((
     ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".kt", ".cs", ".rb", ".php", ".rs",
@@ -49,6 +50,8 @@ REQUIRED_ASSETS = (
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
     ".claude/hooks/pr-guard.sh", ".claude/hooks/artifact-guard.sh",
     ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh", ".claude/hooks/style-mode.sh", ".claude/hooks/glossary-context.sh",
+    ".github/ISSUE_TEMPLATE/process-bug.yml", ".github/ISSUE_TEMPLATE/workflow-request.yml",
+    ".claude/skills/lbvs-aidlc-report/templates/process-bug.md", ".claude/skills/lbvs-aidlc-report/templates/workflow-request.md",
     "docs/glossary/virtualstock-index.md", "docs/glossary/logicbroker-index.md",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/lbvs-aidlc-review/references/review-options.md",
@@ -612,11 +615,53 @@ def package_revision():
     return revision + ("+dirty" if dirty else "")
 
 
+def plugin_manifest():
+    """The lbvs-aidlc plugin manifest: beside scripts/ when this helper runs from the plugin, else the generated copy under plugins/."""
+    for candidate in (PACKAGE_ROOT / ".claude-plugin/plugin.json", PACKAGE_ROOT / PLUGIN_MANIFEST):
+        if candidate.is_file():
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+            except ValueError:
+                continue
+            if isinstance(data, dict) and data.get("name") == PACKAGE_NAME:
+                return data
+    return {}
+
+
 def plugin_version():
-    manifest = PACKAGE_ROOT / PLUGIN_MANIFEST
-    if not manifest.is_file():
-        return "unknown"
-    return json.loads(manifest.read_text(encoding="utf-8")).get("version", "unknown")
+    return plugin_manifest().get("version", "unknown")
+
+
+def redact_home(text):
+    home = str(Path.home())
+    return text.replace(home, "~") if home and home != "/" else text
+
+
+def report_context(root):
+    """Facts /lbvs-aidlc-report puts in a process-bug or workflow-request issue; the project appears as name and remote, never a path; nothing filed."""
+    manifest = plugin_manifest()
+    repository = manifest.get("repository") or "https://github.com/" + origin_repo()
+    layout = "plugin" if os.environ.get("CLAUDE_PLUGIN_ROOT") or (PACKAGE_ROOT / ".claude-plugin/plugin.json").is_file() else "package checkout"
+    installed = {}
+    if (root / MANIFEST_PATH).is_file():
+        try:
+            installed = json.loads((root / MANIFEST_PATH).read_text(encoding="utf-8"))
+        except ValueError:
+            installed = {"error": "unreadable"}
+    change_id, source = current_change(root)
+    mode, reasons = project_mode(root)
+    gh = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True, timeout=15, check=False) if shutil.which("gh") else None
+    lines = [
+        "Package repository: {}".format(repository),
+        "Helper: {} ({}), plugin version {}, helper revision {}".format(redact_home(str(PACKAGE_ROOT)), layout, plugin_version(), package_revision() if layout == "package checkout" else "n/a"),
+        "Host: {}".format("Oh My Pi" if os.environ.get("OMPCODE") else "Claude Code" if os.environ.get("CLAUDECODE") or os.environ.get("CLAUDE_PROJECT_DIR") else "unknown (run from a shell)"),
+        "Workstation: {} {} on {}, Python {}".format(platform.system(), platform.release(), platform.machine(), platform.python_version()),
+        "Project: {} ({}; {}), scaffold manifest {}".format(root.name, git_out(root, "remote", "get-url", "origin") or "no remote", mode, "absent" if not installed else "plugin {} installed {}".format(installed.get("plugin_version", "?"), installed.get("installed", "?"))),
+        "Change in play: {}".format("{} (from {})".format(change_id, source) if change_id else "none resolved"),
+        "gh: {}".format("not installed" if gh is None else ("authenticated" if gh.returncode == 0 else "not authenticated (`gh auth login`)")),
+    ]
+    print("\n".join(lines))
+    return 0
 
 
 def origin_repo():
@@ -1136,6 +1181,7 @@ def main():
     conv = commands.add_parser("conventions", help="compare repository conventions with the package defaults; --apply copies only missing defaults")
     conv.add_argument("--apply", action="store_true", help="copy missing default convention files into the target project (never overwrites)")
     commands.add_parser("profile", help="report whether docs/repo-profile.md exists and is fresh (manifests unchanged since its Last verified commit)")
+    commands.add_parser("report-context", help="print the session facts /lbvs-aidlc-report puts in a process-bug or workflow-request issue (home paths redacted; files nothing)")
     lint = commands.add_parser("lint-artifacts", help="scan changes/<id>/**/*.md (all changes without an ID) and docs/solutions/**/*.md for session references and machine paths; exit 1 on any hit")
     lint.add_argument("--root", dest="lint_root", type=Path, metavar="PATH", help="repository to scan (default: the repository containing the current directory)")
     lint.add_argument("--stdin", metavar="PATH", help="lint text read from stdin as if it were repository file PATH (the artifact-guard hooks use this); no scan")
@@ -1181,6 +1227,8 @@ def main():
             return conventions(root, apply=args.apply)
         if args.command == "profile":
             return profile(root)
+        if args.command == "report-context":
+            return report_context(root)
         return doctor(root, install=getattr(args, "install", False))
     except (OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("ERROR: {}".format(error), file=sys.stderr)

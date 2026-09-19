@@ -23,6 +23,7 @@ aidlc update --apply            # inside an adopting repository; `aidlc` is on P
 | `mode` | Prints one line, `AIDLC project mode: greenfield` or `brownfield`, with its reasons: brownfield when the repository has at least 10 code files or at least 20 commits. `.aidlc/mode` containing either word overrides detection. |
 | `status`, `current` | `status` lists every change with its artifacts, the stage reached and the next one. `current` prints the resolved change ID and its source ([resolution order](WORKFLOW.md#change-ids-you-do-not-have-to-remember)). |
 | `profile` | Prints `missing`, `fresh` or `stale (<n> manifest commits since <rev>)` for `docs/repo-profile.md`. |
+| `report-context` | Prints the facts `/lbvs-aidlc-report` puts in an issue: package repository (from the plugin manifest, else the origin remote), helper layout and plugin version, host (`OMPCODE` or `CLAUDECODE` in the environment), workstation, project name and remote (never its path), mode and scaffold manifest, change in play, `gh auth status`. Home paths become `~`; nothing is filed. |
 | `conventions` | Compares the repository with the defaults in `templates/conventions/` (`.editorconfig`, `.pre-commit-config.yaml`, `ruff.toml`, `biome.json`, `CONVENTIONS.md`) and reports, per file, whether the repository already owns that concern (an existing `pyproject.toml`, ESLint or Prettier config or `CONTRIBUTING.md`) or a default is available. `conventions --apply` copies only the missing defaults and never overwrites. |
 | `lint-artifacts` | Scans `changes/<change-id>/**/*.md` (every change when the ID is omitted) and `docs/solutions/**/*.md` under `--root` for the mechanical half of the [content boundary](ARTIFACTS.md#content-boundary) with two rules: `session-uri` (`artifact://`, `agent://`, `history://`, `local://`, `xd://`) and `machine-path` (`/Users/`, `/home/`, `/tmp/`, `/var/folders/`, `/private/`, drive letters). It prints one `path:line: <rule> <text>` per hit and exits 1, else `lint-artifacts: clean (<n> files)`. `--stdin` lints piped text; `artifact-guard.sh` uses it. |
 | `new` | Creates only `changes/<change-id>/intent.md` as a draft and refuses to overwrite. Replace `example-change` with a real [change ID](WORKFLOW.md#change-ids-you-do-not-have-to-remember). |
@@ -67,7 +68,7 @@ None of the subcommands approve, commit, push or deploy. For a separate target d
 
 | Plugin | Contents | Enabled |
 | --- | --- | --- |
-| `lbvs-aidlc` | the 17 `lbvs-aidlc*` skills plus `architecture-decision-records`, `doc-coauthoring`, `unslop` and `caveman`; the six agents; `hooks/hooks.json` and the seven hook scripts; `bin/aidlc` on the Bash PATH; `scripts/aidlc.py`; `docs/{WORKFLOW,ARTIFACTS,USAGE,PLUGINS}.md`; `docs/glossary/` in full (README, template, comparison, both glossaries, both generated indexes); `REVIEW.md`; `templates/conventions/`; `.mcp.json`; `package.json` whose `omp.extensions` loads `omp/aidlc-guards.ts` for Oh My Pi | on install |
+| `lbvs-aidlc` | the 18 `lbvs-aidlc*` skills plus `architecture-decision-records`, `doc-coauthoring`, `unslop` and `caveman`; the six agents; `hooks/hooks.json` and the seven hook scripts; `bin/aidlc` on the Bash PATH; `scripts/aidlc.py`; `docs/{WORKFLOW,ARTIFACTS,USAGE,PLUGINS}.md`; `docs/glossary/` in full (README, template, comparison, both glossaries, both generated indexes); `REVIEW.md`; `templates/conventions/`; `.mcp.json`; `package.json` whose `omp.extensions` loads `omp/aidlc-guards.ts` for Oh My Pi | on install |
 | `lbvs-ecc` | the 37 ECC reference skills with their licence and manifest | on install; a repository opts in |
 | `lbvs-aidlc-observer` | `continuous-learning-v2` with its observation hooks registered | `defaultEnabled: false`; `claude plugin enable lbvs-aidlc-observer@lbvs-aidlc` |
 
@@ -77,7 +78,7 @@ An adopting repository holds only its own state. `python3 scripts/aidlc.py insta
 
 ## Commands
 
-Every command accepts exactly one ID: a change ID, except `lbvs-aidlc-ideate` (a topic ID), `lbvs-aidlc-ticket` (a ticket key or issue URL) and `lbvs-aidlc-init` and `lbvs-aidlc-onboard` (none). Context, paths, CE selection and requested actions go in conversation. The ID shape and resolution order are in [WORKFLOW.md](WORKFLOW.md#change-ids-you-do-not-have-to-remember); every stage follows the [stage gates](WORKFLOW.md#stage-gates-and-the-flow-policy) and the [review loop](WORKFLOW.md#review-loop-and-escalation).
+Every command accepts exactly one ID: a change ID, except `lbvs-aidlc-ideate` (a topic ID), `lbvs-aidlc-ticket` (a ticket key or issue URL), `lbvs-aidlc-report` (an optional kind and summary) and `lbvs-aidlc-init` and `lbvs-aidlc-onboard` (none). Context, paths, CE selection and requested actions go in conversation. The ID shape and resolution order are in [WORKFLOW.md](WORKFLOW.md#change-ids-you-do-not-have-to-remember); every stage follows the [stage gates](WORKFLOW.md#stage-gates-and-the-flow-policy) and the [review loop](WORKFLOW.md#review-loop-and-escalation).
 
 | Command | Purpose |
 | --- | --- |
@@ -101,6 +102,7 @@ Every command accepts exactly one ID: a change ID, except `lbvs-aidlc-ideate` (a
 | `/lbvs-aidlc-handoff <change-id>` | Immutable snapshot under `changes/<change-id>/handoffs/` ([handoff and resume](WORKFLOW.md#durable-handoff-and-resume)). |
 | `/lbvs-aidlc-resume <change-id>` | Read-only orientation from a snapshot or the current artifacts, then stop. |
 | `/lbvs-aidlc-ideate <topic-id>` | Compare and save candidate directions before a change exists ([ideation](WORKFLOW.md#compare-directions-before-intent)). |
+| `/lbvs-aidlc-report [bug \| request] [summary]` | File a `process-bug` or `workflow-request` issue on the package repository from session facts (`report-context`), after a duplicate search and only on **File it**; the record for how the workflow behaved ([content boundary](ARTIFACTS.md#content-boundary)). |
 
 The skills are advisory instructions, not security controls; existing repository rules and tool permissions apply. Six subagents live under `.claude/agents/`, each with an `.omp/agents/` twin; their tools, callers and outputs are in [WORKFLOW.md](WORKFLOW.md#skills-agents-and-hooks) and their provenance under [imported skills](#imported-skills). `/lbvs-aidlc-init` may add repository-specific agents from its bundled `templates/agent.md`.
 

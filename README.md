@@ -6,7 +6,7 @@ The lifecycle follows [Anthropic's AI-native SDLC playbook](https://claude.com/b
 
 ## What you get
 
-- 17 slash commands (`/lbvs-aidlc*`): one orchestrator, the stage skills, a bug-fix loop, ticket intake, a time-boxed spike, a setup wizard, shipping, onboarding and lessons.
+- 18 slash commands (`/lbvs-aidlc*`): one orchestrator, the stage skills, a bug-fix loop, ticket intake, a time-boxed spike, a setup wizard, shipping, onboarding, lessons and a report command that files workflow defects and workflow requests as issues on this repository.
 - 6 subagents that work in a fresh context and report back: a verifier with Bash, a pre-PR conventions checker that runs only the repository's documented commands, and four read-only critics (repository scout, design reviewer, threat modeler, test critic).
 - 11 hooks. At session start: the package check (silent when it passes), the project-mode line, a scaffold-version check, the reply style (caveman lite by default; `.aidlc/style` sets `full`, `ultra` or `off`) and the company glossary index (one line per term, about 10 KB; the company comes from `.aidlc/glossary` or the profile's `Company:` line, `off` silences it). On every edit: protection of a failing test while you fix its bug, and the content boundary on `changes/**` and lessons. On `gh` and `git push`: a confirmation prompt before a pull request opens or merges or a force-push runs. On `/lbvs-aidlc*`: one bare change ID or nothing. On worktree creation and removal: descriptive names (`aidlc/vs-1234-order-export`) and removal that keeps uncommitted work.
 - Repository context that is read, not re-derived: a committed repository profile (`docs/repo-profile.md`) with a knowledge-store table, the company glossary (`docs/glossary/`, Logicbroker and Virtualstock, with a generated index that the session-start hook injects), playbooks for repeatable procedures, and platform facts. Stages read these first and scout only what is missing or stale.
@@ -130,6 +130,7 @@ The failing test is committed before the fix when you say so; that is the one co
 | `/lbvs-aidlc-learn <change-id>` | You learned something non-obvious worth keeping, with a confidence score. |
 | `/lbvs-aidlc-handoff`, `/lbvs-aidlc-resume <change-id>` | Pausing work and picking it up later (manual only). |
 | `/lbvs-aidlc-ideate <topic-id>` | Comparing directions before a change exists (manual only). |
+| `/lbvs-aidlc-report [bug \| request] [summary]` | The workflow itself misbehaved, or a use case has no flow: a GitHub issue on this repository, filed only when you say so. |
 
 Change IDs match `^[a-z0-9]+(-[a-z0-9]+)*$`. Prefix your ticket key so branches and commits carry it. Claude may also load a stage skill on its own when your request matches; the gates still apply. Commands and agents carry the `lbvs-aidlc-` prefix so they never collide with other AIDLC packages you may have loaded. The branch prefix `aidlc/<id>` and the `.aidlc/` state directory keep their short names.
 
