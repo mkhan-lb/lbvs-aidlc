@@ -23,6 +23,8 @@ Describe what better looks like and how it could be observed. These are goals, n
 
 Identify affected users and systems, relevant constraints, and explicit exclusions. Use real context rather than invented policies or ownership.
 
+Glossary terms: list each term this change introduces that the session's `[aidlc-glossary]` index lacks, with a one-line definition, and offer an entry from `docs/glossary/template.md`; otherwise write `none`.
+
 ## Open questions and risks
 
 List unresolved task decisions and their effect on the outcome. Carry them into the spec or record their answers; do not silently choose for the engineer.

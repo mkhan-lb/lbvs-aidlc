@@ -48,7 +48,8 @@ REQUIRED_ASSETS = (
     ".claude/hooks/check-package.sh", ".claude/hooks/project-mode.sh",
     ".claude/hooks/protect-tests.sh", ".claude/hooks/worktree-create.sh", ".claude/hooks/worktree-remove.sh",
     ".claude/hooks/pr-guard.sh", ".claude/hooks/artifact-guard.sh",
-    ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh", ".claude/hooks/style-mode.sh",
+    ".claude/hooks/argument-guard.sh", ".claude/hooks/scaffold-check.sh", ".claude/hooks/style-mode.sh", ".claude/hooks/glossary-context.sh",
+    "docs/glossary/virtualstock-index.md", "docs/glossary/logicbroker-index.md",
     ".claude/rules/package-maintenance.md",
     ".claude/skills/lbvs-aidlc-review/references/review-options.md",
     ".claude/skills/lbvs-aidlc-intent/templates/intent.md",
@@ -184,7 +185,23 @@ def local_links(text):
         for target in re.findall(r"\[[^\]\n]+\]\(([^)\s]+)\)", line):
             parts = urlsplit(target)
             if not parts.scheme and not parts.netloc and parts.path:
-                yield target, unquote(parts.path)
+                yield target, unquote(parts.path), parts.fragment
+
+
+def heading_anchors(path):
+    """GitHub's heading slugs: lowercase, punctuation dropped, spaces to hyphens; repeats get -1, -2."""
+    anchors, seen = set(), {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        heading = re.match(r"^ {0,3}#{1,6}\s+(.*?)\s*#*\s*$", line)
+        if not heading:
+            continue
+        text = re.sub(r"`([^`]*)`", r"\1", heading.group(1))
+        text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+        slug = re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
+        count = seen.get(slug, 0)
+        seen[slug] = count + 1
+        anchors.add(slug if count == 0 else "{}-{}".format(slug, count))
+    return anchors
 
 
 def first_content_line(path):
@@ -850,10 +867,12 @@ def check_package():
             except ValueError as error:
                 errors.append("invalid JSON configuration: {}: {}".format(relative, error))
         text = content.decode("utf-8") if file.suffix == ".md" else ""
-        for target, path in local_links(text):
+        for target, path, fragment in local_links(text):
             linked = (file.parent / path).resolve()
             if not linked.exists():
                 errors.append("broken local link: {} -> {}".format(relative, target))
+            elif fragment and linked.suffix == ".md" and fragment not in heading_anchors(linked):
+                errors.append("broken anchor: {} -> {}".format(relative, target))
             link_count += 1
     modes = {"lbvs-aidlc": False}
     modes.update({"lbvs-aidlc-" + name: name in MANUAL_SKILLS for name in SKILLS})

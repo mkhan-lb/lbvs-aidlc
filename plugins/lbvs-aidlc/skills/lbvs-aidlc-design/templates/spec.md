@@ -41,6 +41,8 @@ Explain how the change fits the existing system: affected components, interactio
 
 ## Constraints and exclusions
 
+Glossary terms: list each term this change introduces that the session's `[aidlc-glossary]` index lacks, with a one-line definition, and offer an entry from `docs/glossary/template.md`; otherwise write `none`.
+
 Carry forward the intent's scope and actual compatibility, security, UX, or other organisational constraints. Cite relevant policy where applicable; do not invent standards or claim unavailable material was checked.
 
 ## Open questions and risks

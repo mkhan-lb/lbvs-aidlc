@@ -2,7 +2,7 @@
  * Oh My Pi adapter for the AIDLC hook scripts. omp does not run Claude Code's shell hooks, so this
  * extension builds the same JSON payload Claude Code would send, runs the same scripts, and turns
  * their decisions into omp results:
- *   - SessionStart:  `aidlc.py mode`, scaffold-check.sh, style-mode.sh → text attached to the first user turn
+ *   - SessionStart:  `aidlc.py mode`, scaffold-check.sh, style-mode.sh, glossary-context.sh → text attached to the first user turn
  *   - PreToolUse:    write/edit → protect-tests.sh and artifact-guard.sh (one payload per target file);
  *                    bash       → pr-guard.sh
  *   `deny` blocks the call; `ask` asks the engineer through the omp UI and blocks without one.
@@ -20,10 +20,15 @@ const SESSION_MARKERS = [join("scripts", "aidlc.py"), ".git"];
 const PLUGIN_ROOT = resolve(import.meta.dir, "..");
 const PLUGIN_LAYOUT = existsSync(join(PLUGIN_ROOT, "scripts", "aidlc.py"));
 if (PLUGIN_LAYOUT && !process.env.CLAUDE_PLUGIN_ROOT) process.env.CLAUDE_PLUGIN_ROOT = PLUGIN_ROOT;
+// Claude Code puts a plugin's bin/ on the Bash PATH; omp does not, so `aidlc` is added here for the bash tool.
+const PLUGIN_BIN = join(PLUGIN_ROOT, "bin");
+if (PLUGIN_LAYOUT && existsSync(PLUGIN_BIN) && !(process.env.PATH ?? "").split(":").includes(PLUGIN_BIN)) {
+  process.env.PATH = `${PLUGIN_BIN}:${process.env.PATH ?? ""}`;
+}
 
 const EDIT_SCRIPTS = ["protect-tests.sh", "artifact-guard.sh"];
 const BASH_SCRIPTS = ["pr-guard.sh"];
-const SESSION_SCRIPTS = ["scaffold-check.sh", "style-mode.sh"];
+const SESSION_SCRIPTS = ["scaffold-check.sh", "style-mode.sh", "glossary-context.sh"];
 
 type Decision = { permissionDecision?: string; permissionDecisionReason?: string };
 type TextBlock = { type: string; text?: string };
@@ -91,7 +96,7 @@ function preToolUsePayloads(toolName: string, input: Record<string, unknown>, cw
 export default function aidlcGuards(pi: ExtensionAPI): void {
   let sessionText: string | undefined;
 
-  /** `AIDLC project mode: …` from the helper, then whatever the SessionStart scripts print (scaffold line, reply style). */
+  /** `AIDLC project mode: …` from the helper, then whatever the SessionStart scripts print (scaffold line, reply style, glossary index). */
   function sessionContext(cwd: string): string | undefined {
     if (sessionText !== undefined) return sessionText || undefined;
     const root = projectRoot(cwd);
